@@ -9,7 +9,7 @@ const regexp = /\/getrules/
 
 const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Message) => {
     const rules = await getRules(msg.chat.id);
-    bot.sendMessage(msg.chat.id, rules || 'No rules found for this chat.');
+    await bot.sendMessage(msg.chat.id, rules || 'No rules found for this chat.');
 }
 
 export {regexp, callback};
