@@ -8,7 +8,7 @@ import * as setRules from "./lib/commands/setRules";
 import * as getRules from "./lib/commands/getRules";
 import * as ban from "./lib/commands/ban";
 import * as addEvidence from "./lib/commands/addEvidence";
-import * as setLanguage from "./lib/commands/addEvidence";
+import * as setLanguage from "./lib/commands/setLanguage";
 
 const bot = new ModeratorBot(process.env.BOT_TOKEN, {polling: true});
 
