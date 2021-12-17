@@ -1,0 +1,18 @@
+{
+  "name": "telegram-moderator-bot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "@types/node-telegram-bot-api": "^0.53.2",
+    "dotenv": "^10.0.0",
+    "node-telegram-bot-api": "^0.56.0"
+  },
+  "devDependencies": {
+    "ts-node": "^10.4.0",
+    "typescript": "^4.5.4"
+  },
+  "scripts":  {
+    "start-bot": "npx ts-node index.ts"
+  }
+}
