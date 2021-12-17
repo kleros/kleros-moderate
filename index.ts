@@ -5,6 +5,7 @@ import * as TelegramBot from "node-telegram-bot-api";
 import * as addMod from "./lib/commands/addMod";
 import * as removeMod from "./lib/commands/removeMod";
 import * as setRules from "./lib/commands/setRules";
+import * as getRules from "./lib/commands/getRules";
 import * as ban from "./lib/commands/ban";
 import * as addEvidence from "./lib/commands/addEvidence";
 import * as setLanguage from "./lib/commands/addEvidence";
@@ -15,6 +16,7 @@ const commands: {regexp: RegExp, callback: CommandCallback}[] = [
     addMod,
     removeMod,
     setRules,
+    getRules,
     ban,
     addEvidence,
     setLanguage,
