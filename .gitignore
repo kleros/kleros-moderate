@@ -1,3 +1,5 @@
 node_modules/
 .env
 database.db
+lib/typechain
+yarn-error.log

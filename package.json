@@ -6,16 +6,21 @@
   "dependencies": {
     "@types/node-telegram-bot-api": "^0.53.2",
     "dotenv": "^10.0.0",
+    "ethers": "^5.5.2",
     "node-telegram-bot-api": "^0.56.0",
     "sqlite": "^4.0.23",
     "sqlite3": "^5.0.2"
   },
   "devDependencies": {
+    "@typechain/ethers-v5": "^8.0.5",
     "ts-node": "^10.4.0",
+    "typechain": "^6.0.5",
     "typescript": "^4.5.4"
   },
   "scripts": {
     "start-bot": "npx ts-node index.ts",
-    "create-db": "npx ts-node lib/create-db.ts"
+    "create-db": "npx ts-node lib/create-db.ts",
+    "typechain:build": "npx typechain --target ethers-v5 --out-dir lib/typechain lib/abi/*.json",
+    "postinstall": "yarn typechain:build"
   }
 }
