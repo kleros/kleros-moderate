@@ -27,8 +27,6 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
 
     const user = await bot.getChatMember(msg.chat.id, String(msg.from.id));
 
-    //TODO: evidence is saved (how is it saved? What evidence?)
-
     const rules = await getRules(msg.chat.id);
 
     if (!rules) {
@@ -51,7 +49,7 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
         } catch (e) {
             console.log(e);
 
-            await bot.sendMessage(msg.chat.id, `An unexpected error has occurred`);
+            await bot.sendMessage(msg.chat.id, `An unexpected error has occurred: ${e.message}`);
             return;
         }
 

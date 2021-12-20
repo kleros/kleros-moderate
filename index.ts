@@ -15,7 +15,7 @@ const bot = new ModeratorBot(process.env.BOT_TOKEN, {polling: true});
 if (process.env.CHAIN_NAME === 'kovan') {
     // kovan
     process.env.REALITITY_ETH_V30 = '0xcB71745d032E16ec838430731282ff6c10D29Dea';
-    process.env.REALITIO_ARBITRATOR = process.env.REALITITY_ETH_V30; // TODO: change to kleros arbitrator
+    process.env.REALITIO_ARBITRATOR = '0x99489d7bb33539f3d1a401741e56e8f02b9ae0cf';
     process.env.WEB3_PROVIDER_URL = 'https://kovan.infura.io/v3/f1c9535b961648f7bd18209b00e11163';
 } else {
     // xdai
