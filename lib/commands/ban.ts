@@ -11,8 +11,6 @@ import {addBan, getRules} from "../db";
  */
 const regexp = /\/ban/
 
-const arbitratorAddress = '0xe78996a233895be74a66f451f1019ca9734205cc';
-
 const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Message) => {
 
     if (!msg.reply_to_message) {
@@ -49,9 +47,10 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
 
             await addBan(msg.chat.id, questionId);
 
-            appealUrl = `https://reality.eth.link/app/#!/question/${arbitratorAddress}-${questionId}`;
+            appealUrl = `https://reality.eth.link/app/#!/question/${process.env.REALITITY_ETH_V30}-${questionId}`;
         } catch (e) {
-            // TODO: log
+            console.log(e);
+
             await bot.sendMessage(msg.chat.id, `An unexpected error has occurred`);
             return;
         }
@@ -82,12 +81,12 @@ async function askQuestionWithMinBond(fromUsername, rules): Promise<string> {
 
     const question = `Has ${fromUsername} infringed the Telegram group rules (${rules}) and should get banned?`;
 
-    const realityETHV30 = getRealityETHV30(arbitratorAddress);
+    const realityETHV30 = getRealityETHV30(process.env.REALITITY_ETH_V30);
 
     const tx = await realityETHV30.askQuestionWithMinBond(
         0,
         encodeQuestionText(qType, question, outcomes, category),
-        arbitratorAddress,
+        process.env.REALITIO_ARBITRATOR,
         60 * 60 * 24, // 1 day
         0,
         0,
@@ -102,7 +101,7 @@ async function askQuestionWithMinBond(fromUsername, rules): Promise<string> {
 }
 
 function getRealityETHV30(realitioAddress: string) {
-    let wallet = new Wallet(process.env.WALLET_PRIVATE_KEY, new JsonRpcProvider('https://rpc.xdaichain.com/'));
+    let wallet = new Wallet(process.env.WALLET_PRIVATE_KEY, new JsonRpcProvider(process.env.WEB3_PROVIDER_URL));
 
     return RealityETHV30__factory.connect(realitioAddress, wallet);
 }
