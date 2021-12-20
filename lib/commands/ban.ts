@@ -4,7 +4,7 @@ import {RealityETHV30__factory} from "../typechain";
 import {Wallet} from '@ethersproject/wallet';
 import {JsonRpcProvider} from '@ethersproject/providers';
 import {utils} from "ethers";
-import {getRules} from "../db";
+import {addBan, getRules} from "../db";
 
 /*
  * /ban
@@ -47,7 +47,7 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
         try {
             const questionId = await askQuestionWithMinBond(fromUsername, rules);
 
-            // TODO: save questionId to track appeal
+            await addBan(msg.chat.id, questionId);
 
             appealUrl = `https://reality.eth.link/app/#!/question/${arbitratorAddress}-${questionId}`;
         } catch (e) {
@@ -72,7 +72,7 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
     //await bot.banChatMember(msg.chat.id, String(msg.reply_to_message.from.id));
 }
 
-async function askQuestionWithMinBond(fromUsername, rules) {
+async function askQuestionWithMinBond(fromUsername, rules): Promise<string> {
     // A question is automatically created in Realitio with an answer in favor of banning the user.
     // Bond of the answer: 1 xDAI (initially the answer can be omitted).
 
@@ -96,7 +96,7 @@ async function askQuestionWithMinBond(fromUsername, rules) {
 
     const receipt = await tx.wait();
 
-    let log = realityETHV30.interface.parseLog(receipt.logs[0]);
+    const log = realityETHV30.interface.parseLog(receipt.logs[0]);
 
     return log.args[0];
 }

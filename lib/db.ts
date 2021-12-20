@@ -76,5 +76,15 @@ const isMod = async (chatId: number, username: string) => {
     return result.total > 0;
 }
 
+const addBan = async (chatId: number, questionId: string) => {
+    const db = await openDb();
+    await db.run(
+        'INSERT INTO bans(chat_id, question_id) VALUES($chatId, $questionId);',
+        {
+            $chatId: chatId,
+            $questionId: questionId
+        }
+    );
+}
 
-export {setRules, getRules, addMod, removeMod, isMod}
+export {setRules, getRules, addMod, removeMod, isMod, addBan}
