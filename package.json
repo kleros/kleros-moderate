@@ -7,6 +7,7 @@
     "@types/node-telegram-bot-api": "^0.53.2",
     "dotenv": "^10.0.0",
     "ethers": "^5.5.2",
+    "node-fetch": "2",
     "node-telegram-bot-api": "^0.56.0",
     "sqlite": "^4.0.23",
     "sqlite3": "^5.0.2"
