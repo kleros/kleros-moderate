@@ -76,13 +76,15 @@ const isMod = async (chatId: number, userId: number) => {
     return result.total > 0;
 }
 
-const addBan = async (chatId: number, questionId: string) => {
+const addBan = async (chatId: number, questionId: string, active: boolean) => {
     const db = await openDb();
+
     await db.run(
-        'INSERT INTO bans(chat_id, question_id) VALUES($chatId, $questionId);',
+        'INSERT INTO bans(chat_id, question_id, active) VALUES($chatId, $questionId, $active);',
         {
             $chatId: chatId,
-            $questionId: questionId
+            $questionId: questionId,
+            $active: active
         }
     );
 }

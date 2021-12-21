@@ -8,7 +8,7 @@ import {openDb} from "./db";
     // TODO: should we use the user id instead of the username?
     await db.exec('CREATE TABLE mods (chat_id INTEGER, user_id INTEGER, PRIMARY KEY (chat_id, user_id))');
 
-    await db.exec('CREATE TABLE bans (chat_id INTEGER, question_id TEXT, PRIMARY KEY (chat_id, question_id))');
+    await db.exec('CREATE TABLE bans (chat_id INTEGER, question_id TEXT, active BOOLEAN, PRIMARY KEY (chat_id, question_id))');
 
     console.log('database created');
 })();

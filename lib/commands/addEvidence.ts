@@ -1,9 +1,7 @@
 import * as TelegramBot from "node-telegram-bot-api";
 import {CommandCallback} from "../../types";
 import ipfsPublish from "../ipfs-publish";
-import {Wallet} from "@ethersproject/wallet";
-import {JsonRpcProvider} from "@ethersproject/providers";
-import {RealitioV21ArbitratorWithAppeals__factory} from "../typechain";
+import {getRealitioArbitrator} from "../ethers";
 
 /*
  * /addevidence [questionId]
@@ -49,12 +47,5 @@ Message: ${msg.reply_to_message.text}`;
 
     await bot.sendMessage(msg.chat.id, `Evidence submitted: ${evidencePath}`);
 }
-
-function getRealitioArbitrator(arbitratorAddress: string) {
-    let wallet = new Wallet(process.env.WALLET_PRIVATE_KEY, new JsonRpcProvider(process.env.WEB3_PROVIDER_URL));
-
-    return RealitioV21ArbitratorWithAppeals__factory.connect(arbitratorAddress, wallet);
-}
-
 
 export {regexp, callback};

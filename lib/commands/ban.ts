@@ -1,10 +1,8 @@
 import * as TelegramBot from "node-telegram-bot-api";
 import {CommandCallback} from "../../types";
-import {RealityETHV30__factory} from "../typechain";
-import {Wallet} from '@ethersproject/wallet';
-import {JsonRpcProvider} from '@ethersproject/providers';
-import {utils} from "ethers";
-import {addBan, getRules} from "../db";
+import {BigNumber, utils} from "ethers";
+import {addBan, getRules, isMod} from "../db";
+import {getRealityETHV30} from "../ethers";
 
 /*
  * /ban
@@ -25,8 +23,6 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
         return;
     }
 
-    const user = await bot.getChatMember(msg.chat.id, String(msg.from.id));
-
     const rules = await getRules(msg.chat.id);
 
     if (!rules) {
@@ -34,42 +30,52 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
         return;
     }
 
-    const fromUsername = msg.reply_to_message.from.username || msg.reply_to_message.from.first_name || msg.reply_to_message.from.id;
+    try {
+        const fromUsername = msg.reply_to_message.from.username || msg.reply_to_message.from.first_name || String(msg.reply_to_message.from.id);
 
-    let appealUrl;
+        const user = await bot.getChatMember(msg.chat.id, String(msg.from.id));
 
-    if (user.status === 'creator' || user.status === 'administrator') {
+        const isAdmin = user.status === 'creator' || user.status === 'administrator';
+        const isModerator = await isMod(msg.chat.id, msg.from.id);
 
-        try {
-            const questionId = await askQuestionWithMinBond(fromUsername, rules);
+        const hasBanningPermission = isAdmin || isModerator;
 
-            await addBan(msg.chat.id, questionId);
+        const minBond = process.env.CHAIN_NAME === 'kovan'
+            ? utils.parseEther('0.00025')
+            : utils.parseUnits('1', 18); // 1 DAI
 
-            appealUrl = `https://reality.eth.link/app/#!/question/${process.env.REALITITY_ETH_V30}-${questionId}`;
-        } catch (e) {
-            console.log(e);
+        const reward = hasBanningPermission ? minBond : 0;
 
-            await bot.sendMessage(msg.chat.id, `An unexpected error has occurred: ${e.message}`);
-            return;
+        const questionId = await askQuestionWithMinBond(
+            fromUsername,
+            rules,
+            reward,
+            minBond
+        );
+
+        await addBan(msg.chat.id, questionId, hasBanningPermission);
+
+        const appealUrl = `https://reality.eth.link/app/#!/question/${process.env.REALITITY_ETH_V30}-${questionId}`;
+
+        if (hasBanningPermission) {
+            // the user gets notified and it is explained to them how to appeal.
+            await bot.sendMessage(msg.chat.id, `*${fromUsername}* you have been banned, you can appeal here: ${appealUrl}`, {parse_mode: 'Markdown'});
+
+            //@ts-ignore
+            //await bot.banChatMember(msg.chat.id, String(msg.reply_to_message.from.id));
+        } else {
+            // the user first needs to answer and provide a bond
+            await bot.sendMessage(msg.chat.id, `For the ban to be applied you need to provide an answer with a bond of 1 DAI: ${appealUrl}`, {parse_mode: 'Markdown'});
         }
+    } catch (e) {
+        console.log(e);
 
-    } else {
-        // TODO
-        // The user is required to create a question in Realitio and submit an answer with a minimum bond.
-        await bot.sendMessage(msg.chat.id, `Only admins can execute this command.`);
+        await bot.sendMessage(msg.chat.id, `An unexpected error has occurred: ${e.reason}`);
         return;
     }
-
-    // the user gets notified and it is explained to them how to appeal.
-    await bot.sendMessage(msg.chat.id, `*${fromUsername}* you have been banned, you can appeal here: ${appealUrl}`, {parse_mode: 'Markdown'});
-
-    // TODO: If the user appeals (submits an answer to Realitio), the user gets automatically unbanned.
-
-    //@ts-ignore
-    //await bot.banChatMember(msg.chat.id, String(msg.reply_to_message.from.id));
 }
 
-async function askQuestionWithMinBond(fromUsername, rules): Promise<string> {
+async function askQuestionWithMinBond(fromUsername: string, rulesUrl: string, reward: number|BigNumber, minBond: number|BigNumber): Promise<string> {
     // A question is automatically created in Realitio with an answer in favor of banning the user.
     // Bond of the answer: 1 xDAI (initially the answer can be omitted).
 
@@ -77,7 +83,7 @@ async function askQuestionWithMinBond(fromUsername, rules): Promise<string> {
     const outcomes = [];
     const category = 'misc';
 
-    const question = `Has ${fromUsername} infringed the Telegram group rules (${rules}) and should get banned?`;
+    const question = `Has ${fromUsername} infringed the Telegram group rules (${rulesUrl}) and should get banned?`;
 
     const realityETHV30 = getRealityETHV30(process.env.REALITITY_ETH_V30);
 
@@ -87,8 +93,13 @@ async function askQuestionWithMinBond(fromUsername, rules): Promise<string> {
         process.env.REALITIO_ARBITRATOR,
         60 * 60 * 24, // 1 day
         0,
-        0,
-        utils.parseUnits("1", 18) // 1 DAI
+        +new Date(),
+        minBond,
+        {
+            value: reward,
+            // gasLimit is needed to test in kovan
+            gasLimit: process.env.CHAIN_NAME === 'kovan' ? 200000 : undefined
+        }
     );
 
     const receipt = await tx.wait();
@@ -96,12 +107,6 @@ async function askQuestionWithMinBond(fromUsername, rules): Promise<string> {
     const log = realityETHV30.interface.parseLog(receipt.logs[0]);
 
     return log.args[0];
-}
-
-function getRealityETHV30(realitioAddress: string) {
-    let wallet = new Wallet(process.env.WALLET_PRIVATE_KEY, new JsonRpcProvider(process.env.WEB3_PROVIDER_URL));
-
-    return RealityETHV30__factory.connect(realitioAddress, wallet);
 }
 
 // https://github.com/RealityETH/reality-eth-monorepo/blob/d95a9f4ee5c96f88b07651a63b3b6bf5f0e0074d/packages/reality-eth-lib/formatters/question.js#L221
