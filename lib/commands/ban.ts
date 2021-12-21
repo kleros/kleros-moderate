@@ -3,6 +3,7 @@ import {CommandCallback} from "../../types";
 import {BigNumber, utils} from "ethers";
 import {addBan, getRules, isMod} from "../db";
 import {getRealityETHV30} from "../ethers";
+import {processCommand as addEvidenceCommand} from "./addEvidence"
 
 /*
  * /ban
@@ -52,6 +53,15 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
             reward,
             minBond
         );
+
+        try {
+            await addEvidenceCommand(msg, questionId);
+        } catch (e) {
+            // let addEvidence fail, the question was created anyway
+            console.log(e);
+
+            await bot.sendMessage(msg.chat.id, `An unexpected error has occurred while adding the evidence: ${e.message}`);
+        }
 
         await addBan(msg.chat.id, questionId, hasBanningPermission);
 
