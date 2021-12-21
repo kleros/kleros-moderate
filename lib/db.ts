@@ -40,36 +40,36 @@ const getRules = async (chatId: number) => {
     return result?.rules || '';
 }
 
-const addMod = async (chatId: number, username: string) => {
+const addMod = async (chatId: number, userId: number) => {
     const db = await openDb();
     await db.run(
-        'INSERT OR REPLACE INTO mods(chat_id, username) VALUES($chatId, $username);',
+        'INSERT OR REPLACE INTO mods(chat_id, user_id) VALUES($chatId, $userId);',
         {
             $chatId: chatId,
-            $username: username
+            $userId: userId
         }
     );
 }
 
-const removeMod = async (chatId: number, username: string) => {
+const removeMod = async (chatId: number, userId: number) => {
     const db = await openDb();
     await db.run(
-        'DELETE FROM mods WHERE chat_id = $chatId AND username = $username',
+        'DELETE FROM mods WHERE chat_id = $chatId AND user_id = $userId',
         {
             $chatId: chatId,
-            $username: username
+            $userId: userId
         }
     );
 }
 
-const isMod = async (chatId: number, username: string) => {
+const isMod = async (chatId: number, userId: number) => {
     const db = await openDb();
 
     const result = await db.get(
-        'SELECT COUNT(*) as total FROM mods WHERE chat_id = $chatId AND username = $username',
+        'SELECT COUNT(*) as total FROM mods WHERE chat_id = $chatId AND user_id = $userId',
         {
             $chatId: chatId,
-            $username: username
+            $userId: userId
         }
     );
 

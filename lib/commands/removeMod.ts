@@ -1,26 +1,44 @@
 import * as TelegramBot from "node-telegram-bot-api";
 import {CommandCallback} from "../../types";
-import {isMod, removeMod} from "../db";
+import {removeMod} from "../db";
 
-/*
- * /removemod ?
- */
-const regexp = /\/removemod (.+)/
-
-const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Message, match: string[]) => {
-    const user = await bot.getChatMember(msg.chat.id, String(msg.from.id));
+const processCommand = async (bot: TelegramBot, chatId: number, userId: number, modUserId: number) => {
+    const user = await bot.getChatMember(chatId, String(userId));
 
     if (user.status === 'creator' || user.status === 'administrator') {
-
-        if (await isMod(msg.chat.id, match[1])) {
-            await removeMod(msg.chat.id, match[1]);
-            await bot.sendMessage(msg.chat.id, `${match[1]} is no longer a mod.`);
-        } else {
-            await bot.sendMessage(msg.chat.id, `${match[1]} is not a mod, no change was made.`);
-        }
+        await removeMod(chatId, modUserId);
+        await bot.sendMessage(chatId, `[${modUserId}](tg://user?id=${modUserId}) is no longer a mod.`, {parse_mode: 'Markdown'});
     } else {
-        await bot.sendMessage(msg.chat.id, `Only admins can execute this command.`);
+        await bot.sendMessage(chatId, `Only admins can execute this command.`);
     }
 }
 
-export {regexp, callback};
+
+/*
+ * /removemod
+ */
+const regexpReply = /^\/removemod$/
+
+const callbackReply: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Message) => {
+
+    if (!msg.reply_to_message) {
+        await bot.sendMessage(msg.chat.id, `/removemod must be used in a reply`);
+        return;
+    }
+
+    await processCommand(bot, msg.chat.id, msg.from.id, msg.reply_to_message.from.id);
+}
+
+/*
+ * /removemod [userId]
+ */
+const regexpUserId = /^\/removemod (\d+)$/
+
+const callbackUserId: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Message, match: string[]) => {
+    await processCommand(bot, msg.chat.id, msg.from.id, Number(match[1]));
+}
+
+export {
+    regexpReply, callbackReply,
+    regexpUserId, callbackUserId
+};

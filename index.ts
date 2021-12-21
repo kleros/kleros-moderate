@@ -25,8 +25,10 @@ if (process.env.CHAIN_NAME === 'kovan') {
 }
 
 const commands: {regexp: RegExp, callback: CommandCallback}[] = [
-    addMod,
-    removeMod,
+    {regexp: addMod.regexpReply, callback: addMod.callbackReply},
+    {regexp: addMod.regexpUserId, callback: addMod.callbackUserId},
+    {regexp: removeMod.regexpReply, callback: removeMod.callbackReply},
+    {regexp: removeMod.regexpUserId, callback: removeMod.callbackUserId},
     setRules,
     getRules,
     ban,
