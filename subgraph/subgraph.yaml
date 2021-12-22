@@ -24,4 +24,15 @@ dataSources:
           handler: handleLogNewAnswer
         - event: LogNewQuestion(indexed bytes32,indexed address,uint256,string,indexed bytes32,address,uint32,uint32,uint256,uint256)
           handler: handleLogNewQuestion
+      callHandlers:
+        - function: submitAnswer(bytes32,bytes32,uint256)
+          handler: handleSubmitAnswer
+        - function: submitAnswerFor(bytes32,bytes32,uint256,address)
+          handler: handleSubmitAnswerFor
+        - function: submitAnswerReveal(bytes32,bytes32,uint256,uint256)
+          handler: handleSubmitAnswerReveal
+        - function: submitAnswerByArbitrator(bytes32,bytes32,address)
+          handler: handleSubmitAnswerByArbitrator
+        - function: submitAnswerCommitment(bytes32,bytes32,uint256,address)
+          handler: handleSubmitAnswerCommitment
       file: ./src/mapping.ts

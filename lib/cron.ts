@@ -1,6 +1,6 @@
 require('dotenv').config()
 const ModeratorBot = require('node-telegram-bot-api');
-import {getBans, setBan} from "./db";
+import {getDisputedBans, setBan} from "./db";
 import request from "graphql-request";
 import {BigNumber} from "ethers";
 
@@ -9,22 +9,19 @@ import {BigNumber} from "ethers";
 
     const bans = {};
 
-    (await getBans()).forEach((ban) => {
+    (await getDisputedBans()).forEach((ban) => {
         bans[ban.question_id] = ban;
     });
 
     const query = `{
   questions(
-    orderBy: created, 
-    orderDirection: desc, 
-    where: {
-        answer_not: null, 
+    where: { 
         id_in: ${JSON.stringify(Object.keys(bans))}
     }
   ) {
     id
     answer
-    created
+    finalize_ts
   }
 }`;
 
@@ -37,15 +34,18 @@ import {BigNumber} from "ethers";
         const latestBanState = BigNumber.from(question.answer).toNumber();
 
         if (latestBanState !== bans[question.id].active) {
+
+            const finalized = question.finalize_ts <= Math.ceil(+new Date() / 1000);
+
             if (latestBanState === 1) {
                 // ban
-                await setBan(question.id, true);
+                await setBan(question.id, true, finalized);
 
                 // @ts-ignore
                 await bot.banChatMember(bans[question.id].chat_id, String(bans[question.id].user_id), {revoke_messages: false});
             } else {
                 // unban
-                await setBan(question.id, false);
+                await setBan(question.id, false, finalized);
 
                 // @ts-ignore
                 await bot.unbanChatMember(bans[question.id].chat_id, String(bans[question.id].user_id), {only_if_banned: true});

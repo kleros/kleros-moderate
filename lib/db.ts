@@ -80,7 +80,7 @@ const addBan = async (questionId: string, chatId: number, userId: number, active
     const db = await openDb();
 
     await db.run(
-        'INSERT INTO bans(question_id, chat_id, user_id, active) VALUES($questionId, $chatId, $userId, $active);',
+        'INSERT INTO bans(question_id, chat_id, user_id, active, finalized) VALUES ($questionId, $chatId, $userId, $active, FALSE);',
         {
             $questionId: questionId,
             $chatId: chatId,
@@ -90,22 +90,23 @@ const addBan = async (questionId: string, chatId: number, userId: number, active
     );
 }
 
-const setBan = async (questionId: string, active: boolean) => {
+const setBan = async (questionId: string, active: boolean, finalized: boolean) => {
     const db = await openDb();
 
     await db.run(
-        'UPDATE bans SET active = $active WHERE question_id = $questionId',
+        'UPDATE bans SET active = $active, finalized = $finalized WHERE question_id = $questionId',
         {
             $questionId: questionId,
-            $active: active
+            $active: active,
+            $finalized: finalized
         }
     );
 }
 
-const getBans = async() => {
+const getDisputedBans = async() => {
     const db = await openDb();
 
-    return await db.all('SELECT * FROM bans');
+    return await db.all('SELECT * FROM bans WHERE finalized = FALSE');
 }
 
-export {setRules, getRules, addMod, removeMod, isMod, addBan, setBan, getBans}
+export {setRules, getRules, addMod, removeMod, isMod, addBan, setBan, getDisputedBans}
