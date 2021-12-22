@@ -1,0 +1,13 @@
+type Question @entity {
+    id: ID!
+    user: Bytes! # address
+    template_id: BigInt!
+    question: String!
+    content_hash: Bytes! #bytes32
+    arbitrator: Bytes! #address
+    timeout: BigInt!
+    opening_ts: BigInt!
+    nonce: BigInt!
+    created: BigInt!
+    answer: Bytes #bytes32
+}

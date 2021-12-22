@@ -19,6 +19,13 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
 
     const botUser = await bot.getMe();
 
+    const botChatMember = await bot.getChatMember(msg.chat.id, String(botUser.id));
+
+    if (!botChatMember.can_restrict_members) {
+        await bot.sendMessage(msg.chat.id, `The Moderator Bot needs to have the "can_restrict_members" permission to be able to ban users.`);
+        return;
+    }
+
     if (botUser.id === msg.reply_to_message.from.id) {
         await bot.sendMessage(msg.chat.id, `The Moderator Bot can't be banned.`);
         return;
@@ -63,7 +70,7 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
             await bot.sendMessage(msg.chat.id, `An unexpected error has occurred while adding the evidence: ${e.message}`);
         }
 
-        await addBan(msg.chat.id, questionId, hasBanningPermission);
+        await addBan(questionId, msg.chat.id, msg.reply_to_message.from.id, hasBanningPermission);
 
         const appealUrl = `https://reality.eth.link/app/#!/question/${process.env.REALITITY_ETH_V30}-${questionId}`;
 
@@ -71,8 +78,8 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
             // the user gets notified and it is explained to them how to appeal.
             await bot.sendMessage(msg.chat.id, `*${fromUsername}* you have been banned, you can appeal here: ${appealUrl}`, {parse_mode: 'Markdown'});
 
-            //@ts-ignore
-            //await bot.banChatMember(msg.chat.id, String(msg.reply_to_message.from.id));
+            // @ts-ignore
+            await bot.banChatMember(msg.chat.id, String(msg.reply_to_message.from.id), {revoke_messages: false});
         } else {
             // the user first needs to answer and provide a bond
             await bot.sendMessage(msg.chat.id, `For the ban to be applied you need to provide an answer with a bond of 1 DAI: ${appealUrl}`, {parse_mode: 'Markdown'});

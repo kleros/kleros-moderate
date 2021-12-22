@@ -76,17 +76,36 @@ const isMod = async (chatId: number, userId: number) => {
     return result.total > 0;
 }
 
-const addBan = async (chatId: number, questionId: string, active: boolean) => {
+const addBan = async (questionId: string, chatId: number, userId: number, active: boolean) => {
     const db = await openDb();
 
     await db.run(
-        'INSERT INTO bans(chat_id, question_id, active) VALUES($chatId, $questionId, $active);',
+        'INSERT INTO bans(question_id, chat_id, user_id, active) VALUES($questionId, $chatId, $userId, $active);',
         {
+            $questionId: questionId,
             $chatId: chatId,
+            $userId: userId,
+            $active: active
+        }
+    );
+}
+
+const setBan = async (questionId: string, active: boolean) => {
+    const db = await openDb();
+
+    await db.run(
+        'UPDATE bans SET active = $active WHERE question_id = $questionId',
+        {
             $questionId: questionId,
             $active: active
         }
     );
 }
 
-export {setRules, getRules, addMod, removeMod, isMod, addBan}
+const getBans = async() => {
+    const db = await openDb();
+
+    return await db.all('SELECT * FROM bans');
+}
+
+export {setRules, getRules, addMod, removeMod, isMod, addBan, setBan, getBans}

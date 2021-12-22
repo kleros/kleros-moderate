@@ -3,3 +3,7 @@ node_modules/
 database.db
 lib/typechain
 yarn-error.log
+subgraph/build/
+!subgraph/build/.gitkeep
+subgraph/generated/
+!subgraph/generated/.gitkeep

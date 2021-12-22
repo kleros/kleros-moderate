@@ -1,0 +1,27 @@
+specVersion: 0.0.2
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum
+    name: RealityETHV30
+    network: kovan
+    source:
+      address: "0xcB71745d032E16ec838430731282ff6c10D29Dea"
+      abi: RealityETHV30
+      startBlock: 28864889
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      entities:
+        - LogNewAnswer
+        - LogNewQuestion
+      abis:
+        - name: RealityETHV30
+          file: ./abis/RealityETHV30.json
+      eventHandlers:
+        - event: LogNewAnswer(bytes32,indexed bytes32,bytes32,indexed address,uint256,uint256,bool)
+          handler: handleLogNewAnswer
+        - event: LogNewQuestion(indexed bytes32,indexed address,uint256,string,indexed bytes32,address,uint32,uint32,uint256,uint256)
+          handler: handleLogNewQuestion
+      file: ./src/mapping.ts

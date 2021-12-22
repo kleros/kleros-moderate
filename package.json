@@ -4,9 +4,13 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
+    "@graphprotocol/graph-cli": "^0.25.1",
+    "@graphprotocol/graph-ts": "^0.24.1",
     "@types/node-telegram-bot-api": "^0.53.2",
     "dotenv": "^10.0.0",
     "ethers": "^5.5.2",
+    "graphql": "^16.2.0",
+    "graphql-request": "^3.7.0",
     "node-fetch": "2",
     "node-telegram-bot-api": "^0.56.0",
     "sqlite": "^4.0.23",
@@ -21,7 +25,14 @@
   "scripts": {
     "start-bot": "npx ts-node index.ts",
     "create-db": "npx ts-node lib/create-db.ts",
+    "cron": "npx ts-node lib/cron.ts",
     "typechain:build": "npx typechain --target ethers-v5 --out-dir lib/typechain lib/abi/*.json",
+    "graph:codegen": "cd subgraph && graph codegen",
+    "graph:build": "cd subgraph && graph build",
+    "graph:deploy": "cd subgraph && graph deploy --node https://api.thegraph.com/deploy/ rodsouto/telegram-moderator-bot",
+    "graph:create-local": "cd subgraph && graph create --node http://localhost:8020/ rodsouto/telegram-moderator-bot",
+    "graph:remove-local": "cd subgraph && graph remove --node http://localhost:8020/ rodsouto/telegram-moderator-bot",
+    "graph:deploy-local": "cd subgraph && graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 rodsouto/telegram-moderator-bot",
     "postinstall": "yarn typechain:build"
   }
 }
