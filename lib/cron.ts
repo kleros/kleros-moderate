@@ -31,7 +31,16 @@ import {BigNumber} from "ethers";
     )
 
     for (const question of result.questions) {
-        const latestBanState = BigNumber.from(question.answer).toNumber();
+
+        const answer = BigNumber.from(question.answer);
+
+        if (!answer.eq(0) && !answer.eq(1)) {
+            // "Invalid" or "Answered too soon"
+            // TODO: what should we do?
+            continue;
+        }
+
+        const latestBanState = answer.toNumber();
 
         if (latestBanState !== bans[question.id].active) {
 
