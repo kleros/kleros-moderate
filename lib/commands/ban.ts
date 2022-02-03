@@ -70,7 +70,7 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
 
         await addBan(questionId, msg.chat.id, msg.reply_to_message.from.id, hasBanningPermission);
 
-        const appealUrl = `https://reality.eth.link/app/#!/question/${process.env.REALITITY_ETH_V30}-${questionId}`;
+        const appealUrl = `https://reality.eth.link/app/index.html#!/network/100/question/${process.env.REALITITY_ETH_V30}-${questionId}`;
 
         if (hasBanningPermission) {
             // the user gets notified and it is explained to them how to appeal.
