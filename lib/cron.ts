@@ -16,7 +16,8 @@ import {BigNumber} from "ethers";
     const query = `{
   questions(
     where: { 
-        id_in: ${JSON.stringify(Object.keys(bans))}
+        id_in: ${JSON.stringify(Object.keys(bans))},
+        answer_not: null
     }
   ) {
     id
