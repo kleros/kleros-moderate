@@ -1,7 +1,7 @@
 import * as TelegramBot from "node-telegram-bot-api";
-import {CommandCallback} from "../../types";
-import ipfsPublish from "../ipfs-publish";
-import {getRealitioArbitrator} from "../ethers";
+import {CommandCallback} from "../../../types";
+import ipfsPublish from "../../ipfs-publish";
+import {getRealitioArbitrator} from "../../ethers";
 
 const processCommand = async (msg: TelegramBot.Message, questionId: number|string): Promise<string> => {
     const enc = new TextEncoder();

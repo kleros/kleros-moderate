@@ -1,7 +1,7 @@
 import * as TelegramBot from "node-telegram-bot-api";
-import {CommandCallback} from "../../types";
-import {setRules} from "../db";
-import ipfsPublish from "../ipfs-publish";
+import {CommandCallback} from "../../../types";
+import {setRules} from "../../db";
+import ipfsPublish from "../../ipfs-publish";
 
 /*
  * /setrules [ipfs file path]

@@ -1,6 +1,6 @@
 import * as TelegramBot from "node-telegram-bot-api";
-import {CommandCallback} from "../../types";
-import {getRules} from "../db";
+import {CommandCallback} from "../../../types";
+import {getRules} from "../../db";
 
 /*
  * /getrules

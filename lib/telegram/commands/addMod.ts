@@ -1,6 +1,6 @@
 import * as TelegramBot from "node-telegram-bot-api";
-import {CommandCallback} from "../../types";
-import {addMod} from "../db";
+import {CommandCallback} from "../../../types";
+import {addMod} from "../../db";
 
 const processCommand = async (bot: TelegramBot, chatId: number, userId: number, modUserId: number) => {
     const user = await bot.getChatMember(chatId, String(userId));

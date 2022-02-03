@@ -1,5 +1,5 @@
 import * as TelegramBot from "node-telegram-bot-api";
-import {CommandCallback} from "../../types";
+import {CommandCallback} from "../../../types";
 
 /*
  * /setlanguage ?

@@ -2,13 +2,13 @@ require('dotenv').config()
 const ModeratorBot = require('node-telegram-bot-api');
 import {CommandCallback} from "./types";
 import * as TelegramBot from "node-telegram-bot-api";
-import * as addMod from "./lib/commands/addMod";
-import * as removeMod from "./lib/commands/removeMod";
-import * as setRules from "./lib/commands/setRules";
-import * as getRules from "./lib/commands/getRules";
-import * as ban from "./lib/commands/ban";
-import * as addEvidence from "./lib/commands/addEvidence";
-import * as setLanguage from "./lib/commands/setLanguage";
+import * as addMod from "./lib/telegram/commands/addMod";
+import * as removeMod from "./lib/telegram/commands/removeMod";
+import * as setRules from "./lib/telegram/commands/setRules";
+import * as getRules from "./lib/telegram/commands/getRules";
+import * as ban from "./lib/telegram/commands/ban";
+import * as addEvidence from "./lib/telegram/commands/addEvidence";
+import * as setLanguage from "./lib/telegram/commands/setLanguage";
 
 const bot = new ModeratorBot(process.env.BOT_TOKEN, {polling: true});
 
