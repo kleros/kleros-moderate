@@ -48,9 +48,7 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
 
         const hasBanningPermission = isAdmin || isModerator;
 
-        const minBond = process.env.CHAIN_NAME === 'kovan'
-            ? utils.parseEther('0.00025')
-            : utils.parseUnits('1', 18); // 1 DAI
+        const minBond = utils.parseUnits('1', 18); // 1 DAI
 
         const reward = hasBanningPermission ? minBond : 0;
 
@@ -113,9 +111,7 @@ async function askQuestionWithMinBond(fromUsername: string, rulesUrl: string, re
         +new Date(),
         minBond,
         {
-            value: reward,
-            // gasLimit is needed to test in kovan
-            gasLimit: process.env.CHAIN_NAME === 'kovan' ? 200000 : undefined
+            value: reward
         }
     );
 
