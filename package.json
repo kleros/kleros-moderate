@@ -33,6 +33,9 @@
     "graph:create-local": "cd subgraph && graph create --node http://localhost:8020/ rodsouto/telegram-moderator-bot",
     "graph:remove-local": "cd subgraph && graph remove --node http://localhost:8020/ rodsouto/telegram-moderator-bot",
     "graph:deploy-local": "cd subgraph && graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 rodsouto/telegram-moderator-bot",
+    "pm2:start": "pm2 start ecosystem.config.js",
+    "pm2:stop-all": "pm2 stop all",
+    "pm2:delete-all": "pm2 delete all",
     "postinstall": "yarn typechain:build"
   }
 }
