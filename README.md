@@ -10,6 +10,10 @@ Copy `.env.dist` to `.env` and configure the telegram API key.
 
 `yarn start-bot`
 
+## pm2 commands
+
+`pm2 start|stop all|remove all`
+
 ## Commands
 
 Command | Description | Group Admin | Normal user
