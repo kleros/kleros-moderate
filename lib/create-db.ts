@@ -3,7 +3,7 @@ import {openDb} from "./db";
 (async () => {
     const db = await openDb();
 
-    await db.exec('CREATE TABLE bots (address TEXT PRIMARY KEY, private_key TEXT, telegram_user_id INTEGER)');
+    await db.exec('CREATE TABLE bots (address TEXT PRIMARY KEY, private_key TEXT, account_id TEXT, account_source TEXT)');
 
     await db.exec('CREATE TABLE bot_chats (chat_id INTEGER PRIMARY KEY, address TEXT)');
 

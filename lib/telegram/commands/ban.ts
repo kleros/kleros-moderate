@@ -2,7 +2,7 @@ import * as TelegramBot from "node-telegram-bot-api";
 import {CommandCallback} from "../../../types";
 import {addBan, getChatBot, getRules, isMod} from "../../db";
 import {processCommand as addEvidenceCommand} from "./addEvidence"
-import {realityBan} from "../../reality-ban";
+import {banUser} from "../../bot-core";
 
 /*
  * /ban
@@ -40,7 +40,7 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
     const privateKey = (await getChatBot(msg.chat.id))?.private_key || false;
 
     if (!privateKey) {
-        await bot.sendMessage(msg.chat.id, `This chat does not have a bot address. Execute /setbot first.`);
+        await bot.sendMessage(msg.chat.id, `This chat does not have a bot address. Execute /setaccount first.`);
         return;
     }
 
@@ -54,7 +54,7 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
 
         const hasBanningPermission = isAdmin || isModerator;
 
-        const {questionId, questionUrl: appealUrl} = await realityBan(hasBanningPermission, fromUsername, rules, privateKey);
+        const {questionId, questionUrl: appealUrl} = await banUser(hasBanningPermission, fromUsername, rules, privateKey);
 
         try {
             await addEvidenceCommand(msg, questionId, privateKey);

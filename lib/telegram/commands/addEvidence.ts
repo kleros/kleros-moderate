@@ -39,7 +39,7 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
     const privateKey = (await getChatBot(msg.chat.id))?.private_key || false;
 
     if (!privateKey) {
-        await bot.sendMessage(msg.chat.id, `This chat does not have a bot address. Execute /setbot first.`);
+        await bot.sendMessage(msg.chat.id, `This chat does not have a bot address. Execute /setaccount first.`);
         return;
     }
 

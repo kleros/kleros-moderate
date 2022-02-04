@@ -3,9 +3,9 @@ import {CommandCallback} from "../../../types";
 import {getChatBot} from "../../db";
 
 /*
- * /getbot
+ * /getaccount
  */
-const regexp = /\/getbot/
+const regexp = /\/getaccount/
 
 const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Message) => {
     const chatBot = await getChatBot(msg.chat.id);

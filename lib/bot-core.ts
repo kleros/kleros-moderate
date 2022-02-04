@@ -1,12 +1,14 @@
 import {BigNumber, utils} from "ethers";
 import {getRealityETHV30} from "./ethers";
+import {Wallet} from "@ethersproject/wallet";
+import {createBot} from "./db";
 
 interface RealityBanResult {
     questionId: string
     questionUrl: string
 }
 
-export const realityBan = async (hasBanningPermission: boolean, fromUsername: string, rules: string, privateKey: string): Promise<RealityBanResult> => {
+export const banUser = async (hasBanningPermission: boolean, fromUsername: string, rules: string, privateKey: string): Promise<RealityBanResult> => {
 
     const minBond = utils.parseUnits('1', 18); // 1 DAI
 
@@ -80,4 +82,17 @@ function encodeQuestionText(
     }
     qText = qText + delim + category + delim + lang;
     return qText;
+}
+
+export const createAccount = async (accountId: string, accountSource: string) => {
+    const wallet = Wallet.createRandom();
+
+    await createBot(
+        accountId,
+        accountSource,
+        wallet.address,
+        wallet.privateKey,
+    );
+
+    return wallet.address
 }

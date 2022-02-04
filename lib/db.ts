@@ -21,27 +21,28 @@ export async function openDb() {
     })
 }
 
-const createBot = async (userId: string, address: string, privateKey: string) => {
+const createBot = async (accountId: string, accountSource: string, address: string, privateKey: string) => {
     const db = await openDb();
     await db.run(
-        'INSERT INTO bots(telegram_user_id, address, private_key) VALUES($userId, $address, $privateKey);',
+        'INSERT INTO bots(account_id, account_source, address, private_key) VALUES($accountId, $accountSource, $address, $privateKey);',
         {
-            $userId: userId,
+            $accountId: accountId,
+            $accountSource: accountSource,
             $address: address,
             $privateKey: privateKey
         }
     );
 }
 
-const isBotOwner = async (userId: number, address: string) => {
+const isAccountOwner = async (accountId: string, accountSource: string, address: string) => {
     const db = await openDb();
 
-    const result = await db.get('SELECT COUNT(*) as total FROM bots WHERE telegram_user_id = ? AND address = ?', userId, address);
+    const result = await db.get('SELECT COUNT(*) as total FROM bots WHERE account_id = ? AND account_source = ? AND address = ?', accountId, accountSource, address);
 
     return result.total > 0;
 }
 
-const setChatBot = async (chatId: number, address: string) => {
+const setChatAccount = async (chatId: number, address: string) => {
     const db = await openDb();
     await db.run(
         'INSERT OR REPLACE INTO bot_chats(chat_id, address) VALUES($chatId, $address);',
@@ -154,8 +155,8 @@ const getDisputedBans = async() => {
 export {
     createBot,
     getChatBot,
-    isBotOwner,
-    setChatBot,
+    isAccountOwner,
+    setChatAccount,
     setRules,
     getRules,
     addMod,

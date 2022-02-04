@@ -1,11 +1,11 @@
 import * as TelegramBot from "node-telegram-bot-api";
 import {CommandCallback} from "../../../types";
-import {isBotOwner, setChatBot} from "../../db";
+import {isAccountOwner, setChatAccount} from "../../db";
 
 /*
- * /setbot [bot-address]
+ * /setaccount [address]
  */
-const regexp = /\/setbot\s?(.+)?/
+const regexp = /\/setaccount\s?(.+)?/
 
 const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Message, match: string[]) => {
     const user = await bot.getChatMember(msg.chat.id, String(msg.from.id));
@@ -16,18 +16,18 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
     }
 
     if (!match[1]) {
-        await bot.sendMessage(msg.chat.id, 'Bot address is empty. Try again with /setbot [bot-address]');
+        await bot.sendMessage(msg.chat.id, 'Account address is empty. Try again with /setaccount [address]');
         return;
     }
 
-    if (!await isBotOwner(msg.from.id, match[1])) {
-        await bot.sendMessage(msg.chat.id, 'You are not the owner of this bot.');
+    if (!await isAccountOwner(String(msg.from.id), 'telegram', match[1])) {
+        await bot.sendMessage(msg.chat.id, 'You are not the owner of this address.');
         return;
     }
 
-    await setChatBot(msg.chat.id, match[1]);
+    await setChatAccount(msg.chat.id, match[1]);
 
-    await bot.sendMessage(msg.chat.id, 'Chat bot updated');
+    await bot.sendMessage(msg.chat.id, 'Bot account updated');
 }
 
 export {regexp, callback};

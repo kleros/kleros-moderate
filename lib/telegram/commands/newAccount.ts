@@ -1,12 +1,11 @@
 import * as TelegramBot from "node-telegram-bot-api";
 import {CommandCallback} from "../../../types";
-import {Wallet} from "@ethersproject/wallet";
-import {createBot} from "../../db";
+import {createAccount} from "../../bot-core";
 
 /*
- * /newbot
+ * /newaccount
  */
-const regexp = /\/newbot/
+const regexp = /\/newaccount/
 
 const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Message) => {
     const user = await bot.getChatMember(msg.chat.id, String(msg.from.id));
@@ -16,15 +15,9 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
         return;
     }
 
-    const wallet = Wallet.createRandom();
+    const address = await createAccount(String(msg.from.id), 'telegram');
 
-    await createBot(
-        String(msg.from.id),
-        wallet.address,
-        wallet.privateKey,
-    );
-
-    await bot.sendMessage(msg.chat.id, `Bot address: ${wallet.address}. Send xDAI to that address to pay for the gas used. Execute /setbot to start using this bot.`);
+    await bot.sendMessage(msg.chat.id, `Account created. Send xDAI to ${address} to pay for the gas used. Execute /setaccount to start using the bot.`);
 }
 
 export {regexp, callback};

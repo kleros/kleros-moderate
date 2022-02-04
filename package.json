@@ -24,7 +24,7 @@
     "typescript": "^4.5.4"
   },
   "scripts": {
-    "start-bot": "npx ts-node index.ts",
+    "start-telegram-bot": "npx ts-node lib/telegram/index.ts",
     "create-db": "npx ts-node lib/create-db.ts",
     "cron": "npx ts-node lib/cron.ts",
     "typechain:build": "npx typechain --target ethers-v5 --out-dir lib/typechain lib/abi/*.json",

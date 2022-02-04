@@ -1,12 +1,12 @@
 module.exports = {
     apps : [{
-        name: 'kleros_bot',
+        name: 'moderator_telegram_bot',
         script: 'yarn',
-        args: 'start-bot',
+        args: 'start-telegram-bot',
         watch: true,
         ignore_watch: ['\.git', 'node_modules', 'database\.db', 'database\.db-journal'],
     }, {
-        name: 'kleros_bot_cron',
+        name: 'moderator_cron',
         script: 'yarn',
         args: 'cron',
         watch: true,
