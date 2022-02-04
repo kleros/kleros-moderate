@@ -21,6 +21,48 @@ export async function openDb() {
     })
 }
 
+const createBot = async (userId: string, address: string, privateKey: string) => {
+    const db = await openDb();
+    await db.run(
+        'INSERT INTO bots(telegram_user_id, address, private_key) VALUES($userId, $address, $privateKey);',
+        {
+            $userId: userId,
+            $address: address,
+            $privateKey: privateKey
+        }
+    );
+}
+
+const isBotOwner = async (userId: number, address: string) => {
+    const db = await openDb();
+
+    const result = await db.get('SELECT COUNT(*) as total FROM bots WHERE telegram_user_id = ? AND address = ?', userId, address);
+
+    return result.total > 0;
+}
+
+const setChatBot = async (chatId: number, address: string) => {
+    const db = await openDb();
+    await db.run(
+        'INSERT OR REPLACE INTO bot_chats(chat_id, address) VALUES($chatId, $address);',
+        {
+            $chatId: chatId,
+            $address: address,
+        }
+    );
+}
+
+const getChatBot = async(chatId: number): Promise<{address: string, private_key: string} | undefined> => {
+    const db = await openDb();
+
+    const query = `
+SELECT * FROM bots 
+LEFT JOIN bot_chats ON bot_chats.address = bots.address
+WHERE bot_chats.chat_id = ?`;
+
+    return await db.get(query, chatId);
+}
+
 const setRules = async (chatId: number, rules: string) => {
     const db = await openDb();
     await db.run(
@@ -109,4 +151,17 @@ const getDisputedBans = async() => {
     return await db.all('SELECT * FROM bans WHERE finalized = FALSE');
 }
 
-export {setRules, getRules, addMod, removeMod, isMod, addBan, setBan, getDisputedBans}
+export {
+    createBot,
+    getChatBot,
+    isBotOwner,
+    setChatBot,
+    setRules,
+    getRules,
+    addMod,
+    removeMod,
+    isMod,
+    addBan,
+    setBan,
+    getDisputedBans
+}

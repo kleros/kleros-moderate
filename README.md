@@ -25,10 +25,13 @@ yarn pm2:delete-all
 ```
 
 
-## Commands
+## Telegram Commands
 
 Command | Description | Group Admin | Normal user
 --- | --- | --- | ---
+/newbot | Creates a new bot | ✅ | ❌
+/setbot [bot-address]| Sets the bot address of the current chat | ✅ | ❌
+/getbot | Returns the bot address of the current chat | ✅ | ✅
 /setrules | `[by reply/username/id]`  Set chat rules from the quoted message | ✅ | ❌
 /setrules [url] | Set chat rules from the specified url | ✅ | ❌
 /getrules | Get chat rules | ✅ | ✅

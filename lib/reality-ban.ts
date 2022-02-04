@@ -6,7 +6,7 @@ interface RealityBanResult {
     questionUrl: string
 }
 
-export const realityBan = async (hasBanningPermission: boolean, fromUsername: string, rules: string): Promise<RealityBanResult> => {
+export const realityBan = async (hasBanningPermission: boolean, fromUsername: string, rules: string, privateKey: string): Promise<RealityBanResult> => {
 
     const minBond = utils.parseUnits('1', 18); // 1 DAI
 
@@ -16,7 +16,8 @@ export const realityBan = async (hasBanningPermission: boolean, fromUsername: st
         fromUsername,
         rules,
         reward,
-        minBond
+        minBond,
+        privateKey
     );
 
     return {
@@ -25,7 +26,7 @@ export const realityBan = async (hasBanningPermission: boolean, fromUsername: st
     };
 }
 
-async function askQuestionWithMinBond(fromUsername: string, rulesUrl: string, reward: number|BigNumber, minBond: number|BigNumber): Promise<string> {
+async function askQuestionWithMinBond(fromUsername: string, rulesUrl: string, reward: number|BigNumber, minBond: number|BigNumber, privateKey: string): Promise<string> {
     // A question is automatically created in Realitio with an answer in favor of banning the user.
     // Bond of the answer: 1 xDAI (initially the answer can be omitted).
 
@@ -35,7 +36,7 @@ async function askQuestionWithMinBond(fromUsername: string, rulesUrl: string, re
 
     const question = `Has ${fromUsername} infringed the Telegram group rules (${rulesUrl}) and should get banned?`;
 
-    const realityETHV30 = getRealityETHV30(process.env.REALITITY_ETH_V30);
+    const realityETHV30 = getRealityETHV30(process.env.REALITITY_ETH_V30, privateKey);
 
     const tx = await realityETHV30.askQuestionWithMinBond(
         0,

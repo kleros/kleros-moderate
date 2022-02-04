@@ -1,6 +1,6 @@
 import * as TelegramBot from "node-telegram-bot-api";
 import {CommandCallback} from "../../../types";
-import {addBan, getRules, isMod} from "../../db";
+import {addBan, getChatBot, getRules, isMod} from "../../db";
 import {processCommand as addEvidenceCommand} from "./addEvidence"
 import {realityBan} from "../../reality-ban";
 
@@ -37,6 +37,13 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
         return;
     }
 
+    const privateKey = (await getChatBot(msg.chat.id))?.private_key || false;
+
+    if (!privateKey) {
+        await bot.sendMessage(msg.chat.id, `This chat does not have a bot address. Execute /setbot first.`);
+        return;
+    }
+
     try {
         const fromUsername = msg.reply_to_message.from.username || msg.reply_to_message.from.first_name || String(msg.reply_to_message.from.id);
 
@@ -47,15 +54,15 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
 
         const hasBanningPermission = isAdmin || isModerator;
 
-        const {questionId, questionUrl: appealUrl} = await realityBan(hasBanningPermission, fromUsername, rules);
+        const {questionId, questionUrl: appealUrl} = await realityBan(hasBanningPermission, fromUsername, rules, privateKey);
 
         try {
-            await addEvidenceCommand(msg, questionId);
+            await addEvidenceCommand(msg, questionId, privateKey);
         } catch (e) {
             // let addEvidence fail, the question was created anyway
             console.log(e);
 
-            await bot.sendMessage(msg.chat.id, `An unexpected error has occurred while adding the evidence: ${e.message}`);
+            await bot.sendMessage(msg.chat.id, `An unexpected error has occurred while adding the evidence: ${e.message}. Does the bot address has enough funds to pay the transaction?`);
         }
 
         await addBan(questionId, msg.chat.id, msg.reply_to_message.from.id, hasBanningPermission);
@@ -73,7 +80,7 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
     } catch (e) {
         console.log(e);
 
-        await bot.sendMessage(msg.chat.id, `An unexpected error has occurred: ${e.reason}`);
+        await bot.sendMessage(msg.chat.id, `An unexpected error has occurred: ${e.reason}. Does the bot address has enough funds to pay the transaction?`);
         return;
     }
 }
