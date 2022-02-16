@@ -49,6 +49,10 @@ import {BigNumber} from "ethers";
 
             const finalized = question.finalize_ts <= Math.ceil(+new Date() / 1000);
 
+            console.log(
+                `${latestBanState ? 'ban' : 'unban'}: ${question.id} for ${ban.app_type} - group ${ban.app_group_id} - user ${ban.app_user_id}`
+            );
+
             if (latestBanState === 1) {
                 // ban
                 await setBan(question.id, true, finalized);
