@@ -2,7 +2,7 @@ import * as TelegramBot from "node-telegram-bot-api";
 import {CommandCallback} from "../../../types";
 import ipfsPublish from "../../ipfs-publish";
 import {getRealitioArbitrator} from "../../ethers";
-import {getChatBot} from "../../db";
+import {getBot} from "../../db";
 
 const processCommand = async (msg: TelegramBot.Message, questionId: number|string, privateKey: string): Promise<string> => {
     const enc = new TextEncoder();
@@ -36,7 +36,7 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
         return;
     }
 
-    const privateKey = (await getChatBot(msg.chat.id))?.private_key || false;
+    const privateKey = (await getBot(String(msg.chat.id), 'telegram'))?.private_key || false;
 
     if (!privateKey) {
         await bot.sendMessage(msg.chat.id, `This chat does not have a bot address. Execute /setaccount first.`);

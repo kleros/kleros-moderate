@@ -43,7 +43,9 @@ import {BigNumber} from "ethers";
 
         const latestBanState = answer.toNumber();
 
-        if (latestBanState !== bans[question.id].active) {
+        const ban = bans[question.id];
+
+        if (latestBanState !== ban.active) {
 
             const finalized = question.finalize_ts <= Math.ceil(+new Date() / 1000);
 
@@ -51,14 +53,23 @@ import {BigNumber} from "ethers";
                 // ban
                 await setBan(question.id, true, finalized);
 
-                // @ts-ignore
-                await bot.banChatMember(bans[question.id].chat_id, String(bans[question.id].user_id), {revoke_messages: false});
+                if (ban.app_type === 'telegram') {
+                    // @ts-ignore
+                    await bot.banChatMember(ban.app_group_id, ban.app_user_id, {revoke_messages: false});
+                } else {
+                    console.error(`Invalid app_type: ${ban.app_type}`);
+                }
+
             } else {
                 // unban
                 await setBan(question.id, false, finalized);
 
-                // @ts-ignore
-                await bot.unbanChatMember(bans[question.id].chat_id, String(bans[question.id].user_id), {only_if_banned: true});
+                if (ban.app_type === 'telegram') {
+                    // @ts-ignore
+                    await bot.unbanChatMember(ban.app_group_id, ban.app_user_id, {only_if_banned: true});
+                } else {
+                    console.error(`Invalid app_type: ${ban.app_type}`);
+                }
             }
         }
     }

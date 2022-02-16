@@ -21,53 +21,60 @@ export async function openDb() {
     })
 }
 
-const createBot = async (accountId: string, accountSource: string, address: string, privateKey: string) => {
+const createBot = async (appUserId: string, appType: string, address: string, privateKey: string) => {
     const db = await openDb();
     await db.run(
-        'INSERT INTO bots(account_id, account_source, address, private_key) VALUES($accountId, $accountSource, $address, $privateKey);',
+        'INSERT INTO bots (app_user_id, app_type, address, private_key) VALUES ($appUserId, $appType, $address, $privateKey);',
         {
-            $accountId: accountId,
-            $accountSource: accountSource,
+            $appUserId: appUserId,
+            $appType: appType,
             $address: address,
             $privateKey: privateKey
         }
     );
 }
 
-const isAccountOwner = async (accountId: string, accountSource: string, address: string) => {
+const isAccountOwner = async (appUserId: string, appType: string, address: string) => {
     const db = await openDb();
 
-    const result = await db.get('SELECT COUNT(*) as total FROM bots WHERE account_id = ? AND account_source = ? AND address = ?', accountId, accountSource, address);
+    const result = await db.get('SELECT COUNT(*) as total FROM bots WHERE app_user_id = ? AND app_type = ? AND address = ?', appUserId, appType, address);
 
     return result.total > 0;
 }
 
-const setChatAccount = async (chatId: number, address: string) => {
+const setGroupAccount = async (appGroupId: string, appType: string, address: string) => {
     const db = await openDb();
     await db.run(
-        'INSERT OR REPLACE INTO bot_chats(chat_id, address) VALUES($chatId, $address);',
+        'INSERT OR REPLACE INTO bot_groups (app_group_id, app_type, address) VALUES ($appGroupId, $appType, $address);',
         {
-            $chatId: chatId,
+            $appGroupId: appGroupId,
+            $appType: appType,
             $address: address,
         }
     );
 }
 
-const getChatBot = async(chatId: number): Promise<{address: string, private_key: string} | undefined> => {
+const getBot = async(appGroupId: string, appType: string): Promise<{address: string, private_key: string} | undefined> => {
     const db = await openDb();
 
     const query = `
 SELECT * FROM bots 
-LEFT JOIN bot_chats ON bot_chats.address = bots.address
-WHERE bot_chats.chat_id = ?`;
+LEFT JOIN bot_groups ON bot_groups.address = bots.address
+WHERE bot_groups.app_group_id = $appGroupId AND bot_groups.app_type = $appType`;
 
-    return await db.get(query, chatId);
+    return await db.get(
+        query,
+        {
+            $appGroupId: appGroupId,
+            $appType: appType,
+        }
+    );
 }
 
 const setRules = async (chatId: number, rules: string) => {
     const db = await openDb();
     await db.run(
-        'INSERT OR REPLACE INTO rules(chat_id, rules) VALUES($chatId, $rules);',
+        'INSERT OR REPLACE INTO rules (chat_id, rules) VALUES ($chatId, $rules);',
         {
             $chatId: chatId,
             $rules: rules
@@ -86,7 +93,7 @@ const getRules = async (chatId: number) => {
 const addMod = async (chatId: number, userId: number) => {
     const db = await openDb();
     await db.run(
-        'INSERT OR REPLACE INTO mods(chat_id, user_id) VALUES($chatId, $userId);',
+        'INSERT OR REPLACE INTO mods (chat_id, user_id) VALUES ($chatId, $userId);',
         {
             $chatId: chatId,
             $userId: userId
@@ -119,15 +126,16 @@ const isMod = async (chatId: number, userId: number) => {
     return result.total > 0;
 }
 
-const addBan = async (questionId: string, chatId: number, userId: number, active: boolean) => {
+const addBan = async (questionId: string, appType: string, appGroupId: string, appUserId: string, active: boolean) => {
     const db = await openDb();
 
     await db.run(
-        'INSERT INTO bans(question_id, chat_id, user_id, active, finalized) VALUES ($questionId, $chatId, $userId, $active, FALSE);',
+        'INSERT INTO bans (question_id, app_type, app_group_id, app_user_id, active, finalized) VALUES ($questionId, $appType, $appGroupId, $appUserId, $active, FALSE);',
         {
             $questionId: questionId,
-            $chatId: chatId,
-            $userId: userId,
+            $appType: appType,
+            $appGroupId: appGroupId,
+            $appUserId: appUserId,
             $active: active
         }
     );
@@ -154,9 +162,9 @@ const getDisputedBans = async() => {
 
 export {
     createBot,
-    getChatBot,
+    getBot,
     isAccountOwner,
-    setChatAccount,
+    setGroupAccount,
     setRules,
     getRules,
     addMod,

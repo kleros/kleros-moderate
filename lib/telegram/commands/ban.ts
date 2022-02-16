@@ -1,6 +1,6 @@
 import * as TelegramBot from "node-telegram-bot-api";
 import {CommandCallback} from "../../../types";
-import {addBan, getChatBot, getRules, isMod} from "../../db";
+import {addBan, getBot, getRules, isMod} from "../../db";
 import {processCommand as addEvidenceCommand} from "./addEvidence"
 import {banUser} from "../../bot-core";
 
@@ -37,10 +37,10 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
         return;
     }
 
-    const privateKey = (await getChatBot(msg.chat.id))?.private_key || false;
+    const privateKey = (await getBot(String(msg.chat.id), 'telegram'))?.private_key || false;
 
     if (!privateKey) {
-        await bot.sendMessage(msg.chat.id, `This chat does not have a bot address. Execute /setaccount first.`);
+        await bot.sendMessage(msg.chat.id, `This chat does not have a bot address. Execute /setaccount or /newaccount first.`);
         return;
     }
 
@@ -65,7 +65,7 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
             await bot.sendMessage(msg.chat.id, `An unexpected error has occurred while adding the evidence: ${e.message}. Does the bot address has enough funds to pay the transaction?`);
         }
 
-        await addBan(questionId, msg.chat.id, msg.reply_to_message.from.id, hasBanningPermission);
+        await addBan(questionId, 'telegram', String(msg.chat.id), String(msg.reply_to_message.from.id), hasBanningPermission);
 
         if (hasBanningPermission) {
             // the user gets notified and it is explained to them how to appeal.

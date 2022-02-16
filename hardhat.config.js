@@ -4,9 +4,10 @@
 module.exports = {
   networks: {
     hardhat: {
+      chainId: 1337,
       forking: {
-        url: "https://rpc.xdaichain.com"
-      }
+        url: "https://rpc.gnosischain.com",
+      },
     },
   },
 };
