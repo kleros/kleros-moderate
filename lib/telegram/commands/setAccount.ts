@@ -1,6 +1,6 @@
 import * as TelegramBot from "node-telegram-bot-api";
 import {CommandCallback} from "../../../types";
-import {isAccountOwner, setGroupAccount} from "../../db";
+import {isAccountOwner, setAccount} from "../../db";
 
 /*
  * /setaccount [address]
@@ -25,7 +25,7 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
         return;
     }
 
-    await setGroupAccount(String(msg.chat.id), 'telegram', match[1]);
+    await setAccount('telegram', String(msg.chat.id), match[1]);
 
     await bot.sendMessage(msg.chat.id, 'Bot account updated');
 }

@@ -26,12 +26,12 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
 
             const rulesPath = await ipfsPublish('rules.json', enc.encode(msg.reply_to_message.text))
 
-            await setRules(msg.chat.id, rulesPath);
+            await setRules('telegram', String(msg.chat.id), rulesPath, new Date().getTime()/1000);
 
             await bot.sendMessage(msg.chat.id, 'Rules updated');
         } else {
             if (validateUrl(match[1])) {
-                await setRules(msg.chat.id, match[1]);
+                await setRules('telegram', String(msg.chat.id), match[1], new Date().getTime()/1000);
                 await bot.sendMessage(msg.chat.id, 'Rules updated');
             } else {
                 await bot.sendMessage(msg.chat.id, 'Invalid url passed to /setrules');
@@ -42,4 +42,4 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
     }
 }
 
-export {regexp, callback};
+export {regexp, callback, validateUrl};

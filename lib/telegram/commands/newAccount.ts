@@ -1,6 +1,6 @@
 import * as TelegramBot from "node-telegram-bot-api";
 import {CommandCallback} from "../../../types";
-import {createAccount} from "../../bot-core";
+import {createWalletAndAccount} from "../../bot-core";
 
 /*
  * /newaccount
@@ -15,7 +15,7 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
         return;
     }
 
-    const address = await createAccount(String(msg.from.id), 'telegram');
+    const address = await createWalletAndAccount('telegram', String(msg.from.id));
 
     await bot.sendMessage(msg.chat.id, `Account created. Send xDAI to ${address} to pay for the gas used. Execute /setaccount to start using the bot.`);
 }

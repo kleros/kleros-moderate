@@ -1,6 +1,6 @@
 import * as TelegramBot from "node-telegram-bot-api";
 import {CommandCallback} from "../../../types";
-import {getBot} from "../../db";
+import {getGroup} from "../../db";
 
 /*
  * /getaccount
@@ -8,7 +8,7 @@ import {getBot} from "../../db";
 const regexp = /\/getaccount/
 
 const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Message) => {
-    const chatBot = await getBot(String(msg.chat.id), 'telegram');
+    const chatBot = await getGroup('telegram', String(msg.chat.id));
 
     await bot.sendMessage(msg.chat.id, chatBot ? `Bot address: ${chatBot.address}` : 'Bot address not set.');
 }
