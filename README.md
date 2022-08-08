@@ -37,3 +37,7 @@ Command | Description | Group Admin | Normal user
 /getrules | Get chat rules | ✅ | ✅
 /report | `[by reply/username/id]`  Reports a user | ✅ | ❌
 /addevidence [questionId] | `[by reply/username/id]` Adds the quoted message as evidence to the arbitrator of `questionId` | ✅ | ✅
+
+### Attribution
+
+Thanks to @rodsouto and @fnanni-0 for starting an initial [version](https://github.com/rodsouto/kleros-moderator-bot) of this project for telegram.
