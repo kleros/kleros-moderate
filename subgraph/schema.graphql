@@ -1,7 +1,29 @@
 type Question @entity {
     id: ID!
-    timeout: BigInt!
-    finalize_ts: BigInt!
-    bond: BigInt!
-    answer: Bytes #bytes32
+    timeout: BigInt
+    finalize_ts: BigInt
+    bond: BigInt
+    user: User!
+    rulesUrl: String
+    message: String
+    messageBackup: String
+    askedBy: Bytes
+    answer: Bytes
+    arbitrationRequested: Boolean
+}
+
+type User @entity{
+    id: ID!
+    username: String
+    userID: String
+    group: Group!
+    questions: [Question!]! @derivedFrom(field: "user")
+}
+
+type Group @entity{
+    id: ID!
+    name: String
+    platform: String!
+    groupID: String!
+    users: [User!]! @derivedFrom(field: "group")
 }
