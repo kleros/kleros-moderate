@@ -1,3 +1,9 @@
+# Kleros Moderate
+
+The Kleros Moderate service uses a Telegram bot to provide Kleros dispute resolution to Telegram communities. The architecture is based on the battle tested [Reality.eth X Kleros integration](https://kleros.gitbook.io/docs/integrations/types-of-integrations/1.-dispute-resolution-integration-plan/channel-partners/how-to-use-reality.eth-+-kleros-as-an-oracle) and uses solid cryptoeconomics for fair and transparent moderation.
+
+Currently Telegram is supported, with Discord planned.
+
 ## Installation
 
 Copy `.env.dist` to `.env` and configure the telegram API key.
