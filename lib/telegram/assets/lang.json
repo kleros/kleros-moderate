@@ -1,0 +1,8 @@
+{
+    "en":{
+        "guide0": "Make sure to setup a bot account (to pay for txn fees) with /newaccount, and set the chat invite url with /setinviteurl [url] e.g. /setinviteurl https://t.me/mygroupname."
+    },
+    "es":{
+        "guide0": "Make sure to setup a bot account (to pay for txn fees) with /newaccount, and set the chat invite url with /setinviteurl [url] e.g. /setinviteurl https://t.me/mygroupname."
+    }
+}

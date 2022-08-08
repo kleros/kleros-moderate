@@ -12,14 +12,24 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
     // TODO: add multi language support
 
     const validLanguages = {
-        'en': 'English'
+        'en': 'English',
+        'es': 'Español'
     };
 
     const langCode = match[1].toLowerCase();
 
     if (user.status === 'creator' || user.status === 'administrator') {
         if (validLanguages[langCode] !== undefined) {
-            await bot.sendMessage(msg.chat.id, `Language changed to "${validLanguages[langCode]}".`);
+            switch(langCode){
+                case 'en':{
+                    await bot.sendMessage(msg.chat.id, `Language changed to "${validLanguages[langCode]}".`);
+                    break;
+                }
+                case 'es':{
+                    await bot.sendMessage(msg.chat.id, `El idioma ha cambiado al "${validLanguages[langCode]}".`);
+                    break;
+                }
+            }
         } else {
             await bot.sendMessage(msg.chat.id, `"${langCode}" is not a supported language.`);
         }
