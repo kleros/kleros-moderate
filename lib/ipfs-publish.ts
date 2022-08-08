@@ -22,7 +22,7 @@ const ipfsPublish = async (fileName, data): Promise<string> => {
 
     const body = await response.json();
 
-    return `https://ipfs.kleros.io/ipfs/${body.data[1].hash}${body.data[0].path}`
+    return `/ipfs/${body.data[1].hash}${body.data[0].path}`
 }
 
 export default ipfsPublish
