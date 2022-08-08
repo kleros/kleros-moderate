@@ -1,55 +1,58 @@
 import {BigNumber, utils} from "ethers";
 import {getRealityETHV30} from "./ethers";
 import {Wallet} from "@ethersproject/wallet";
-import {createBot} from "./db";
+import {createAccount} from "./db";
 
 interface RealityBanResult {
     questionId: string
     questionUrl: string
 }
 
-export const banUser = async (hasBanningPermission: boolean, fromUsername: string, rules: string, privateKey: string): Promise<RealityBanResult> => {
+export const reportUser = async (hasBanningPermission: boolean, fromUsername: string, UserID: string, platform: string, group: string, inviteURL: string, groupID: string, rules: string, message: string, messageBackup: string, privateKey: string): Promise<RealityBanResult> => {
 
-    const minBond = utils.parseUnits('1', 18); // 1 DAI
-
-    const reward = hasBanningPermission ? minBond : 0;
-
+    const minBond = utils.parseUnits('1', 15); // 0.001 DAI
     const questionId = await askQuestionWithMinBond(
         fromUsername,
+        UserID,
+        platform,
+        group,
+        inviteURL,
+        groupID,
         rules,
-        reward,
+        message,
+        messageBackup,
         minBond,
         privateKey
     );
 
+    if(hasBanningPermission){
+        await answerQuestion(questionId, privateKey);
+    }
+
     return {
         questionId: questionId,
-        questionUrl: `https://reality.eth.link/app/index.html#!/network/100/question/${process.env.REALITITY_ETH_V30}-${questionId}`
+        questionUrl: `https://realityeth.github.io/#!/network/100/question/${process.env.REALITITY_ETH_V30}-${questionId}`
     };
 }
 
-async function askQuestionWithMinBond(fromUsername: string, rulesUrl: string, reward: number|BigNumber, minBond: number|BigNumber, privateKey: string): Promise<string> {
+async function askQuestionWithMinBond(fromUsername: string, UserID: string, platform: string, group: string, inviteURL: string, groupID: string, rulesUrl: string|BigNumber, message: string, messageBackup: string, minBond: number|BigNumber, privateKey: string): Promise<string> {
     // A question is automatically created in Realitio with an answer in favor of banning the user.
     // Bond of the answer: 1 xDAI (initially the answer can be omitted).
-
-    const qType = 'bool';
-    const outcomes = [];
-    const category = 'misc';
-
-    const question = `Has ${fromUsername} infringed the Telegram group rules (${rulesUrl}) and should get banned?`;
-
     const realityETHV30 = getRealityETHV30(process.env.REALITITY_ETH_V30, privateKey);
 
+    const delim = '\u241f';
+    const category = 'misc';
+    const lang = 'en_US'
     const tx = await realityETHV30.askQuestionWithMinBond(
-        0,
-        encodeQuestionText(qType, question, outcomes, category),
+        process.env.TEMPLATE_ID,
+        fromUsername+delim+UserID+delim+platform+delim+group+delim+inviteURL+delim+groupID+delim+rulesUrl+delim+message+delim+messageBackup+delim+category+delim+lang,
         process.env.REALITIO_ARBITRATOR,
-        60 * 60 * 24, // 1 day
+        86400, // 1 day
         0,
-        +new Date(),
+        +Math.floor(new Date().getTime()/1000),
         minBond,
         {
-            value: reward
+            value: 0
         }
     );
 
@@ -60,38 +63,37 @@ async function askQuestionWithMinBond(fromUsername: string, rulesUrl: string, re
     return log.args[0];
 }
 
-// https://github.com/RealityETH/reality-eth-monorepo/blob/d95a9f4ee5c96f88b07651a63b3b6bf5f0e0074d/packages/reality-eth-lib/formatters/question.js#L221
-function encodeQuestionText(
-    qtype: 'bool' | 'single-select' | 'multiple-select' | 'uint' | 'datetime',
-    txt: string,
-    outcomes: string[],
-    category: string,
-    lang?: string
-) {
-    let qText = JSON.stringify(txt).replace(/^"|"$/g, '');
-    const delim = '\u241f';
-    //console.log('using template_id', template_id);
-    if (qtype == 'single-select' || qtype == 'multiple-select') {
-        const outcome_str = JSON.stringify(outcomes).replace(/^\[/, '').replace(/\]$/, '');
-        //console.log('made outcome_str', outcome_str);
-        qText = qText + delim + outcome_str;
-        //console.log('made qtext', qtext);
-    }
-    if (typeof lang == 'undefined' || lang == '') {
-        lang = 'en_US';
-    }
-    qText = qText + delim + category + delim + lang;
-    return qText;
+async function answerQuestion(questionId: string, privateKey: string): Promise<string> {
+    // A question is automatically created in Realitio with an answer in favor of banning the user.
+    // Bond of the answer: 1 xDAI (initially the answer can be omitted).
+
+    const realityETHV30 = getRealityETHV30(process.env.REALITITY_ETH_V30, privateKey);
+    const minBond = utils.parseUnits('1', 15); // 0.01 DAI
+
+    const tx = await realityETHV30.submitAnswer(
+        questionId, // 377 rinkeby
+        '0x0000000000000000000000000000000000000000000000000000000000000001',
+        0,
+        {
+            value: minBond
+        }
+    );
+
+    const receipt = await tx.wait();
+
+    const log = realityETHV30.interface.parseLog(receipt.logs[0]);
+
+    return log.args[0];
 }
 
-export const createAccount = async (accountId: string, accountSource: string) => {
+export const createWalletAndAccount = async (platform: string, userId: string) => {
     const wallet = Wallet.createRandom();
 
-    await createBot(
-        accountId,
-        accountSource,
+    await createAccount(
         wallet.address,
         wallet.privateKey,
+        platform,
+        userId
     );
 
     return wallet.address
