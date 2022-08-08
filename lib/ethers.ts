@@ -1,6 +1,6 @@
 import {Wallet} from "@ethersproject/wallet";
 import {JsonRpcProvider} from "@ethersproject/providers";
-import {RealitioV21ArbitratorWithAppeals__factory, RealityETHV30__factory} from "./typechain";
+import {RealitioV21ArbitratorWithAppeals__factory, RealityETHV30__factory, ModerateBilling__factory} from "./typechain";
 
 function getWallet(privateKey: string) {
     return new Wallet(privateKey, new JsonRpcProvider(process.env.WEB3_PROVIDER_URL));
@@ -14,4 +14,8 @@ function getRealityETHV30(realitioAddress: string, privateKey: string) {
     return RealityETHV30__factory.connect(realitioAddress, getWallet(privateKey));
 }
 
-export {getRealitioArbitrator, getRealityETHV30}
+function getModerateBilling(moderateBillingAddress: string, privateKey: string) {
+    return RealityETHV30__factory.connect(moderateBillingAddress, getWallet(privateKey));
+}
+
+export {getRealitioArbitrator, getRealityETHV30, getModerateBilling}
