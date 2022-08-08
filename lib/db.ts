@@ -21,156 +21,197 @@ export async function openDb() {
     })
 }
 
-const createBot = async (appUserId: string, appType: string, address: string, privateKey: string) => {
+const createAccount = async (address: string, privateKey: string, platform: string, userId: string) => {
     const db = await openDb();
     await db.run(
-        'INSERT INTO bots (app_user_id, app_type, address, private_key) VALUES ($appUserId, $appType, $address, $privateKey);',
+        'INSERT INTO accounts (address, private_key, platform, user_id) VALUES ($address, $private_key, $platform, $user_id);',
         {
-            $appUserId: appUserId,
-            $appType: appType,
             $address: address,
-            $privateKey: privateKey
+            $private_key: privateKey,
+            $platform: platform,
+            $user_id: userId,
         }
     );
 }
 
-const isAccountOwner = async (appUserId: string, appType: string, address: string) => {
+const isAccountOwner = async (user_id: string, platform: string, address: string) => {
     const db = await openDb();
 
-    const result = await db.get('SELECT COUNT(*) as total FROM bots WHERE app_user_id = ? AND app_type = ? AND address = ?', appUserId, appType, address);
+    const result = await db.get('SELECT COUNT(*) as total FROM accounts WHERE user_id = ? AND platform = ? AND address = ?;', user_id, platform, address);
 
     return result.total > 0;
 }
 
-const setGroupAccount = async (appGroupId: string, appType: string, address: string) => {
+const setAccount = async (platform: string, groupId: string, address: string) => {
     const db = await openDb();
     await db.run(
-        'INSERT OR REPLACE INTO bot_groups (app_group_id, app_type, address) VALUES ($appGroupId, $appType, $address);',
+        `INSERT INTO groups (platform, group_id, address) 
+            VALUES ($platform, $group_id, $address) 
+            ON CONFLICT(platform, group_id) DO UPDATE SET 
+            address=$address;`,
         {
-            $appGroupId: appGroupId,
-            $appType: appType,
+            $platform: platform,
+            $group_id: groupId,
             $address: address,
         }
     );
 }
 
-const getBot = async(appGroupId: string, appType: string): Promise<{address: string, private_key: string} | undefined> => {
+const setInviteURL = async (platform: string, groupId: string, inviteUrl: string) => {
+    const db = await openDb();
+    await db.run(
+        `INSERT INTO groups (platform, group_id, invite_url) 
+            VALUES ($platform, $group_id, $invite_url) 
+            ON CONFLICT (platform, group_id) DO UPDATE SET 
+            invite_url = $invite_url;`,
+        {
+            $platform: platform,
+            $group_id: groupId,
+            $invite_url: inviteUrl,
+        }
+    );
+}
+
+const getGroup = async(platform: string, groupId: string): Promise<{address: string, private_key: string} | undefined> => {
     const db = await openDb();
 
     const query = `
-SELECT * FROM bots 
-LEFT JOIN bot_groups ON bot_groups.address = bots.address
-WHERE bot_groups.app_group_id = $appGroupId AND bot_groups.app_type = $appType`;
+SELECT groups.address, private_key FROM accounts 
+LEFT JOIN groups ON groups.address = accounts.address
+WHERE groups.platform = $platform AND groups.group_id = $group_id`;
 
     return await db.get(
         query,
         {
-            $appGroupId: appGroupId,
-            $appType: appType,
+            $platform: platform,
+            $group_id: groupId
         }
     );
 }
 
-const setRules = async (chatId: number, rules: string) => {
+const getInviteURL = async(platform: string, groupId: string) => {
+    const db = await openDb();
+
+    const result = await db.get('SELECT invite_url FROM groups WHERE platform = ? AND group_id = ?', platform, groupId);
+
+    return result?.app_invite_url || '';
+}
+
+const setRules = async (platform: string, groupId: string, rules: string, timestamp: number) => {
     const db = await openDb();
     await db.run(
-        'INSERT OR REPLACE INTO rules (chat_id, rules) VALUES ($chatId, $rules);',
+        `INSERT INTO rules (platform, group_id, rules)
+            VALUES ($platform, $group_id, $rules) 
+            ON CONFLICT (platform, group_id) DO UPDATE SET 
+                rules = $rules ;`,
         {
-            $chatId: chatId,
-            $rules: rules
+            $platform: platform,
+            $group_id: groupId,
+            $rules: rules,
         }
     );
 }
 
-const getRules = async (chatId: number) => {
+const getRules = async (platform: string, groupId: string) => {
     const db = await openDb();
 
-    const result = await db.get('SELECT rules FROM rules WHERE chat_id = ?', chatId);
+    const result = await db.get('SELECT rules FROM rules WHERE platform = ? AND group_id = ?', platform, groupId);
 
     return result?.rules || '';
 }
 
-const addMod = async (chatId: number, userId: number) => {
+const addReport = async (questionId: string, timestamp: number, platform: string, groupId: string, userId: string, active: boolean) => {
     const db = await openDb();
     await db.run(
-        'INSERT OR REPLACE INTO mods (chat_id, user_id) VALUES ($chatId, $userId);',
-        {
-            $chatId: chatId,
-            $userId: userId
-        }
-    );
-}
-
-const removeMod = async (chatId: number, userId: number) => {
-    const db = await openDb();
-    await db.run(
-        'DELETE FROM mods WHERE chat_id = $chatId AND user_id = $userId',
-        {
-            $chatId: chatId,
-            $userId: userId
-        }
-    );
-}
-
-const isMod = async (chatId: number, userId: number) => {
-    const db = await openDb();
-
-    const result = await db.get(
-        'SELECT COUNT(*) as total FROM mods WHERE chat_id = $chatId AND user_id = $userId',
-        {
-            $chatId: chatId,
-            $userId: userId
-        }
-    );
-
-    return result.total > 0;
-}
-
-const addBan = async (questionId: string, appType: string, appGroupId: string, appUserId: string, active: boolean) => {
-    const db = await openDb();
-
-    await db.run(
-        'INSERT INTO bans (question_id, app_type, app_group_id, app_user_id, active, finalized) VALUES ($questionId, $appType, $appGroupId, $appUserId, $active, FALSE);',
+        'INSERT INTO reports (question_id, timestamp, activeTimestamp, timeServed, platform, group_id, user_id, active, finalized) VALUES ($questionId, $timestamp, $activeTimestamp, $timeServed, $platform, $group_id, $user_id, $active, FALSE);',
         {
             $questionId: questionId,
-            $appType: appType,
-            $appGroupId: appGroupId,
-            $appUserId: appUserId,
+            $timestamp: timestamp,
+            $activeTimestamp: 0,
+            $platform: platform,
+            $group_id: groupId,
+            $user_id: userId,
             $active: active
         }
     );
 }
 
-const setBan = async (questionId: string, active: boolean, finalized: boolean) => {
+const setReport = async (questionId: string, active: boolean, finalized: boolean, activeTimestamp: number, timeServed: number) => {
     const db = await openDb();
 
     await db.run(
-        'UPDATE bans SET active = $active, finalized = $finalized WHERE question_id = $questionId',
+        'UPDATE reports SET active = $active, finalized = $finalized, activeTimestamp = $activeTimestamp, timeServed = $timeServed WHERE question_id = $questionId',
         {
             $questionId: questionId,
             $active: active,
-            $finalized: finalized
+            $activeTimestamp: activeTimestamp,
+            $finalized: finalized,
+            $timeServed : timeServed
         }
     );
 }
 
-const getDisputedBans = async() => {
+const getDisputedReports = async() => {
     const db = await openDb();
 
-    return await db.all('SELECT * FROM bans WHERE finalized = FALSE');
+    return await db.all('SELECT * FROM reports WHERE finalized = FALSE');
+}
+
+const getConcurrentReports = async(userId: string, timestamp: number) => {
+    const db = await openDb();
+
+    const result = await db.all(
+        'SELECT question_id FROM reports WHERE timestamp BETWEEN $timestamp1 AND $timestamp2 AND user_id = $user_id',
+        {
+            $timestamp1: timestamp - 3600,
+            $timestamp2: timestamp + 3600,
+            $user_id: userId
+        }
+    );
+
+    return result;
+}
+
+const getActiveReportedUserAndGroupId = async(questionId: string) => {
+    const db = await openDb();
+
+    const result = await db.get(
+        `SELECT user_id, group_id, active FROM reports 
+        WHERE question_id = $question_id AND finalized = FALSE`,
+        {
+            $question_id: questionId,
+        }
+    );
+
+    return result;
+}
+
+const getRecord = async(userId: string) => {
+    const db = await openDb();
+
+    const result = await db.get(
+        'SELECT COUNT(*) FROM reports WHERE finalized = TRUE AND active = TRUE AND user_id = $user_id',
+        {
+            $user_id: userId
+        }
+    );
+
+    return result.total;
 }
 
 export {
-    createBot,
-    getBot,
+    getInviteURL,
     isAccountOwner,
-    setGroupAccount,
+    setInviteURL,
+    setAccount,
+    getGroup,
+    getActiveReportedUserAndGroupId,
+    createAccount,
     setRules,
     getRules,
-    addMod,
-    removeMod,
-    isMod,
-    addBan,
-    setBan,
-    getDisputedBans
+    addReport,
+    setReport,
+    getDisputedReports,
+    getConcurrentReports,
+    getRecord
 }
