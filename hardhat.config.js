@@ -1,7 +1,7 @@
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
-module.exports = {
+ module.exports = {
   networks: {
     hardhat: {
       chainId: 1337,
@@ -10,4 +10,5 @@ module.exports = {
       },
     },
   },
+  solidity: "0.8.10",
 };
