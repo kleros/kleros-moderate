@@ -6,9 +6,12 @@ import fetch from 'node-fetch';
  * @param {ArrayBuffer} data - The raw data from the file to upload.
  * @return {string} URL of the stored item.
  */
-const ipfsPublish = async (fileName, data): Promise<string> => {
+ const ipfsPublish = async (fileName, data): Promise<string> => {
     const buffer = await Buffer.from(data)
+    return await ipfsPublishBuffer(fileName, buffer);
+}
 
+const ipfsPublishBuffer = async (fileName, buffer): Promise<string> => {
     const response = await fetch('https://ipfs.kleros.io/add', {
         method: 'POST',
         body: JSON.stringify({
@@ -25,4 +28,4 @@ const ipfsPublish = async (fileName, data): Promise<string> => {
     return `/ipfs/${body.data[1].hash}${body.data[0].path}`
 }
 
-export default ipfsPublish
+export {ipfsPublish, ipfsPublishBuffer};

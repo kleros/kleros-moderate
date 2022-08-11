@@ -1,7 +1,7 @@
 import * as TelegramBot from "node-telegram-bot-api";
 import {CommandCallback} from "../../../types";
 import {addReport, getGroup, getInviteURL, getRules, getConcurrentReports} from "../../db";
-import {uploadEvidence, submitEvidence} from "./addEvidence"
+import {upload, submitEvidence} from "./addEvidence"
 import {reportUser} from "../../bot-core";
 
 /*
@@ -70,7 +70,7 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
     try {
         const inviteURL = await getInviteURL(String(msg.chat.id), 'telegram');
         const inviteURLBackup = inviteURL? inviteURL: await bot.exportChatInviteLink(msg.chat.id);
-        const evidencepath = await uploadEvidence(msg, group.address);
+        const evidencepath = await upload(bot, msg, group.address);
         const msgLink = inviteURL + '/' + msg.reply_to_message.message_id;
         const msgBackup = 'ipfs.kleros.io'+evidencepath[1];
         const {questionId, questionUrl: appealUrl} = await reportUser(
