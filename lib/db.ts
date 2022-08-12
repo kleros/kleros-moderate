@@ -52,7 +52,22 @@ const setAccount = async (platform: string, groupId: string, address: string) =>
         {
             $platform: platform,
             $group_id: groupId,
-            $address: address,
+            $address: address
+        }
+    );
+}
+
+const setPermissions = async (platform: string, groupId: string, permission: boolean) => {
+    const db = await openDb();
+    await db.run(
+        `INSERT INTO groups (platform, group_id, permission) 
+            VALUES ($platform, $group_id, $permission) 
+            ON CONFLICT(platform, group_id) DO UPDATE SET 
+            permission=$permission;`,
+        {
+            $platform: platform,
+            $group_id: groupId,
+            $permission: permission
         }
     );
 }
@@ -94,7 +109,15 @@ const getInviteURL = async(platform: string, groupId: string) => {
 
     const result = await db.get('SELECT invite_url FROM groups WHERE platform = ? AND group_id = ?', platform, groupId);
 
-    return result?.app_invite_url || '';
+    return result?.invite_url || '';
+}
+
+const getPermissions = async(platform: string, groupId: string) => {
+    const db = await openDb();
+
+    const result = await db.get('SELECT permission FROM groups WHERE platform = ? AND group_id = ?', platform, groupId);
+
+    return result?.permission || '';
 }
 
 const setRules = async (platform: string, groupId: string, rules: string, timestamp: number) => {
@@ -123,11 +146,11 @@ const getRules = async (platform: string, groupId: string) => {
 const addReport = async (questionId: string, timestamp: number, platform: string, groupId: string, userId: string, active: boolean) => {
     const db = await openDb();
     await db.run(
-        'INSERT INTO reports (question_id, timestamp, activeTimestamp, timeServed, platform, group_id, user_id, active, finalized) VALUES ($questionId, $timestamp, $activeTimestamp, $timeServed, $platform, $group_id, $user_id, $active, FALSE);',
+        'INSERT INTO reports (question_id, timestamp, active_timestamp, timeServed, platform, group_id, user_id, active, finalized) VALUES ($questionId, $timestamp, $active_timestamp, $timeServed, $platform, $group_id, $user_id, $active, FALSE);',
         {
             $questionId: questionId,
             $timestamp: timestamp,
-            $activeTimestamp: 0,
+            $active_timestamp: 0,
             $platform: platform,
             $group_id: groupId,
             $user_id: userId,
@@ -140,11 +163,11 @@ const setReport = async (questionId: string, active: boolean, finalized: boolean
     const db = await openDb();
 
     await db.run(
-        'UPDATE reports SET active = $active, finalized = $finalized, activeTimestamp = $activeTimestamp, timeServed = $timeServed WHERE question_id = $questionId',
+        'UPDATE reports SET active = $active, finalized = $finalized, active_timestamp = $active_timestamp, timeServed = $timeServed WHERE question_id = $question_id',
         {
-            $questionId: questionId,
+            $question_id: questionId,
             $active: active,
-            $activeTimestamp: activeTimestamp,
+            $active_timestamp: activeTimestamp,
             $finalized: finalized,
             $timeServed : timeServed
         }
@@ -157,7 +180,60 @@ const getDisputedReports = async() => {
     return await db.all('SELECT * FROM reports WHERE finalized = FALSE');
 }
 
-const getConcurrentReports = async(userId: string, timestamp: number) => {
+const getConcurrentReports = async(platform: string, groupId: string, userId: string, timestamp: number) => {
+    const db = await openDb();
+
+    const result = await db.all(
+        'SELECT question_id FROM reports WHERE timestamp BETWEEN $timestamp1 AND $timestamp2 AND user_id = $user_id AND group_id = $group_id AND platform = $platform',
+        {
+            $timestamp1: timestamp - 3600,
+            $timestamp2: timestamp + 3600,
+            $user_id: userId,
+            $group_id: groupId,
+            $platform: platform
+        }
+    );
+
+    return result;
+}
+
+const getAllowance = async(platform: string, groupId: string, userId: string): Promise<{report_allowance: number, evidence_allowance: number, timestamp_refresh: number} | undefined> => {
+    const db = await openDb();
+
+    const result = await db.get(
+        'SELECT report_allowance, evidence_allowance, timestamp_refresh FROM allowance WHERE user_id = $user_id AND group_id = $group_id AND platform = $platform',
+        {
+            $user_id: userId,
+            $group_id: groupId,
+            $platform: platform
+        }
+    );
+
+    return result;
+}
+
+const setAllowance = async(platform: string, groupId: string, userId: string, reportAllowance: number, evidenceAllowance: number, timeRefresh: number) => {
+    const db = await openDb();
+//        'UPDATE allowance SET report_allowance = $report_allowance, evidence_allowance = $evidence_allowance, timestamp_refresh = $timestamp_refresh WHERE user_id = $user_id AND group_id = $group_id AND platform = $platform',
+    
+    await db.run(
+        `INSERT INTO allowance (platform, group_id, user_id, report_allowance, evidence_allowance, timestamp_refresh) 
+        VALUES ($platform, $group_id, $user_id, $report_allowance, $evidence_allowance, $timestamp_refresh) 
+        ON CONFLICT(platform, group_id, user_id) DO UPDATE SET 
+        report_allowance=$report_allowance, evidence_allowance = $evidence_allowance, timestamp_refresh = $timestamp_refresh;`,
+        {
+            $report_allowance: reportAllowance,
+            $evidence_allowance: evidenceAllowance,
+            $timestamp_refresh: timeRefresh,
+            $user_id: userId,
+            $group_id: groupId,
+            $platform: platform
+        }
+    );
+}
+
+
+const getRecentReports = async(userId: string, timestamp: number) => {
     const db = await openDb();
 
     const result = await db.all(
@@ -208,6 +284,10 @@ export {
     getActiveReportedUserAndGroupId,
     createAccount,
     setRules,
+    getPermissions,
+    getAllowance,
+    setAllowance,
+    setPermissions,
     getRules,
     addReport,
     setReport,

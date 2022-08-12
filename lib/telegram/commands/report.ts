@@ -1,6 +1,6 @@
 import * as TelegramBot from "node-telegram-bot-api";
 import {CommandCallback} from "../../../types";
-import {addReport, getGroup, getInviteURL, getRules, getConcurrentReports} from "../../db";
+import {getPermissions, addReport, getGroup, getInviteURL, getRules, getConcurrentReports, getAllowance, setAllowance} from "../../db";
 import {upload, submitEvidence} from "./addEvidence"
 import {reportUser} from "../../bot-core";
 
@@ -18,8 +18,10 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
 
     const user = await bot.getChatMember(msg.chat.id, String(msg.from.id));
     const hasReportingPermission = user.status === 'creator' || user.status === 'administrator';
-
-    if (!hasReportingPermission){
+    const res = await getPermissions('telegram', String(msg.chat.id));
+    const permissionless = res == true;
+    
+    if (!permissionless && !hasReportingPermission){
         await bot.sendMessage(msg.chat.id, `You do not have reporting permission.`);
         return;
     }
@@ -42,7 +44,7 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
 
     const fromUsername = (msg.reply_to_message.from.username || msg.reply_to_message.from.first_name || `no-username-set`);
     const reportedUserID = String(msg.reply_to_message.from.id);
-    const reports = await getConcurrentReports(reportedUserID, msg.reply_to_message.date);
+    const reports = await getConcurrentReports('telgeram', String(msg.chat.id), reportedUserID, msg.reply_to_message.date);
 
     if (reports.length > 0 && match[1] != 'confirm') {
         var reportInfo = `Are you sure the user ${fromUsername}(ID :${reportedUserID}) has not already been reported for this behavior? Note that any subsequent reports for the same behavior will result in lost deposits. The following lists the user's reported messages within a 24 hour time window of the message you reported\n`;
@@ -67,6 +69,28 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
         await bot.sendMessage(msg.chat.id, `This chat does not have a bot address. Execute /setaccount or /newaccount first.`);
         return;
     }
+
+    if (permissionless){
+        if (!hasReportingPermission){
+            const reportAllowance = await getAllowance('telegram', String(msg.chat.id), String(msg.from.id));
+            if (!reportAllowance){
+                setAllowance('telegram', String(msg.chat.id), String(msg.from.id), 2, 15, Math.ceil( new Date().getTime() / 1000));
+            } else if ((Math.ceil( new Date().getTime() / 1000) < reportAllowance.timestamp_refresh + 28800) && reportAllowance.report_allowance == 0 ){
+                await bot.sendMessage(msg.chat.id, `You have exhausted your daily report allowance..`);
+            } else{
+                const newReportAllowance = reportAllowance.report_allowance + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/28800);
+                const newEvidenceAllowance = reportAllowance.report_allowance + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/5760);
+                const newRefreshTimestamp = reportAllowance.timestamp_refresh + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/28800)*28800;
+                setAllowance('telegram', String(msg.chat.id), String(msg.from.id), newReportAllowance, newEvidenceAllowance, newRefreshTimestamp);
+            }
+        }
+    } else {
+        if (!hasReportingPermission){
+            await bot.sendMessage(msg.chat.id, `You do not have reporting permission.`);
+            return;
+        }   
+    }
+
     try {
         const inviteURL = await getInviteURL(String(msg.chat.id), 'telegram');
         const inviteURLBackup = inviteURL? inviteURL: await bot.exportChatInviteLink(msg.chat.id);
@@ -74,7 +98,7 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
         const msgLink = inviteURL + '/' + msg.reply_to_message.message_id;
         const msgBackup = 'ipfs.kleros.io'+evidencepath[1];
         const {questionId, questionUrl: appealUrl} = await reportUser(
-            hasReportingPermission, 
+            !permissionless, 
             fromUsername, 
             reportedUserID, 
             'Telegram',
@@ -97,7 +121,7 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
 
         await addReport(questionId, msg.reply_to_message.date, 'telegram', String(msg.chat.id), String(msg.reply_to_message.from.id), hasReportingPermission);
 
-        if (hasReportingPermission) {
+        if (hasReportingPermission && !permissionless) {
             // the user gets notified and it is explained to them how to appeal.
             await bot.sendMessage(msg.chat.id, `*${fromUsername}* you have been banned, you can appeal here: ${appealUrl}
             
