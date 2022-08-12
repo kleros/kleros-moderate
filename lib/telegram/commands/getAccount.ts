@@ -8,9 +8,9 @@ import {getGroup} from "../../db";
 const regexp = /\/getaccount/
 
 const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Message) => {
-    const chatBot = await getGroup('telegram', String(msg.chat.id));
+    const group = await getGroup('telegram', String(msg.chat.id));
 
-    await bot.sendMessage(msg.chat.id, chatBot ? `Bot address: ${chatBot.address}` : 'Bot address not set.');
+    await bot.sendMessage(msg.chat.id, group ? `Bot address: ${group.address}` : 'Bot address not set.');
 }
 
 export {regexp, callback};
