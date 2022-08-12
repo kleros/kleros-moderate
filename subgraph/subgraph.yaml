@@ -11,7 +11,7 @@ dataSources:
       startBlock: 11138020 # <--- rinkeby, xdai 23143918
     mapping:
       kind: ethereum/events
-      apiVersion: 0.0.5
+      apiVersion: 0.0.6
       language: wasm/assemblyscript
       entities:
         - LogAnswerReveal
@@ -57,39 +57,4 @@ dataSources:
           handler: handleLogSetQuestionFee
         - event: LogWithdraw(indexed address,uint256)
           handler: handleLogWithdraw
-      callHandlers:
-        - function: submitAnswerByArbitrator(bytes32,bytes32,address)
-          handler: handleSubmitAnswerByArbitrator
-      file: ./src/reality-ethv-30.ts
-- kind: ethereum
-    name: Realitio_v2_1_ArbitratorWithAppeals 
-    network: rinkeby #xdai 
-    source:
-      address: "0xdf33060f476f8cff7511f806c72719394da1ad64" #<-- rinkeby, xdai "0xD2d4174A971b2AE58F23F7d4F5e4DE9d97bDda31"
-      abi: Realitio_v2_1_ArbitratorWithAppeals
-      startBlock: 11138020 # <--- rinkeby, xdai 23143918
-    mapping:
-      kind: ethereum/events
-      apiVersion: 0.0.5
-      language: wasm/assemblyscript
-      entities:
-        - LogAnswerReveal
-        - LogCancelArbitration
-        - LogClaim
-        - LogFinalize
-        - LogFundAnswerBounty
-        - LogMinimumBond
-        - LogNewAnswer
-        - LogNewQuestion
-        - LogNewTemplate
-        - LogNotifyOfArbitrationRequest
-        - LogReopenQuestion
-        - LogSetQuestionFee
-        - LogWithdraw
-      abis:
-        - name: Realitio_v2_1_ArbitratorWithAppeals
-          file: ./abis/Realitio_v2_1_ArbitratorWithAppeals.json
-      eventHandlers:
-        - event: LogAnswerReveal(indexed bytes32,indexed address,indexed bytes32,bytes32,uint256,uint256)
-          handler: handleLogAnswerReveal
       file: ./src/reality-ethv-30.ts

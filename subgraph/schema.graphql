@@ -1,6 +1,6 @@
 type Question @entity {
     id: ID!
-    timeout: BigInt
+    timeout: BigInt!
     finalize_ts: BigInt
     bond: BigInt
     user: User!

@@ -14,7 +14,6 @@ import {
   LogReopenQuestion,
   LogSetQuestionFee,
   LogWithdraw,
-  SubmitAnswerByArbitratorCall
 } from "../generated/RealityETHV30/RealityETHV30"
 import { Question, User, Group } from "../generated/schema"
 
@@ -95,7 +94,7 @@ export function handleLogFinalize(event: LogFinalize): void {
   let question = Question.load(event.params.question_id.toHexString());
 
   if (question === null) {
-    log.error(`handleSubmitAnswerByArbitrator: question ${event.params.question_id.toString()} not found`, [])
+    log.error(`handleSubmitAnswerByArbitrator: question ${event.params.question_id.toHexString()} not found`, [])
     return;
   }
 
@@ -112,14 +111,15 @@ export function handleLogNewAnswer(event: LogNewAnswer): void {
   let question = Question.load(event.params.question_id.toHexString());
 
   if (question === null) {
-    log.error(`handleSubmitAnswer: question ${event.params.question_id.toString()} not found`, [])
+    log.error(`handleSubmitAnswer: question ${event.params.question_id.toHexString()} not found`, [])
     return;
+  } else {
+
+    question.finalize_ts = event.block.timestamp.plus(question.timeout);
+    question.bond = event.params.bond;
+
+    question.save();
   }
-
-  question.finalize_ts = event.block.timestamp.plus(question.timeout);
-  question.bond = event.params.bond;
-
-  question.save();
 }
 
 export function handleLogNewQuestion(event: LogNewQuestion): void {
