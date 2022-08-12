@@ -4,6 +4,8 @@ The Kleros Moderate service uses a Telegram bot to provide Kleros dispute resolu
 
 Currently Telegram is supported, with Discord planned.
 
+The bot can be self-hosted, or to use the bot instance that is hosted by the Kleros Cooperative, please apply to [join the beta](https://forms.gle/3Yteu5YFTZoWGhXv7). 
+
 ## Installation
 
 Copy `.env.dist` to `.env` and configure the telegram API key.
