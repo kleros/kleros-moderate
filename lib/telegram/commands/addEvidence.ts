@@ -18,11 +18,9 @@ const upload = async (bot: TelegramBot, msg: TelegramBot.Message, address: strin
     if (msg.reply_to_message.text){
         return await uploadTextEvidence(msg, address);
     } else if (msg.reply_to_message.location){
-        //TODO
-        //return await uploadLocationEvidence(msg, address);
+        return await uploadLocationEvidence(msg, address);
     } else if (msg.reply_to_message.poll){
-        //TODO
-        //return await uploadPoll(msg, address);
+        return await uploadPollEvidence(msg, address);
     } else {
         var file: TelegramBot.File;
         if (msg.reply_to_message.sticker){
@@ -56,6 +54,40 @@ const uploadFileEvidence = async (filePath: string, fileName: string): Promise<s
         .then(res => res.buffer())
         .then(async buffer => { return await ipfsPublishBuffer(fileName,buffer); });
     return file;
+}
+
+const uploadLocationEvidence = async (msg: TelegramBot.Message, address: string): Promise<string> => {
+    const enc = new TextEncoder();
+    const author = (msg.reply_to_message.from.username || msg.reply_to_message.from.first_name) + ' ID:'+msg.reply_to_message.from.id ;
+    const fileName = `location.txt`;
+    const chatHistory = `Chat: ${msg.chat.title} (${Math.abs(msg.chat.id)})
+    
+Author: ${author} (${(new Date(msg.reply_to_message.date*1000)).toISOString()})
+
+Message (location): Latitude - ${msg.reply_to_message.location.latitude}, Longitude - ${msg.reply_to_message.location.longitude}`;
+
+    const evidencePath = await ipfsPublish(`${fileName}`, enc.encode(chatHistory));
+
+    return evidencePath;
+}
+
+const uploadPollEvidence = async (msg: TelegramBot.Message, address: string): Promise<string> => {
+    const enc = new TextEncoder();
+    const author = (msg.reply_to_message.from.username || msg.reply_to_message.from.first_name) + ' ID:'+msg.reply_to_message.from.id ;
+    const fileName = `poll.txt`;
+    var chatHistory = `Chat: ${msg.chat.title} (${Math.abs(msg.chat.id)})
+    
+Author: ${author} (${(new Date(msg.reply_to_message.date*1000)).toISOString()})
+
+Message (Poll): \n  Question - ${msg.reply_to_message.poll.question} \n`;
+
+    msg.reply_to_message.poll.options.forEach(option => {
+        chatHistory += ' Option:'+option.text+'\n';
+    });
+
+    const evidencePath = await ipfsPublish(`${fileName}`, enc.encode(chatHistory));
+
+    return evidencePath;
 }
 
 const uploadTextEvidence = async (msg: TelegramBot.Message, address: string): Promise<string> => {
