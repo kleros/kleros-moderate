@@ -152,12 +152,12 @@ const regexpFull = /\/addevidence (.+)/
 const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Message) => {
     const match = msg.text.match(regexpFull);
 
-    if (!msg.reply_to_message || !match) {
+    if (!msg.reply_to_message) {
         await bot.sendMessage(msg.chat.id, `/addevidence must be used in a reply`);
         return;
     }
 
-    if (match.length < 2){
+    if (!match || match.length < 2){
         await bot.sendMessage(msg.chat.id, `/addevidence must be followed by a question id`);
         return; 
     }

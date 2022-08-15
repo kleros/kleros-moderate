@@ -8,7 +8,8 @@ import {getRules} from "../../db";
 const regexp = /\/getrules/
 
 const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Message) => {
-    const rules = await getRules('telegram', String(msg.chat.id));
+    const rules = await getRules('telegram', String(msg.chat.id), Math.floor(Date.now()/1000));
+
     try {
         await bot.sendMessage(msg.chat.id, rules || 'No rules found for this chat.');        
     } catch (error) {

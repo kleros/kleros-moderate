@@ -5,7 +5,7 @@ import {setPermissions, getPermissions} from "../../db";
 /*
  * /setaccount [address]
  */
-const regexp = /\/togglePermissions/
+const regexp = /\/togglepermissions/
 
 const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Message) => {
     const user = await bot.getChatMember(msg.chat.id, String(msg.from.id));

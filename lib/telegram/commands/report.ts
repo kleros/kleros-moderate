@@ -1,6 +1,6 @@
 import * as TelegramBot from "node-telegram-bot-api";
 import {CommandCallback} from "../../../types";
-import {getPermissions, addReport, getGroup, getInviteURL, getRules, getConcurrentReports, getAllowance, setAllowance} from "../../db";
+import {getPermissions, addReport, getGroup, getInviteURL, getQuestionId, getRules, getConcurrentReports, getAllowance, setAllowance} from "../../db";
 import {upload, submitEvidence} from "./addEvidence"
 import {reportUser} from "../../bot-core";
 
@@ -38,25 +38,36 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
     }
 
     if (!botChatMember.can_restrict_members) {
-        await bot.sendMessage(msg.chat.id, `The Moderator Bot needs to have the "can_restrict_members" permission to be able to ban users.`);
+        await bot.sendMessage(msg.chat.id, `The Moderator Bot needs to have the "can_restrict_members" permission to be able to enable to reports.`);
         return;
     }
 
     const fromUsername = (msg.reply_to_message.from.username || msg.reply_to_message.from.first_name || `no-username-set`);
     const reportedUserID = String(msg.reply_to_message.from.id);
-    const reports = await getConcurrentReports('telgeram', String(msg.chat.id), reportedUserID, msg.reply_to_message.date);
+    const reportedQuestionId = await getQuestionId('telegram', String(msg.chat.id), reportedUserID, String(msg.reply_to_message.message_id));
+    console.log(reportedQuestionId);
+    if (reportedQuestionId){
+        await bot.sendMessage(msg.chat.id, `The message is already reported. The report status is available at: \n\n https://reality.eth.limo/app/#!/network/100/question/${process.env.REALITITY_ETH_V30}-${reportedQuestionId}`);
+        return;
+    }
+    const reports = await getConcurrentReports('telegram', String(msg.chat.id), reportedUserID, msg.reply_to_message.date);
+    console.log(reports);
 
     if (reports.length > 0 && match[1] != 'confirm') {
-        var reportInfo = `Are you sure the user ${fromUsername}(ID :${reportedUserID}) has not already been reported for this behavior? Note that any subsequent reports for the same behavior will result in lost deposits. The following lists the user's reported messages within a 24 hour time window of the message you reported\n`;
+        var reportInfo = `Are you sure the user ${fromUsername}(ID :${reportedUserID}) has not already been reported for this behavior? Note that any subsequent reports for the same behavior will result in lost deposits. The following lists the user's reported messages within a 24 hour time window of the message you reported: \n\n`;
         (reports).forEach((report) => {
-            reportInfo += `https://reality.eth.limo/app/#!/network/100/question/${process.env.REALITITY_ETH_V30}-${report.question_id}\n`;
+            reportInfo += ` - https://reality.eth.limo/app/#!/network/100/question/${process.env.REALITITY_ETH_V30}-${report.question_id}\n\n`;
         });
         reportInfo += `If you are sure, report the message again followed by \'confirm\' e.g. /report confirm`
         await bot.sendMessage(msg.chat.id, reportInfo);
         return;
     } 
 
-    const rules = await getRules('telegram', String(msg.chat.id));
+    const rules = await getRules('telegram', String(msg.chat.id), msg.reply_to_message.date);
+    if (!rules){
+        await bot.sendMessage(msg.chat.id, `No rules found for this message. Rules are not retroactive. Reports are only possible for messages after rules are set.`);
+        return;
+    }
 
     if (!rules) {
         await bot.sendMessage(msg.chat.id, `You need to /setrules before /report`);
@@ -119,7 +130,8 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
             await bot.sendMessage(msg.chat.id, `An unexpected error has occurred while adding the evidence: ${e.message}. Does the bot address has enough funds to pay the transaction?`);
         }
 
-        await addReport(questionId, msg.reply_to_message.date, 'telegram', String(msg.chat.id), String(msg.reply_to_message.from.id), hasReportingPermission);
+        await addReport(questionId, 'telegram', String(msg.chat.id), String(msg.reply_to_message.from.id), String(msg.reply_to_message.message_id), (hasReportingPermission && !permissionless));
+        console.log('reportAdded');
 
         if (hasReportingPermission && !permissionless) {
             // the user gets notified and it is explained to them how to appeal.

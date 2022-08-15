@@ -123,37 +123,67 @@ const getPermissions = async(platform: string, groupId: string) => {
 const setRules = async (platform: string, groupId: string, rules: string, timestamp: number) => {
     const db = await openDb();
     await db.run(
-        `INSERT INTO rules (platform, group_id, rules)
-            VALUES ($platform, $group_id, $rules) 
-            ON CONFLICT (platform, group_id) DO UPDATE SET 
-                rules = $rules ;`,
+        `INSERT INTO rules (platform, group_id, rules, timestamp)
+            VALUES ($platform, $group_id, $rules, $timestamp);`, 
         {
             $platform: platform,
             $group_id: groupId,
             $rules: rules,
+            $timestamp: timestamp
         }
     );
 }
 
-const getRules = async (platform: string, groupId: string) => {
+const getRules = async (platform: string, groupId: string, timestamp: number) => {
     const db = await openDb();
-
-    const result = await db.get('SELECT rules FROM rules WHERE platform = ? AND group_id = ?', platform, groupId);
+    const query = 
+        `SELECT rules
+        FROM rules 
+        WHERE platform = $platform and group_id = $groupId and timestamp < $timestamp
+        ORDER BY timestamp DESC;`;
+    const result = await db.get(query, platform, groupId, timestamp);
 
     return result?.rules || '';
 }
 
-const addReport = async (questionId: string, timestamp: number, platform: string, groupId: string, userId: string, active: boolean) => {
+const addReport = async (questionId: string, 
+                        platform: string, 
+                        groupId: string, 
+                        userId: string, 
+                        msgId: string,
+                        active: boolean
+                        ) => {
     const db = await openDb();
     await db.run(
-        'INSERT INTO reports (question_id, timestamp, active_timestamp, timeServed, platform, group_id, user_id, active, finalized) VALUES ($questionId, $timestamp, $active_timestamp, $timeServed, $platform, $group_id, $user_id, $active, FALSE);',
+        `INSERT INTO reports (question_id, 
+                                platform, 
+                                group_id, 
+                                user_id, 
+                                msg_id, 
+                                timestamp, 
+                                active_timestamp, 
+                                active, 
+                                timeServed, 
+                                finalized) 
+        VALUES ($questionId, 
+                $platform, 
+                $group_id, 
+                $user_id, 
+                $msg_id, 
+                $timestamp, 
+                $active_timestamp, 
+                $active, 
+                $timeServed, 
+                FALSE);`,
         {
             $questionId: questionId,
-            $timestamp: timestamp,
-            $active_timestamp: 0,
             $platform: platform,
             $group_id: groupId,
             $user_id: userId,
+            $msg_id: msgId,
+            $timestamp: Math.floor(Date.now()/1000),
+            $active_timestamp: active? Math.floor(Date.now()/1000): 0,
+            $timeServed: 0,
             $active: active
         }
     );
@@ -195,6 +225,14 @@ const getConcurrentReports = async(platform: string, groupId: string, userId: st
     );
 
     return result;
+}
+
+const getQuestionId = async (platform: string, groupId: string, userId: string, msgId: string) => {
+    const db = await openDb();
+
+    const result = await db.get(`SELECT question_id FROM reports WHERE platform = ? AND group_id = ? AND user_id = ? AND msg_id = ?;`, platform, groupId, userId, msgId);
+
+    return result?.question_id || '';
 }
 
 const getAllowance = async(platform: string, groupId: string, userId: string): Promise<{report_allowance: number, evidence_allowance: number, timestamp_refresh: number} | undefined> => {
@@ -278,6 +316,7 @@ const getRecord = async(userId: string) => {
 export {
     getInviteURL,
     isAccountOwner,
+    getQuestionId,
     setInviteURL,
     setAccount,
     getGroup,
