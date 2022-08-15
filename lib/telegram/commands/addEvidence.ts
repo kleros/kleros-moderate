@@ -184,13 +184,13 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
     if (permissionless){
         if (!hasEvidencePermission){
             const reportAllowance = await getAllowance('telegram', String(msg.chat.id), String(msg.from.id));
-            if (!reportAllowance){
+            if (reportAllowance === undefined){
                 setAllowance('telegram', String(msg.chat.id), String(msg.from.id), 3, 14, Math.ceil( new Date().getTime() / 1000));
             } else if ((Math.ceil( new Date().getTime() / 1000) < reportAllowance.timestamp_refresh + 5760) && reportAllowance.evidence_allowance == 0 ){
-                await bot.sendMessage(msg.chat.id, `You have exhausted your daily report allowance..`);
+                await bot.sendMessage(msg.chat.id, `You have exhausted your daily evidence allowance.`);
             } else{
                 const newReportAllowance = reportAllowance.report_allowance + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/28800);
-                const newEvidenceAllowance = reportAllowance.report_allowance + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/5760) - 1;
+                const newEvidenceAllowance = reportAllowance.evidence_allowance + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/28800)*5 - 1;
                 const newRefreshTimestamp = reportAllowance.timestamp_refresh + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/28800)*28800;
                 setAllowance('telegram', String(msg.chat.id), String(msg.from.id), newReportAllowance, newEvidenceAllowance, newRefreshTimestamp);
             }

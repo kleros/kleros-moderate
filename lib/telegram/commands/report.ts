@@ -84,14 +84,17 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
     if (permissionless){
         if (!hasReportingPermission){
             const reportAllowance = await getAllowance('telegram', String(msg.chat.id), String(msg.from.id));
-            if (!reportAllowance){
+            console.log(reportAllowance);
+            if ( reportAllowance === undefined ){
                 setAllowance('telegram', String(msg.chat.id), String(msg.from.id), 2, 15, Math.ceil( new Date().getTime() / 1000));
             } else if ((Math.ceil( new Date().getTime() / 1000) < reportAllowance.timestamp_refresh + 28800) && reportAllowance.report_allowance == 0 ){
-                await bot.sendMessage(msg.chat.id, `You have exhausted your daily report allowance..`);
+                await bot.sendMessage(msg.chat.id, `You have exhausted your daily report allowance.`);
             } else{
-                const newReportAllowance = reportAllowance.report_allowance + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/28800);
-                const newEvidenceAllowance = reportAllowance.report_allowance + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/5760);
+                const newReportAllowance = reportAllowance.report_allowance + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/28800) - 1;
+                const newEvidenceAllowance = reportAllowance.evidence_allowance + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/28800)*5;
                 const newRefreshTimestamp = reportAllowance.timestamp_refresh + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/28800)*28800;
+                console.log(newReportAllowance);
+                console.log(newEvidenceAllowance);
                 setAllowance('telegram', String(msg.chat.id), String(msg.from.id), newReportAllowance, newEvidenceAllowance, newRefreshTimestamp);
             }
         }
@@ -103,11 +106,11 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
     }
 
     try {
-        const inviteURL = await getInviteURL(String(msg.chat.id), 'telegram');
+        const inviteURL = await getInviteURL('telegram', String(msg.chat.id));
         const inviteURLBackup = inviteURL? inviteURL: await bot.exportChatInviteLink(msg.chat.id);
         const evidencepath = await upload(bot, msg, group.address);
         const msgLink = inviteURL + '/' + msg.reply_to_message.message_id;
-        const msgBackup = 'ipfs.kleros.io'+evidencepath[1];
+        const msgBackup = 'ipfs.kleros.io'+evidencepath;
         const {questionId, questionUrl: appealUrl} = await reportUser(
             !permissionless, 
             fromUsername, 
