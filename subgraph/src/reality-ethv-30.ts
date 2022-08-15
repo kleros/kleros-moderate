@@ -124,7 +124,7 @@ export function handleLogNewAnswer(event: LogNewAnswer): void {
 
 export function handleLogNewQuestion(event: LogNewQuestion): void {
   //if (event.params.template_id.toU32() === 58){ //XDAI
-  if (event.params.template_id.toU32() === 381){ // Rinkeby
+  if (event.params.template_id.toU32() === 392){ // Rinkeby
       const questionString = event.params.question;    
     const params = questionString.split('\u241f');
     if (params.length < 10)
