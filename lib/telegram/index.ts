@@ -17,7 +17,6 @@ import langJson from "./assets/lang.json";
 
 const ModeratorBot = require('node-telegram-bot-api');
 const bot = new ModeratorBot(process.env.BOT_TOKEN, {polling: true});
-var flag = true; // hack to prevent duplicate messages
 
 bot.on("my_chat_member", async function(myChatMember: TelegramBot.ChatMemberUpdated) {
     try {
@@ -28,12 +27,9 @@ bot.on("my_chat_member", async function(myChatMember: TelegramBot.ChatMemberUpda
 
 Make sure to setup a bot account (to pay for txn fees) with /newaccount, and (optionally) set the chat invite url with /setinviteurl [url] e.g. /setinviteurl https://t.me/groupInviteUrl.
 
-By default, only admins can report and add evidence. To allow all users to report and add evidence, use /togglePermissions.`);
-            flag = true;
-
-        } else if (flag){
+By default, only admins can report and add evidence. To allow all users to report and add evidence, use /togglepermissions.`);
+        } else{
             await bot.sendMessage(myChatMember.chat.id, 'Please make sure to enable all of the admin rights for the bot and set the group type to public.');
-            flag = false;
         }
     } catch (error) {
         console.log(error);   

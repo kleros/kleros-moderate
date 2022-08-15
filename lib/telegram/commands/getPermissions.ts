@@ -5,7 +5,7 @@ import {getPermissions} from "../../db";
 /*
  * /getaccount
  */
-const regexp = /\/getPermissions/
+const regexp = /\/getpermissions/
 
 const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Message) => {
     const res = await getPermissions('telegram', String(msg.chat.id));
