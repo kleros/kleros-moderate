@@ -21,8 +21,8 @@ const bot = new ModeratorBot(process.env.BOT_TOKEN, {polling: true});
 bot.on("my_chat_member", async function(myChatMember: TelegramBot.ChatMemberUpdated) {
     try {
         if (myChatMember.new_chat_member?.status === "administrator") {
-            await bot.sendMessage(myChatMember.chat.id, '/setrules https://ipfs.kleros.io/ipfs/QmNvhZTNu3vAV43VNfQFKWrUYJ78oZgLhiZje78hWZoTLS/Kleros%20Moderate%20Community%20Guideline.pdf');
-            await setRules('telegram', String(myChatMember.chat.id), 'https://ipfs.kleros.io/ipfs/QmNvhZTNu3vAV43VNfQFKWrUYJ78oZgLhiZje78hWZoTLS/Kleros%20Moderate%20Community%20Guideline.pdf', new Date().getTime()/1000);
+            await bot.sendMessage(myChatMember.chat.id, '/setrules https://ipfs.kleros.io/ipfs/QmeYuhtdsbyrpYa3tsRFTb92jcvUJNb2CJ2NdLE5fsRyAX/Kleros%20Moderate%20Community%20Guideline.pdf');
+            await setRules('telegram', String(myChatMember.chat.id), 'https://ipfs.kleros.io/ipfs/QmeYuhtdsbyrpYa3tsRFTb92jcvUJNb2CJ2NdLE5fsRyAX/Kleros%20Moderate%20Community%20Guideline.pdf', new Date().getTime()/1000);
             await bot.sendMessage(myChatMember.chat.id, `The Kleros Moderation Community Guidelines apply as the default rules. Crafting precise policies can be challenging, if you are certain in setting a new policy, you can set new rules with /setrules [url] or /setrules [reply to message].
 
 Make sure to setup a bot account (to pay for txn fees) with /newaccount, and (optionally) set the chat invite url with /setinviteurl [url] e.g. /setinviteurl https://t.me/groupInviteUrl.
