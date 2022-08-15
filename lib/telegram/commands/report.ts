@@ -47,7 +47,7 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
     const reportedQuestionId = await getQuestionId('telegram', String(msg.chat.id), reportedUserID, String(msg.reply_to_message.message_id));
     console.log(reportedQuestionId);
     if (reportedQuestionId){
-        await bot.sendMessage(msg.chat.id, `The message is already reported. The report status is available at: \n\n https://reality.eth.limo/app/#!/network/100/question/${process.env.REALITITY_ETH_V30}-${reportedQuestionId}`);
+        await bot.sendMessage(msg.chat.id, `The message is already reported. The report status is available at: \n\n https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITITY_ETH_V30}-${reportedQuestionId}`);
         return;
     }
     const reports = await getConcurrentReports('telegram', String(msg.chat.id), reportedUserID, msg.reply_to_message.date);
@@ -56,7 +56,7 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
     if (reports.length > 0 && match[1] != 'confirm') {
         var reportInfo = `Are you sure the user ${fromUsername}(ID :${reportedUserID}) has not already been reported for this behavior? Note that any subsequent reports for the same behavior will result in lost deposits. The following lists the user's reported messages within a 24 hour time window of the message you reported: \n\n`;
         (reports).forEach((report) => {
-            reportInfo += ` - https://reality.eth.limo/app/#!/network/100/question/${process.env.REALITITY_ETH_V30}-${report.question_id}\n\n`;
+            reportInfo += ` - https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITITY_ETH_V30}-${report.question_id}\n\n`;
         });
         reportInfo += `If you are sure, report the message again followed by \'confirm\' e.g. /report confirm`
         await bot.sendMessage(msg.chat.id, reportInfo);
