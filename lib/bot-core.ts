@@ -31,7 +31,7 @@ export const reportUser = async (hasBanningPermission: boolean, fromUsername: st
 
     return {
         questionId: questionId,
-        questionUrl: `https://realityeth.github.io/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITITY_ETH_V30}-${questionId}`
+        questionUrl: `https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITITY_ETH_V30}-${questionId}`
     };
 }
 

@@ -47,19 +47,20 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
     const reportedQuestionId = await getQuestionId('telegram', String(msg.chat.id), reportedUserID, String(msg.reply_to_message.message_id));
     console.log(reportedQuestionId);
     if (reportedQuestionId){
-        await bot.sendMessage(msg.chat.id, `The message is already reported. The report status is available at: \n\n https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITITY_ETH_V30}-${reportedQuestionId}`);
+        await bot.sendMessage(msg.chat.id, `The message is already [reported](https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITITY_ETH_V30}-${reportedQuestionId})`, {parse_mode: 'Markdown'});
         return;
     }
     const reports = await getConcurrentReports('telegram', String(msg.chat.id), reportedUserID, msg.reply_to_message.date);
     console.log(reports);
 
     if (reports.length > 0 && match[1] != 'confirm') {
-        var reportInfo = `Are you sure the user ${fromUsername}(ID :${reportedUserID}) has not already been reported for this behavior? Note that any subsequent reports for the same behavior will result in lost deposits. The following lists the user's reported messages within a 24 hour time window of the message you reported: \n\n`;
+        var reportInfo = `Are you sure the user *${fromUsername} (ID :${reportedUserID})* was not already reported for this behavior?\n\nDuplicate reports will result in lost deposits. Reported messages from the same user within 24 hours include: \n\n`;
         (reports).forEach((report) => {
-            reportInfo += ` - https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITITY_ETH_V30}-${report.question_id}\n\n`;
+            const privateMsgLink = 'https://t.me/c/' + report.group_id.substring(4) + '/' + report.msg_id;
+            reportInfo += ` - [Message at ${new Date(report.timestamp*1000).toISOString()}](${privateMsgLink}): [Report](https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITITY_ETH_V30}-${report.question_id})\n`;
         });
-        reportInfo += `If you are sure, report the message again followed by \'confirm\' e.g. /report confirm`
-        await bot.sendMessage(msg.chat.id, reportInfo);
+        reportInfo += `\nIf you are sure, type \'/report confirm\'`
+        await bot.sendMessage(msg.chat.id, reportInfo, {parse_mode: 'Markdown'});
         return;
     } 
 
@@ -109,7 +110,9 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
         const inviteURL = await getInviteURL('telegram', String(msg.chat.id));
         const inviteURLBackup = inviteURL? inviteURL: await bot.exportChatInviteLink(msg.chat.id);
         const evidencepath = await upload(bot, msg, group.address);
-        const msgLink = inviteURL + '/' + msg.reply_to_message.message_id;
+        const privateMsgLink = 'https://t.me/c/' + String(msg.chat.id).substring(4) + '/' + String(msg.reply_to_message.message_id);
+        const publicMsgLink = inviteURL + '/' + String(msg.reply_to_message.message_id);
+        const msgLink = (!inviteURL || inviteURL == '')? privateMsgLink : publicMsgLink;
         const msgBackup = 'ipfs.kleros.io'+evidencepath;
         const {questionId, questionUrl: appealUrl} = await reportUser(
             !permissionless, 
@@ -135,21 +138,7 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
 
         await addReport(questionId, 'telegram', String(msg.chat.id), String(msg.reply_to_message.from.id), String(msg.reply_to_message.message_id), (hasReportingPermission && !permissionless));
         console.log('reportAdded');
-
-        if (hasReportingPermission && !permissionless) {
-            // the user gets notified and it is explained to them how to appeal.
-            await bot.sendMessage(msg.chat.id, `*${fromUsername}* you have been banned, you can appeal here: ${appealUrl}
-            
-            To add evidence to the case, reply to a message with ther addevidence command followed by the questionID ${questionId}. This command ensure that messages, if deleted persist. In case messages have already been deleted, please gather witnesses from this group to make a public statement about the deleted messages in this chat.
-            `, {parse_mode: 'Markdown'});
-
-            // @ts-ignore
-            //await bot.banChatMember(msg.chat.id, String(msg.reply_to_message.from.id), {revoke_messages: false});
-            await bot.restrictChatMember(msg.chat.id, String(msg.reply_to_message.from.id), {can_send_messages: false});
-        } else {
-            // the user first needs to answer and provide a bond
-            await bot.sendMessage(msg.chat.id, `For the report to be applied you need to provide an answer with a bond of 1 DAI: ${appealUrl}`, {parse_mode: 'Markdown'});
-        }
+        await bot.sendMessage(msg.chat.id, `*${fromUsername}  (ID :${reportedUserID}) *'s conduct due to this [message](${privateMsgLink}) is reported for breaking the [rules](${rules}).\n\nDid *${fromUsername}* break the rules? The [question](${appealUrl}) can be answered with a minimum bond of 5 DAI.`, {parse_mode: 'Markdown'});
     } catch (e) {
         console.log(e);
 
