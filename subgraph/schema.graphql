@@ -10,6 +10,9 @@ type Question @entity {
     askedBy: Bytes
     answer: Bytes
     arbitrationRequested: Boolean
+    appeals: BigInt
+    ruling: BigInt
+    disputeId: BigInt
 }
 
 type User @entity{
@@ -26,4 +29,63 @@ type Group @entity{
     platform: String!
     groupID: String!
     users: [User!]! @derivedFrom(field: "group")
+}
+
+type Contribution @entity {
+  id: ID!
+  _localDisputeID: BigInt! # uint256
+  _round: BigInt! # uint256
+  ruling: BigInt! # uint256
+  _contributor: Bytes! # address
+  _amount: BigInt! # uint256
+}
+
+type Dispute @entity {
+  id: ID!
+  _arbitrator: Bytes! # address
+  _disputeID: BigInt! # uint256
+  _metaEvidenceID: BigInt! # uint256
+  _evidenceGroupID: BigInt! # uint256
+}
+
+type DisputeIDToQuestionID @entity {
+  id: ID!
+  _questionID: String! # bytes32
+}
+
+type Evidence @entity {
+  id: ID!
+  _arbitrator: Bytes! # address
+  _evidenceGroupID: BigInt! # uint256
+  _party: Bytes! # address
+  _evidence: String! # string
+}
+
+type MetaEvidence @entity {
+  id: ID!
+  _metaEvidenceID: BigInt! # uint256
+  _evidence: String! # string
+}
+
+type Ruling @entity {
+  id: ID!
+  _arbitrator: Bytes! # address
+  _disputeID: BigInt! # uint256
+  _ruling: BigInt! # uint256
+}
+
+type RulingFunded @entity {
+  id: ID!
+  _localDisputeID: BigInt! # uint256
+  _round: BigInt! # uint256
+  _ruling: BigInt! # uint256
+}
+
+type Withdrawal @entity {
+  id: ID!
+  _localDisputeID: BigInt! # uint256
+  _round: BigInt! # uint256
+  _ruling: BigInt! # uint256
+  _contributor: Bytes! # address
+  _reward: BigInt! # uint256
 }

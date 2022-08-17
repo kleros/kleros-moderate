@@ -31,7 +31,8 @@ dataSources:
         - name: RealityETHV30
           file: ./abis/RealityETHV30.json
       eventHandlers:
-        - event: LogAnswerReveal(indexed bytes32,indexed address,indexed bytes32,bytes32,uint256,uint256)
+        - event: LogAnswerReveal(indexed bytes32,indexed address,indexed
+            bytes32,bytes32,uint256,uint256)
           handler: handleLogAnswerReveal
         - event: LogCancelArbitration(indexed bytes32)
           handler: handleLogCancelArbitration
@@ -45,7 +46,8 @@ dataSources:
           handler: handleLogMinimumBond
         - event: LogNewAnswer(bytes32,indexed bytes32,bytes32,indexed address,uint256,uint256,bool)
           handler: handleLogNewAnswer
-        - event: LogNewQuestion(indexed bytes32,indexed address,uint256,string,indexed bytes32,address,uint32,uint32,uint256,uint256)
+        - event: LogNewQuestion(indexed bytes32,indexed address,uint256,string,indexed
+            bytes32,address,uint32,uint32,uint256,uint256)
           handler: handleLogNewQuestion
         - event: LogNewTemplate(indexed uint256,indexed address,string)
           handler: handleLogNewTemplate
@@ -58,3 +60,44 @@ dataSources:
         - event: LogWithdraw(indexed address,uint256)
           handler: handleLogWithdraw
       file: ./src/reality-ethv-30.ts
+  - kind: ethereum
+    name: Realitio_v2_1_ArbitratorWithAppeals
+    network: rinkeby
+    source:
+      address: "0xF9D4D329E8b7f786b96666c0502cBA4981888705" # centralized arb <--- , 3 jurors new bundle.js"0xE34e3DF30932e7C0c1b4F465eCec90646e948568" # "0xe27768bDb76A9B742b7ddCFE1539fAdAf3b89bC7" 31 jurors, old bundle.js
+      abi: Realitio_v2_1_ArbitratorWithAppeals
+      startBlock: 11138020 # <--- rinkeby, xdai 23143918
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - Contribution
+        - Dispute
+        - DisputeIDToQuestionID
+        - Evidence
+        - MetaEvidence
+        - Ruling
+        - RulingFunded
+        - Withdrawal
+      abis:
+        - name: Realitio_v2_1_ArbitratorWithAppeals
+          file: ./abis/Realitio_v2_1_ArbitratorWithAppeals.json
+      eventHandlers:
+        - event: Contribution(indexed uint256,indexed uint256,uint256,indexed address,uint256)
+          handler: handleContribution
+        - event: Dispute(indexed address,indexed uint256,uint256,uint256)
+          handler: handleDispute
+        - event: DisputeIDToQuestionID(indexed uint256,bytes32)
+          handler: handleDisputeIDToQuestionID
+        - event: Evidence(indexed address,indexed uint256,indexed address,string)
+          handler: handleEvidence
+        - event: MetaEvidence(indexed uint256,string)
+          handler: handleMetaEvidence
+        - event: Ruling(indexed address,indexed uint256,uint256)
+          handler: handleRuling
+        - event: RulingFunded(indexed uint256,indexed uint256,indexed uint256)
+          handler: handleRulingFunded
+        - event: Withdrawal(indexed uint256,indexed uint256,uint256,indexed address,uint256)
+          handler: handleWithdrawal
+      file: ./src/Realitio_v2_1_ArbitratorWithAppeals.ts

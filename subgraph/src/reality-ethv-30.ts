@@ -117,14 +117,15 @@ export function handleLogNewAnswer(event: LogNewAnswer): void {
 
     question.finalize_ts = event.block.timestamp.plus(question.timeout);
     question.bond = event.params.bond;
+    question.answer = event.params.answer;
 
     question.save();
   }
 }
 
 export function handleLogNewQuestion(event: LogNewQuestion): void {
-  //if (event.params.template_id.toU32() === 58){ //XDAI
-  if (event.params.template_id.toU32() === 392){ // Rinkeby
+  //if (event.params.template_id.toU32() === 59){ //XDAI
+  if (event.params.template_id.toU32() === 394){ // Rinkeby
       const questionString = event.params.question;    
     const params = questionString.split('\u241f');
     if (params.length < 10)
