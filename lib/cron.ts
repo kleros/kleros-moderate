@@ -56,9 +56,8 @@ import {BigNumber} from "ethers";
             if(report.arbitrationRequested != true){
                 console.log(report.arbitrationRequested);
                 await bot.restrictChatMember(report.group_id, report.user_id, {can_send_messages: true});
-                const timeServed = report.timeServed + Math.floor(Date.now()/1000) - report.activeTimestamp;
                 await bot.sendMessage(report.group_id, `Arbitration is requested. *${fromUsername}* is un-banned for the duration of the [dispute](https://court.kleros.io/cases/${BigNumber.from(question.disputeId).toNumber()}) (on Gnosis Chain).`, {parse_mode: 'Markdown'}); 
-                await setReportArbitration(question.id, timeServed);
+                await setReportArbitration(question.id, 0);
             } else if (question.ruling != null){
                 const msgLink = 'https://t.me/c/' + report.group_id.substring(4) + '/' + report.msg_id;
                 if (question.ruling == 1){ // check rulings
@@ -94,21 +93,15 @@ import {BigNumber} from "ethers";
 
                     switch(reportHistory){
                         case 0:{
-                            if (report.timeServed  < 86400){
-                                const paroleDate = Math.ceil(+new Date() / 1000) + 86400 - report.timeServed;
-                                await bot.restrictChatMember(report.group_id, report.user_id, {can_send_messages: false, until_date: paroleDate});
-                                const timeHours = Math.ceil((86400 - report.timeServed)/3600);
-                                await bot.sendMessage(report.group_id, `*${fromUsername}* is subject to a 24 hour ban with ${timeHours} hour(s) remaining.`, {parse_mode: 'Markdown'});
-                            }
+                            const paroleDate = Math.ceil(+new Date() / 1000) + 86400;
+                            await bot.restrictChatMember(report.group_id, report.user_id, {can_send_messages: false, until_date: paroleDate});
+                            await bot.sendMessage(report.group_id, `*${fromUsername}* is subject to a 24 hour ban.`, {parse_mode: 'Markdown'});
                             break;
                         }
                         case 1:{
-                            if (report.timeServed  < 604800){
-                                const paroleDate = Math.ceil(+new Date() / 1000) + 604800 - report.timeServed;
-                                await bot.restrictChatMember(report.group_id, report.user_id, {can_send_messages: false, until_date: paroleDate});
-                                const timeDays = Math.ceil((604800 - report.timeServed)/86400);
-                                await bot.sendMessage(report.group_id, `*${fromUsername}* is subject to a 7 day ban with ${timeDays} day(s) remaining.`, {parse_mode: 'Markdown'});
-                            }
+                            const paroleDate = Math.ceil(+new Date() / 1000) + 604800;
+                            await bot.restrictChatMember(report.group_id, report.user_id, {can_send_messages: false, until_date: paroleDate});
+                            await bot.sendMessage(report.group_id, `*${fromUsername}* is subject to a 7 day ban.`, {parse_mode: 'Markdown'});
                             break;
                         }
                         default:{
@@ -117,7 +110,7 @@ import {BigNumber} from "ethers";
                             break;
                         }
                     }
-                    await setReport(question.id, true, finalized,  Math.ceil(+new Date() / 1000), report.timeServed);
+                    await setReport(question.id, true, finalized,  Math.ceil(+new Date() / 1000), 0);
                 } else {
                     console.error(`Invalid platform: ${report.platform}`);
                 }
@@ -132,8 +125,7 @@ import {BigNumber} from "ethers";
                 } else {
                     console.error(`Invalid platform: ${report.platform}`);
                 }
-                const timeServed = report.timeServed + Math.floor(Date.now()/1000) - report.activeTimestamp;
-                await setReport(question.id, false, finalized, Math.floor(Date.now()/1000), timeServed);
+                await setReport(question.id, false, finalized, Math.floor(Date.now()/1000), 0);
 
             }
         }
@@ -144,41 +136,32 @@ import {BigNumber} from "ethers";
 const handleFinalizedTelegram = async (bot: TelegramBot, fromUsername: string, report: any, question: any, latestReportState: number, reportHistory: number) => {
     await bot.restrictChatMember(report.group_id, report.user_id, {can_send_messages: true}); // reset temporary mute
     if (latestReportState === 1){
-        const timeServed = latestReportState === report.active ? report.timeServed + Math.ceil(+new Date() / 1000) - report.activeTimestamp : report.timeServed;
         const activeTimestamp = latestReportState === report.active ? report.activeTimestamp : Math.ceil(+new Date() / 1000);
         switch(reportHistory){
             case 0:{
                 await bot.sendMessage(report.group_id, `*${fromUsername}* violated the rules for the first time and is subject to a 1 day ban.`, {parse_mode: 'Markdown'}); 
-                if (timeServed  < 86400){
-                    const paroleDate = Math.ceil(+new Date() / 1000) + 86400 - timeServed;
-                    await bot.banChatMember(report.group_id, report.user_id, paroleDate);
-                    const timeHours = Math.ceil((86400 - report.timeServed)/3600);
-                    await bot.sendMessage(report.group_id, `*${fromUsername}*'s ban has ${timeHours} hour(s) remaining.`, {parse_mode: 'Markdown'});
-                }
-                await setReport(question.id, true, true, activeTimestamp, report.timeServed);
+                const paroleDate = Math.ceil(+new Date() / 1000) + 86400;
+                await bot.banChatMember(report.group_id, report.user_id, paroleDate);
+                await setReport(question.id, true, true, activeTimestamp, 0);
                 break;
             }
             case 1:{
                 await bot.sendMessage(report.group_id, `*${fromUsername}* violated the rules for the second time and is subject to a 1 week ban.`, {parse_mode: 'Markdown'}); 
-                if (timeServed  < 604800){
-                    const paroleDate = Math.ceil(+new Date() / 1000) + 604800 - timeServed;
-                    await bot.banChatMember(report.group_id, report.user_id, paroleDate);
-                    const timeDays = Math.ceil((604800 - report.timeServed)/86400);
-                    await bot.sendMessage(report.group_id, `*${fromUsername}*'s ban has ${timeDays} day(s) remaining.`, {parse_mode: 'Markdown'});
-                }
-                await setReport(question.id, true, true, activeTimestamp, report.timeServed);
+                const paroleDate = Math.ceil(+new Date() / 1000) + 604800;
+                await bot.banChatMember(report.group_id, report.user_id, paroleDate);
+                await setReport(question.id, true, true, activeTimestamp, 0);
                 break;
             }
             default:{
                 await bot.sendMessage(report.group_id, `*${fromUsername}* violated the rules for the third time and is subject to a permanent ban.`, {parse_mode: 'Markdown'}); 
                 await bot.banChatMember(report.group_id, report.user_id);
-                await setReport(question.id, true, true, activeTimestamp, report.timeServed);
+                await setReport(question.id, true, true, activeTimestamp, 0);
                 break;
             }
         }
     }
     else{
         await bot.sendMessage(report.group_id, `*${fromUsername}* did not violated the rules.`, {parse_mode: 'Markdown'});
-        await setReport(question.id, false, true, report.activeTimestamp, report.timeServed);
+        await setReport(question.id, false, true, report.activeTimestamp, 0);
     }
 }
