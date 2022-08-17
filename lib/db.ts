@@ -164,7 +164,8 @@ const addReport = async (questionId: string,
                                 active_timestamp, 
                                 active, 
                                 timeServed, 
-                                finalized) 
+                                finalized,
+                                arbitrationRequested) 
         VALUES ($questionId, 
                 $platform, 
                 $group_id, 
@@ -174,6 +175,7 @@ const addReport = async (questionId: string,
                 $active_timestamp, 
                 $active, 
                 $timeServed, 
+                FALSE,
                 FALSE);`,
         {
             $questionId: questionId,
@@ -204,6 +206,20 @@ const setReport = async (questionId: string, active: boolean, finalized: boolean
     );
 }
 
+const setReportArbitration = async (questionId: string, timeServed: number) => {
+    const db = await openDb();
+
+    await db.run(
+        `UPDATE reports SET 
+        arbitrationRequested = TRUE, timeServed = $timeServed, active = FALSE
+        WHERE question_id = $question_id`,
+        {
+            $timeServed: timeServed,
+            $question_id: questionId
+        }
+    );
+}
+
 const getDisputedReports = async() => {
     const db = await openDb();
 
@@ -214,7 +230,7 @@ const getConcurrentReports = async(platform: string, groupId: string, userId: st
     const db = await openDb();
 
     const result = await db.all(
-        'SELECT question_id FROM reports WHERE timestamp BETWEEN $timestamp1 AND $timestamp2 AND user_id = $user_id AND group_id = $group_id AND platform = $platform',
+        'SELECT question_id, msg_id, group_id, timestamp FROM reports WHERE timestamp BETWEEN $timestamp1 AND $timestamp2 AND user_id = $user_id AND group_id = $group_id AND platform = $platform',
         {
             $timestamp1: timestamp - 3600,
             $timestamp2: timestamp + 3600,
@@ -300,12 +316,38 @@ const getActiveReportedUserAndGroupId = async(questionId: string) => {
     return result;
 }
 
-const getRecord = async(userId: string) => {
+const getFinalRecord = async(platform: string, groupId: string, userId: string) => {
     const db = await openDb();
 
     const result = await db.get(
-        'SELECT COUNT(*) FROM reports WHERE finalized = TRUE AND active = TRUE AND user_id = $user_id',
+        `SELECT COUNT(*) FROM reports 
+        WHERE active = TRUE 
+            AND finalized = TRUE 
+            AND platform = $platform 
+            AND group_id = $group_id 
+            AND user_id = $user_id`,
         {
+            $platform: platform,
+            $group_id: groupId,
+            $user_id: userId
+        }
+    );
+
+    return result?.total || 0;
+}
+
+const getCurrentRecord = async(platform: string, groupId: string, userId: string) => {
+    const db = await openDb();
+
+    const result = await db.get(
+        `SELECT COUNT(*) FROM reports 
+        WHERE active = TRUE 
+            AND platform = $platform 
+            AND group_id = $group_id 
+            AND user_id = $user_id`,
+        {
+            $platform: platform,
+            $group_id: groupId,
             $user_id: userId
         }
     );
@@ -332,5 +374,7 @@ export {
     setReport,
     getDisputedReports,
     getConcurrentReports,
-    getRecord
+    getFinalRecord,
+    getCurrentRecord,
+    setReportArbitration
 }

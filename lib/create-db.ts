@@ -51,12 +51,15 @@ import {openDb} from "./db";
             platform TEXT, 
             group_id TEXT, 
             user_id TEXT, 
+            username TEXT, 
             msg_id TEXT, 
             timestamp INTEGER, 
             active_timestamp INTEGER, 
             active BOOLEAN, 
             timeServed INTEGER, 
-            finalized BOOLEAN)`
+            finalized BOOLEAN,
+            arbitrationRequested BOOLEAN 
+            )`
             );
 
     /**
