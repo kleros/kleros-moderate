@@ -13,10 +13,12 @@ import * as addEvidence from "../../lib/telegram/commands/addEvidence";
 import * as setLanguage from "../../lib/telegram/commands/setLanguage";
 import * as togglePermissions from "../../lib/telegram/commands/togglePermissions";
 import * as getPermissions from "../../lib/telegram/commands/getPermissions";
+import * as getReports from "../../lib/telegram/commands/getReports";
 import langJson from "./assets/lang.json";
 
 const ModeratorBot = require('node-telegram-bot-api');
 const bot = new ModeratorBot(process.env.BOT_TOKEN, {polling: true});
+
 //const whitelist = ['-780089934'];
 
 bot.on("my_chat_member", async function(myChatMember: TelegramBot.ChatMemberUpdated) {
@@ -52,6 +54,7 @@ const commands: {regexp: RegExp, callback: CommandCallback}[] = [
     getRules,    
     report,
     addEvidence,
+    getReports,
     setLanguage,
     togglePermissions,
     getPermissions
@@ -63,8 +66,7 @@ commands.forEach((command) => {
         (msg: TelegramBot.Message, match: string[]) => {
             
             //if (!whitelist.includes(String(msg.chat.id)))
-            //    return;
-
+            //    return;            
             command.callback(bot, msg, match)
         }
     )

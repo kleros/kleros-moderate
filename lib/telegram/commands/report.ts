@@ -72,6 +72,7 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
         await bot.sendMessage(msg.chat.id, `You need to /setrules before /report`);
         return;
     }
+    
     const group = await getGroup('telegram', String(msg.chat.id));
     const privateKey = group?.private_key || false;
 
@@ -79,6 +80,7 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
         await bot.sendMessage(msg.chat.id, `This chat does not have a bot address. Execute /setaccount or /newaccount first.`);
         return;
     }
+
 
     if (permissionless){
         if (!hasReportingPermission){
@@ -131,7 +133,7 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
             await bot.sendMessage(msg.chat.id, `An unexpected error has occurred while adding the evidence: ${e.message}. Does the bot address has enough funds to pay the transaction?`);
         }
 
-        await addReport(questionId, 'telegram', String(msg.chat.id), String(msg.reply_to_message.from.id), String(msg.reply_to_message.message_id), (hasReportingPermission && !permissionless));
+        await addReport(questionId, 'telegram', String(msg.chat.id), String(msg.reply_to_message.from.id), fromUsername+' (ID :'+reportedUserID+')', String(msg.reply_to_message.message_id), false);
         await bot.sendMessage(msg.chat.id, `*${fromUsername}  (ID :${reportedUserID}) *'s conduct due to this [message](${privateMsgLink}) is reported for breaking the [rules](${rules}).\n\nDid *${fromUsername}* break the rules? The [question](${appealUrl}) can be answered with a minimum bond of 5 DAI.`, {parse_mode: 'Markdown'});
     } catch (e) {
         console.log(e);

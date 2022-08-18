@@ -150,6 +150,7 @@ const addReport = async (questionId: string,
                         platform: string, 
                         groupId: string, 
                         userId: string, 
+                        username: string, 
                         msgId: string,
                         active: boolean
                         ) => {
@@ -159,6 +160,7 @@ const addReport = async (questionId: string,
                                 platform, 
                                 group_id, 
                                 user_id, 
+                                username,
                                 msg_id, 
                                 timestamp, 
                                 active_timestamp, 
@@ -170,12 +172,12 @@ const addReport = async (questionId: string,
                 $platform, 
                 $group_id, 
                 $user_id, 
+                $username,
                 $msg_id, 
                 $timestamp, 
                 $active_timestamp, 
                 $active, 
                 $timeServed, 
-                0,
                 FALSE,
                 FALSE);`,
         {
@@ -183,6 +185,7 @@ const addReport = async (questionId: string,
             $platform: platform,
             $group_id: groupId,
             $user_id: userId,
+            $username: username,
             $msg_id: msgId,
             $timestamp: Math.floor(Date.now()/1000),
             $active_timestamp: active? Math.floor(Date.now()/1000): 0,
@@ -225,6 +228,29 @@ const getDisputedReports = async() => {
     const db = await openDb();
 
     return await db.all('SELECT * FROM reports WHERE finalized = FALSE');
+}
+
+const getDisputedReportsInfo = async(platform: string, groupId: string) => {
+    const db = await openDb();
+
+    return await db.all('SELECT * FROM reports WHERE finalized = FALSE AND group_id = $group_id AND platform = $platform',
+        {
+        $group_id: groupId,
+        $platform: platform
+        }
+    );
+}
+
+const getDisputedReportsUserInfo = async(platform: string, groupId: string, userId: string) => {
+    const db = await openDb();
+
+    return await db.all('SELECT * FROM reports WHERE finalized = FALSE AND user_id = $user_id AND group_id = $group_id AND platform = $platform',
+        {
+        $user_id: userId,
+        $group_id: groupId,
+        $platform: platform
+        }
+    );
 }
 
 const getConcurrentReports = async(platform: string, groupId: string, userId: string, timestamp: number) => {
@@ -321,7 +347,7 @@ const getFinalRecord = async(platform: string, groupId: string, userId: string) 
     const db = await openDb();
 
     const result = await db.get(
-        `SELECT COUNT(*) FROM reports 
+        `SELECT COUNT(*)  as total FROM reports 
         WHERE active = TRUE 
             AND finalized = TRUE 
             AND platform = $platform 
@@ -341,7 +367,7 @@ const getCurrentRecord = async(platform: string, groupId: string, userId: string
     const db = await openDb();
 
     const result = await db.get(
-        `SELECT COUNT(*) FROM reports 
+        `SELECT COUNT(*)  as total FROM reports 
         WHERE active = TRUE 
             AND platform = $platform 
             AND finalized = FALSE
@@ -354,7 +380,7 @@ const getCurrentRecord = async(platform: string, groupId: string, userId: string
         }
     );
 
-    return result.total;
+    return result?.total || 0;
 }
 
 export {
@@ -375,6 +401,8 @@ export {
     addReport,
     setReport,
     getDisputedReports,
+    getDisputedReportsUserInfo,
+    getDisputedReportsInfo,
     getConcurrentReports,
     getFinalRecord,
     getCurrentRecord,
