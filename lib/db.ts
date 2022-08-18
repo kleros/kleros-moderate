@@ -164,7 +164,6 @@ const addReport = async (questionId: string,
                                 active_timestamp, 
                                 active, 
                                 timeServed, 
-                                penaltyDuration,
                                 finalized,
                                 arbitrationRequested) 
         VALUES ($questionId, 
@@ -193,7 +192,7 @@ const addReport = async (questionId: string,
     );
 }
 
-const setReport = async (questionId: string, active: boolean, finalized: boolean, activeTimestamp: number, timeServed: number, penaltyDuration: number) => {
+const setReport = async (questionId: string, active: boolean, finalized: boolean, activeTimestamp: number, timeServed: number) => {
     const db = await openDb();
 
     await db.run(
@@ -203,8 +202,7 @@ const setReport = async (questionId: string, active: boolean, finalized: boolean
             $active: active,
             $active_timestamp: activeTimestamp,
             $finalized: finalized,
-            $timeServed : timeServed,
-            $penaltyDuration: penaltyDuration
+            $timeServed : timeServed
         }
     );
 }

@@ -46,7 +46,7 @@ import {BigNumber} from "ethers";
         }
 
         const report = reports[question.id];
-        const reportHistory = await getFinalRecord(report.platform, report.group_id, report.user_id);
+        const reportHistoryFinal = await getFinalRecord(report.platform, report.group_id, report.user_id);
         const finalized = question.finalize_ts <= Math.ceil(+new Date() / 1000) + 300; // 300 buffer for graph syncing and finality
         const chatMember = await bot.getChatMember(report.group_id, report.user_id);
         const fromUsername = (chatMember.user.username || chatMember.user.first_name) + ' ID: ' + chatMember.user.id;
@@ -59,11 +59,11 @@ import {BigNumber} from "ethers";
                 const msgLink = 'https://t.me/c/' + report.group_id.substring(4) + '/' + report.msg_id;
                 if (question.ruling == 1){ // check rulings
                     await bot.sendMessage(report.group_id, `The dispute over *${fromUsername}*'s [message](${msgLink}) resolved.`, {parse_mode: 'Markdown'});
-                    handleFinalizedTelegram(bot, fromUsername, report, question, 1, reportHistory);
+                    handleFinalizedTelegram(bot, fromUsername, report, question, 1, reportHistoryFinal);
                 } 
                 else if (question.ruling == 0){
                     await bot.sendMessage(report.group_id, `The dispute over *${fromUsername}*'s [message](${msgLink}) resolved.`, {parse_mode: 'Markdown'});
-                    handleFinalizedTelegram(bot, fromUsername, report, question, 0, reportHistory);
+                    handleFinalizedTelegram(bot, fromUsername, report, question, 0, reportHistoryFinal);
                 }
             }
             continue;
@@ -76,28 +76,26 @@ import {BigNumber} from "ethers";
             if (report.platform === 'telegram') {
                 await bot.sendMessage(report.group_id, `The report on Reality is finalized.`, {parse_mode: 'Markdown'}); 
                 const latestReportState = answer.toNumber();
-                handleFinalizedTelegram(bot, fromUsername, report, question, latestReportState, reportHistory);
+                handleFinalizedTelegram(bot, fromUsername, report, question, latestReportState, reportHistoryFinal);
             } else {
                 console.error(`Invalid platform: ${report.platform}`);
             }
         } else if (latestReportState !== report.active) {
+            const reportHistoryCurrent = reportHistoryFinal + await getCurrentRecord(report.platform, report.group_id, report.user_id);
             const appealUrl = `https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITITY_ETH_V30}-${question.id}\n`;
             if (latestReportState === 1) {
                 // ban
                 if (report.platform === 'telegram') {
                     // @ts-ignore
                     await bot.sendMessage(report.group_id, `The report on Reality is answered. *${fromUsername}* violated the rules. The answer can be [appealed](${appealUrl}).`, {parse_mode: 'Markdown'});
-                    var penaltyDuration: number = 0;
-                    switch(reportHistory){
+                    switch(reportHistoryCurrent){
                         case 0:{
-                            penaltyDuration = 86400;
                             const paroleDate = Math.ceil(+new Date() / 1000) + 86400;
                             await bot.restrictChatMember(report.group_id, report.user_id, {can_send_messages: false, until_date: paroleDate});
                             await bot.sendMessage(report.group_id, `*${fromUsername}* is subject to a 24 hour ban.`, {parse_mode: 'Markdown'});
                             break;
                         }
                         case 1:{
-                            penaltyDuration = 604800;
                             const paroleDate = Math.ceil(+new Date() / 1000) + 604800;
                             await bot.restrictChatMember(report.group_id, report.user_id, {can_send_messages: false, until_date: paroleDate});
                             await bot.sendMessage(report.group_id, `*${fromUsername}* is subject to a 7 day ban.`, {parse_mode: 'Markdown'});
@@ -109,25 +107,40 @@ import {BigNumber} from "ethers";
                             break;
                         }
                     }
-                    await setReport(question.id, true, finalized,  Math.ceil(+new Date() / 1000), 0, penaltyDuration);
+                    await setReport(question.id, true, finalized,  Math.ceil(+new Date() / 1000), 0);
                 } else {
                     console.error(`Invalid platform: ${report.platform}`);
                 }
             } else {
                 // unban
+                await setReport(question.id, false, finalized, Math.floor(Date.now()/1000), 0);
 
                 if (report.platform === 'telegram') {
                     // @ts-ignore
-                    const paroleDateOld = (await bot.getChatMember(report.group_id, report.user_id)).until_date;
-                    const paroleDateNew = paroleDateOld - report.penaltyDuration;
-                    await bot.restrictChatMember(report.group_id, report.user_id, {can_send_messages: false, until_date: paroleDateNew});
-                    await bot.sendMessage(report.group_id, `The report on Reality is answered. *${fromUsername}* did not violated the rules. The answer can be [appealed](${appealUrl}).`, {parse_mode: 'Markdown'});
-                    await bot.sendMessage(report.group_id, `Any ban of *${fromUsername}* is removed.`, {parse_mode: 'Markdown'});
+                    const msgLink = 'https://t.me/c/' + report.group_id.substring(4) + '/' + report.msg_id;
+                    await bot.sendMessage(report.group_id, `The report on Reality is answered. *${fromUsername}* did not violated the rules regarding this [message](${msgLink}). The answer can be [appealed](${appealUrl}).`, {parse_mode: 'Markdown'});
+                    switch(reportHistoryCurrent){
+                        case 0:{
+                            const paroleDate = Math.ceil(+new Date() / 1000) + 86400;
+                            await bot.restrictChatMember(report.group_id, report.user_id, {can_send_messages: false, until_date: paroleDate});
+                            await bot.sendMessage(report.group_id, `*${fromUsername}* is subject to a 24 hour ban.`, {parse_mode: 'Markdown'});
+                            break;
+                        }
+                        case 1:{
+                            const paroleDate = Math.ceil(+new Date() / 1000) + 604800;
+                            await bot.restrictChatMember(report.group_id, report.user_id, {can_send_messages: false, until_date: paroleDate});
+                            await bot.sendMessage(report.group_id, `*${fromUsername}* is subject to a 7 day ban.`, {parse_mode: 'Markdown'});
+                            break;
+                        }
+                        default:{
+                            await bot.restrictChatMember(report.group_id, report.user_id, {can_send_messages: false});
+                            await bot.sendMessage(report.group_id, `*${fromUsername}* is banned.`, {parse_mode: 'Markdown'});
+                            break;
+                        }
+                    }
                 } else {
                     console.error(`Invalid platform: ${report.platform}`);
                 }
-                await setReport(question.id, false, finalized, Math.floor(Date.now()/1000), 0, 0);
-
             }
         }
     }

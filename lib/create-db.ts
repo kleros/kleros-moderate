@@ -57,7 +57,6 @@ import {openDb} from "./db";
             active_timestamp INTEGER, 
             active BOOLEAN, 
             timeServed INTEGER, 
-            penaltyDuration INTEGER, 
             finalized BOOLEAN,
             arbitrationRequested BOOLEAN 
             )`
