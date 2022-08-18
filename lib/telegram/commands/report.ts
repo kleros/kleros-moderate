@@ -125,12 +125,12 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
             privateKey);
 
         try {
-            await submitEvidence(evidencepath[0], questionId, privateKey);
+            //await submitEvidence(evidencepath[0], questionId, privateKey);
         } catch (e) {
             // let addEvidence fail, the question was created anyway
             console.log(e);
 
-            await bot.sendMessage(msg.chat.id, `An unexpected error has occurred while adding the evidence: ${e.message}. Does the bot address has enough funds to pay the transaction?`);
+            //await bot.sendMessage(msg.chat.id, `An unexpected error has occurred while adding the evidence: ${e.message}. Does the bot address has enough funds to pay the transaction?`);
         }
 
         await addReport(questionId, 'telegram', String(msg.chat.id), String(msg.reply_to_message.from.id), fromUsername+' (ID :'+reportedUserID+')', String(msg.reply_to_message.message_id), false);
