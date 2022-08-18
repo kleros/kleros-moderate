@@ -45,13 +45,11 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
     const fromUsername = (msg.reply_to_message.from.username || msg.reply_to_message.from.first_name || `no-username-set`);
     const reportedUserID = String(msg.reply_to_message.from.id);
     const reportedQuestionId = await getQuestionId('telegram', String(msg.chat.id), reportedUserID, String(msg.reply_to_message.message_id));
-    console.log(reportedQuestionId);
     if (reportedQuestionId){
         await bot.sendMessage(msg.chat.id, `The message is already [reported](https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITITY_ETH_V30}-${reportedQuestionId})`, {parse_mode: 'Markdown'});
         return;
     }
     const reports = await getConcurrentReports('telegram', String(msg.chat.id), reportedUserID, msg.reply_to_message.date);
-    console.log(reports);
 
     if (reports.length > 0 && match[1] != 'confirm') {
         var reportInfo = `Are you sure the user *${fromUsername} (ID :${reportedUserID})* was not already reported for this behavior?\n\nDuplicate reports will result in lost deposits. Reported messages from the same user within 24 hours include: \n\n`;
@@ -85,7 +83,6 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
     if (permissionless){
         if (!hasReportingPermission){
             const reportAllowance = await getAllowance('telegram', String(msg.chat.id), String(msg.from.id));
-            console.log(reportAllowance);
             if ( reportAllowance === undefined ){
                 setAllowance('telegram', String(msg.chat.id), String(msg.from.id), 2, 15, Math.ceil( new Date().getTime() / 1000));
             } else if ((Math.ceil( new Date().getTime() / 1000) < reportAllowance.timestamp_refresh + 28800) && reportAllowance.report_allowance == 0 ){
@@ -94,8 +91,6 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
                 const newReportAllowance = reportAllowance.report_allowance + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/28800) - 1;
                 const newEvidenceAllowance = reportAllowance.evidence_allowance + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/28800)*5;
                 const newRefreshTimestamp = reportAllowance.timestamp_refresh + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/28800)*28800;
-                console.log(newReportAllowance);
-                console.log(newEvidenceAllowance);
                 setAllowance('telegram', String(msg.chat.id), String(msg.from.id), newReportAllowance, newEvidenceAllowance, newRefreshTimestamp);
             }
         }
@@ -137,7 +132,6 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
         }
 
         await addReport(questionId, 'telegram', String(msg.chat.id), String(msg.reply_to_message.from.id), String(msg.reply_to_message.message_id), (hasReportingPermission && !permissionless));
-        console.log('reportAdded');
         await bot.sendMessage(msg.chat.id, `*${fromUsername}  (ID :${reportedUserID}) *'s conduct due to this [message](${privateMsgLink}) is reported for breaking the [rules](${rules}).\n\nDid *${fromUsername}* break the rules? The [question](${appealUrl}) can be answered with a minimum bond of 5 DAI.`, {parse_mode: 'Markdown'});
     } catch (e) {
         console.log(e);

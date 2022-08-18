@@ -24,7 +24,6 @@ const upload = async (bot: TelegramBot, msg: TelegramBot.Message, address: strin
     } else {
         var file: TelegramBot.File;
         if (msg.reply_to_message.sticker){
-            console.log('sticker');
             file = await bot.getFile(msg.reply_to_message.sticker.file_id);
         } else if (msg.reply_to_message.photo){
             file = await bot.getFile(msg.reply_to_message.photo[0].file_id);   
@@ -40,9 +39,7 @@ const upload = async (bot: TelegramBot, msg: TelegramBot.Message, address: strin
             file = await bot.getFile(msg.reply_to_message.document.file_id);   
         }
         const filePath = `https://api.telegram.org/file/bot${process.env.BOT_TOKEN}/`+file.file_path;
-        console.log(file.file_path);
         const fileIPFS = await uploadFileEvidence(filePath, file.file_path.replace('/','_'));
-        console.log(fileIPFS);
         return fileIPFS;
     }
 
@@ -60,7 +57,7 @@ const uploadLocationEvidence = async (msg: TelegramBot.Message, address: string)
     const enc = new TextEncoder();
     const author = (msg.reply_to_message.from.username || msg.reply_to_message.from.first_name) + ' ID:'+msg.reply_to_message.from.id ;
     const fileName = `location.txt`;
-    const chatHistory = `Chat: ${msg.chat.title} (${Math.abs(msg.chat.id)})
+    const chatHistory = `Chat: ${msg.chat.title} (${String(msg.chat.id)})
     
 Author: ${author} (${(new Date(msg.reply_to_message.date*1000)).toISOString()})
 
@@ -75,7 +72,7 @@ const uploadPollEvidence = async (msg: TelegramBot.Message, address: string): Pr
     const enc = new TextEncoder();
     const author = (msg.reply_to_message.from.username || msg.reply_to_message.from.first_name) + ' ID:'+msg.reply_to_message.from.id ;
     const fileName = `poll.txt`;
-    var chatHistory = `Chat: ${msg.chat.title} (${Math.abs(msg.chat.id)})
+    var chatHistory = `Chat: ${msg.chat.title} (${String(msg.chat.id)})
     
 Author: ${author} (${(new Date(msg.reply_to_message.date*1000)).toISOString()})
 
@@ -94,7 +91,7 @@ const uploadTextEvidence = async (msg: TelegramBot.Message, address: string): Pr
     const enc = new TextEncoder();
     const author = (msg.reply_to_message.from.username || msg.reply_to_message.from.first_name) + ' ID:'+msg.reply_to_message.from.id ;
     const fileName = `msg.txt`;
-    const chatHistory = `Chat: ${msg.chat.title} (${Math.abs(msg.chat.id)})
+    const chatHistory = `Chat: ${msg.chat.title} (${String(msg.chat.id)})
     
 Author: ${author} (${(new Date(msg.reply_to_message.date*1000)).toISOString()})
 

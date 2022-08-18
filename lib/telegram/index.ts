@@ -17,10 +17,14 @@ import langJson from "./assets/lang.json";
 
 const ModeratorBot = require('node-telegram-bot-api');
 const bot = new ModeratorBot(process.env.BOT_TOKEN, {polling: true});
+//const whitelist = ['-780089934'];
 
 bot.on("my_chat_member", async function(myChatMember: TelegramBot.ChatMemberUpdated) {
+    //if (!whitelist.includes(String(myChatMember.chat.id))){
+    //    await bot.sendMessage(myChatMember.chat.id, `The hosted Kleros Moderate service is in beta. This chat id ${myChatMember.chat.id} is not whitelisted. Submit an [interest form](https://forms.gle/3Yteu5YFTZoWGhXv7) to get whitelisted, or self-host the [bot](https://github.com/kleros/kleros-moderate).`, {parse_mode: 'Markdown'});
+    //    return;
+    //}
     try {
-        console.log(myChatMember);
         if (myChatMember.new_chat_member?.status === "administrator" && myChatMember.old_chat_member?.status === "member" ) {
             await bot.sendMessage(myChatMember.chat.id, '/setrules https://ipfs.kleros.io/ipfs/QmeYuhtdsbyrpYa3tsRFTb92jcvUJNb2CJ2NdLE5fsRyAX/Kleros%20Moderate%20Community%20Guideline.pdf');
             await setRules('telegram', String(myChatMember.chat.id), 'https://ipfs.kleros.io/ipfs/QmeYuhtdsbyrpYa3tsRFTb92jcvUJNb2CJ2NdLE5fsRyAX/Kleros%20Moderate%20Community%20Guideline.pdf', new Date().getTime()/1000);
@@ -57,6 +61,10 @@ commands.forEach((command) => {
     bot.onText(
         command.regexp,
         (msg: TelegramBot.Message, match: string[]) => {
+            
+            //if (!whitelist.includes(String(msg.chat.id)))
+            //    return;
+
             command.callback(bot, msg, match)
         }
     )
