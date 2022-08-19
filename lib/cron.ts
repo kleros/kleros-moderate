@@ -53,21 +53,20 @@ import {BigNumber} from "ethers";
         const reportHistoryFinal = await getFinalRecord(report.platform, report.group_id, report.user_id);
         const finalized = question.finalize_ts <= Math.ceil(+new Date() / 1000) + 300; // 300 buffer for graph syncing and finality
         const chatMember = await bot.getChatMember(report.group_id, report.user_id);
-        const fromUsername = (chatMember.user.username || chatMember.user.first_name) + ' ID: ' + chatMember.user.id;
         if(question.arbitrationRequested === true){
             if(report.arbitrationRequested != true){
                 await bot.restrictChatMember(report.group_id, report.user_id, {can_send_messages: true});
-                await bot.sendMessage(report.group_id, `Arbitration is requested. *${fromUsername}* is un-banned for the duration of the [dispute](https://court.kleros.io/cases/${BigNumber.from(question.disputeId).toNumber()}) (on Gnosis Chain).`, {parse_mode: 'Markdown'}); 
+                await bot.sendMessage(report.group_id, `Arbitration is requested. *${report.username}* is un-banned for the duration of the [dispute](https://court.kleros.io/cases/${BigNumber.from(question.disputeId).toNumber()}) (on Gnosis Chain).`, {parse_mode: 'Markdown'}); 
                 await setReportArbitration(question.id, 0);
             } else if (question.ruling != null){
                 const msgLink = 'https://t.me/c/' + report.group_id.substring(4) + '/' + report.msg_id;
                 if (question.ruling == 1){ // check rulings
-                    await bot.sendMessage(report.group_id, `The dispute over *${fromUsername}*'s [message](${msgLink}) resolved.`, {parse_mode: 'Markdown'});
-                    handleFinalizedTelegram(bot, fromUsername, report, question, 1, reportHistoryFinal);
+                    await bot.sendMessage(report.group_id, `The dispute over *${report.username}*'s [message](${msgLink}) resolved.`, {parse_mode: 'Markdown'});
+                    handleFinalizedTelegram(bot, report.username, report, question, 1, reportHistoryFinal);
                 } 
                 else if (question.ruling == 0){
-                    await bot.sendMessage(report.group_id, `The dispute over *${fromUsername}*'s [message](${msgLink}) resolved.`, {parse_mode: 'Markdown'});
-                    handleFinalizedTelegram(bot, fromUsername, report, question, 0, reportHistoryFinal);
+                    await bot.sendMessage(report.group_id, `The dispute over *${report.username}*'s [message](${msgLink}) resolved.`, {parse_mode: 'Markdown'});
+                    handleFinalizedTelegram(bot, report.username, report, question, 0, reportHistoryFinal);
                 }
             }
             continue;
@@ -80,7 +79,7 @@ import {BigNumber} from "ethers";
             if (report.platform === 'telegram') {
                 await bot.sendMessage(report.group_id, `The report on Reality is finalized.`, {parse_mode: 'Markdown'}); 
                 const latestReportState = answer.toNumber();
-                handleFinalizedTelegram(bot, fromUsername, report, question, latestReportState, reportHistoryFinal);
+                handleFinalizedTelegram(bot, report.username, report, question, latestReportState, reportHistoryFinal);
             } else {
                 console.error(`Invalid platform: ${report.platform}`);
             }
@@ -95,23 +94,23 @@ import {BigNumber} from "ethers";
                 if (report.platform === 'telegram') {
                     // @ts-ignore
                     const msgLink = 'https://t.me/c/' + report.group_id.substring(4) + '/' + report.msg_id;
-                    await bot.sendMessage(report.group_id, `The question: \"Did *${fromUsername}*'s conduct due to this [message](${msgLink}) violate the [rules](${defaultRules})\" is answered with Yes. Do you think the answer is wrong? Please help [correct](${appealUrl}) the answer.`, {parse_mode: 'Markdown'});
+                    await bot.sendMessage(report.group_id, `The question: \"Did *${report.username}*'s conduct due to this [message](${msgLink}) violate the [rules](${defaultRules})\" is answered with Yes. Do you think the answer is wrong? Please help [correct](${appealUrl}) the answer.`, {parse_mode: 'Markdown'});
                     switch(reportHistoryCurrent){
                         case 0:{
                             const paroleDate = Math.ceil(+new Date() / 1000) + 86400;
                             await bot.restrictChatMember(report.group_id, report.user_id, {can_send_messages: false, until_date: paroleDate});
-                            await bot.sendMessage(report.group_id, `*${fromUsername}* is subject to a 24 hour ban.`, {parse_mode: 'Markdown'});
+                            await bot.sendMessage(report.group_id, `*${report.username}* is subject to a 24 hour ban.`, {parse_mode: 'Markdown'});
                             break;
                         }
                         case 1:{
                             const paroleDate = Math.ceil(+new Date() / 1000) + 604800;
                             await bot.restrictChatMember(report.group_id, report.user_id, {can_send_messages: false, until_date: paroleDate});
-                            await bot.sendMessage(report.group_id, `*${fromUsername}* is subject to a 7 day ban.`, {parse_mode: 'Markdown'});
+                            await bot.sendMessage(report.group_id, `*${report.username}* is subject to a 7 day ban.`, {parse_mode: 'Markdown'});
                             break;
                         }
                         default:{
                             await bot.restrictChatMember(report.group_id, report.user_id, {can_send_messages: false});
-                            await bot.sendMessage(report.group_id, `*${fromUsername}* is banned.`, {parse_mode: 'Markdown'});
+                            await bot.sendMessage(report.group_id, `*${report.username}* is banned.`, {parse_mode: 'Markdown'});
                             break;
                         }
                     }
@@ -126,28 +125,28 @@ import {BigNumber} from "ethers";
                 if (report.platform === 'telegram') {
                     // @ts-ignore
                     const msgLink = 'https://t.me/c/' + report.group_id.substring(4) + '/' + report.msg_id;
-                    await bot.sendMessage(report.group_id, `The question: \"Did *${fromUsername}*'s conduct due to this [message](${msgLink}) violate the [rules](${defaultRules})\" is answered with No. Do you think the answer on is wrong? Please help [correct](${appealUrl}) the answer.`, {parse_mode: 'Markdown'});
+                    await bot.sendMessage(report.group_id, `The question: \"Did *${report.username}*'s conduct due to this [message](${msgLink}) violate the [rules](${defaultRules})\" is answered with No. Do you think the answer on is wrong? Please help [correct](${appealUrl}) the answer.`, {parse_mode: 'Markdown'});
                     switch(reportHistoryCurrent){
                         case 0:{
                             await bot.restrictChatMember(report.group_id, report.user_id, {can_send_messages: true});
-                            await bot.sendMessage(report.group_id, `All bans are lifted from *${fromUsername}*.`, {parse_mode: 'Markdown'});
+                            await bot.sendMessage(report.group_id, `All bans are lifted from *${report.username}*.`, {parse_mode: 'Markdown'});
                             break;
                         }
                         case 1:{
                             const paroleDate = Math.ceil(+new Date() / 1000) + 86400;
                             await bot.restrictChatMember(report.group_id, report.user_id, {can_send_messages: false, until_date: paroleDate});
-                            await bot.sendMessage(report.group_id, `The ban on *${fromUsername}* is lifted to 24 hours.`, {parse_mode: 'Markdown'});
+                            await bot.sendMessage(report.group_id, `The ban on *${report.username}* is lifted to 24 hours.`, {parse_mode: 'Markdown'});
                             break;
                         }
                         case 2:{
                             const paroleDate = Math.ceil(+new Date() / 1000) + 604800;
                             await bot.restrictChatMember(report.group_id, report.user_id, {can_send_messages: false, until_date: paroleDate});
-                            await bot.sendMessage(report.group_id, `The ban on *${fromUsername}* is lifted to 7 days.`, {parse_mode: 'Markdown'});
+                            await bot.sendMessage(report.group_id, `The ban on *${report.username}* is lifted to 7 days.`, {parse_mode: 'Markdown'});
                             break;
                         }
                         default:{
                             await bot.restrictChatMember(report.group_id, report.user_id, {can_send_messages: false});
-                            await bot.sendMessage(report.group_id, `*${fromUsername}* is banned.`, {parse_mode: 'Markdown'});
+                            await bot.sendMessage(report.group_id, `*${report.username}* is banned.`, {parse_mode: 'Markdown'});
                             break;
                         }
                     }
@@ -168,21 +167,21 @@ const handleFinalizedTelegram = async (bot: any, fromUsername: string, report: a
         const activeTimestamp = latestReportState === report.active ? report.activeTimestamp : Math.ceil(+new Date() / 1000);
         switch(reportHistory){
             case 0:{
-                await bot.sendMessage(report.group_id, `*${fromUsername}*'s conduct due to this [message](${msgLink}) violated the [rules](${defaultRules}) for the first time and is subject to a 1 day ban.`, {parse_mode: 'Markdown'}); 
+                await bot.sendMessage(report.group_id, `*${report.username}*'s conduct due to this [message](${msgLink}) violated the [rules](${defaultRules}) for the first time and is subject to a 1 day ban.`, {parse_mode: 'Markdown'}); 
                 const paroleDate = Math.ceil(+new Date() / 1000) + 86400;
                 await bot.banChatMember(report.group_id, report.user_id, {until_date: paroleDate});
                 await setReport(question.id, true, true, activeTimestamp, 0);
                 break;
             }
             case 1:{
-                await bot.sendMessage(report.group_id, `*${fromUsername}*'s conduct due to this [message](${msgLink}) violated the [rules](${defaultRules}) for the second time and is subject to a 1 week ban.`, {parse_mode: 'Markdown'}); 
+                await bot.sendMessage(report.group_id, `*${report.username}*'s conduct due to this [message](${msgLink}) violated the [rules](${defaultRules}) for the second time and is subject to a 1 week ban.`, {parse_mode: 'Markdown'}); 
                 const paroleDate = Math.ceil(+new Date() / 1000) + 604800;
                 await bot.banChatMember(report.group_id, report.user_id, {until_date: paroleDate});
                 await setReport(question.id, true, true, activeTimestamp, 0);
                 break;
             }
             default:{
-                await bot.sendMessage(report.group_id, `*${fromUsername}*'s conduct due to this [message](${msgLink}) violated the [rules](${defaultRules}) for the third time and is subject to a permanent ban.`, {parse_mode: 'Markdown'}); 
+                await bot.sendMessage(report.group_id, `*${report.username}*'s conduct due to this [message](${msgLink}) violated the [rules](${defaultRules}) for the third time and is subject to a permanent ban.`, {parse_mode: 'Markdown'}); 
                 await bot.banChatMember(report.group_id, report.user_id);
                 await setReport(question.id, true, true, activeTimestamp, 0);
                 break;
@@ -190,7 +189,7 @@ const handleFinalizedTelegram = async (bot: any, fromUsername: string, report: a
         }
     }
     else{
-        await bot.sendMessage(report.group_id, `*${fromUsername}*'s conduct due to this [message](${msgLink}) did not violate the [rules](${defaultRules}).`, {parse_mode: 'Markdown'});
+        await bot.sendMessage(report.group_id, `*${report.username}*'s conduct due to this [message](${msgLink}) did not violate the [rules](${defaultRules}).`, {parse_mode: 'Markdown'});
         await setReport(question.id, false, true, report.activeTimestamp, 0);
     }
 }

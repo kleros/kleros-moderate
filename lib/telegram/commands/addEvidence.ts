@@ -8,7 +8,7 @@ import {getGroup, getActiveReportedUserAndGroupId, getPermissions, setAllowance,
 const processCommand = async (bot: TelegramBot, msg: TelegramBot.Message, questionId: number|string, address: string, privateKey: string): Promise<string> => {
     const evidencePath = await upload(bot, msg, address);
     const evidenceJsonPath = await uploadEvidenceJson(msg, evidencePath, address);
-    await bot.sendMessage(msg.chat.id, `Evidence submitted: https://ipfs.kleros.io${evidenceJsonPath}`);
+    await bot.sendMessage(msg.chat.id, `Evidence [submitted](https://ipfs.kleros.io${evidenceJsonPath})`, {parse_mode: "Markdown"});
     await submitEvidence(evidenceJsonPath, questionId,privateKey);
 
     return evidenceJsonPath;
