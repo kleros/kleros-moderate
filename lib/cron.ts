@@ -8,6 +8,7 @@ import {BigNumber} from "ethers";
 
 
 (async ()=> {
+    const defaultRules = 'https://ipfs.kleros.io/ipfs/QmeYuhtdsbyrpYa3tsRFTb92jcvUJNb2CJ2NdLE5fsRyAX/Kleros%20Moderate%20Community%20Guideline.pdf';
     const bot = new ModeratorBot(process.env.BOT_TOKEN, {polling: false});  
     //const moderateBilling = getModerateBilling(process.env.MODERATE_BILLING, '1111111111111111111111111111111111111111111111111111111111111111');
 
@@ -93,7 +94,8 @@ import {BigNumber} from "ethers";
                 console.log('current history count: '+reportHistoryCurrent);
                 if (report.platform === 'telegram') {
                     // @ts-ignore
-                    await bot.sendMessage(report.group_id, `The report on Reality is answered. *${fromUsername}* violated the rules. The answer can be [appealed](${appealUrl}).`, {parse_mode: 'Markdown'});
+                    const msgLink = 'https://t.me/c/' + report.group_id.substring(4) + '/' + report.msg_id;
+                    await bot.sendMessage(report.group_id, `The report on Reality is answered. *${fromUsername}*'s conduct due to this [message](${msgLink}) violated the [rules](${defaultRules}). The answer can be [appealed](${appealUrl}).`, {parse_mode: 'Markdown'});
                     switch(reportHistoryCurrent){
                         case 0:{
                             const paroleDate = Math.ceil(+new Date() / 1000) + 86400;
@@ -124,7 +126,7 @@ import {BigNumber} from "ethers";
                 if (report.platform === 'telegram') {
                     // @ts-ignore
                     const msgLink = 'https://t.me/c/' + report.group_id.substring(4) + '/' + report.msg_id;
-                    await bot.sendMessage(report.group_id, `The report on Reality is answered. *${fromUsername}* did not violated the rules regarding this [message](${msgLink}). The answer can be [appealed](${appealUrl}).`, {parse_mode: 'Markdown'});
+                    await bot.sendMessage(report.group_id, `The report on Reality is answered. *${fromUsername}*'s conduct due to this [message](${msgLink}) did not violate the [rules](${defaultRules}). The answer can be [appealed](${appealUrl}).`, {parse_mode: 'Markdown'});
                     switch(reportHistoryCurrent){
                         case 0:{
                             await bot.restrictChatMember(report.group_id, report.user_id, {can_send_messages: true});
@@ -159,26 +161,28 @@ import {BigNumber} from "ethers";
 
 
 const handleFinalizedTelegram = async (bot: any, fromUsername: string, report: any, question: any, latestReportState: number, reportHistory: number) => {
+    const msgLink = 'https://t.me/c/' + report.group_id.substring(4) + '/' + report.msg_id;
+    const defaultRules = 'https://ipfs.kleros.io/ipfs/QmeYuhtdsbyrpYa3tsRFTb92jcvUJNb2CJ2NdLE5fsRyAX/Kleros%20Moderate%20Community%20Guideline.pdf';
     await bot.restrictChatMember(report.group_id, report.user_id, {can_send_messages: true}); // reset temporary mute
     if (latestReportState === 1){
         const activeTimestamp = latestReportState === report.active ? report.activeTimestamp : Math.ceil(+new Date() / 1000);
         switch(reportHistory){
             case 0:{
-                await bot.sendMessage(report.group_id, `*${fromUsername}* violated the rules for the first time and is subject to a 1 day ban.`, {parse_mode: 'Markdown'}); 
+                await bot.sendMessage(report.group_id, `*${fromUsername}*'s conduct due to this [message](${msgLink}) violated the [rules](${defaultRules}) for the first time and is subject to a 1 day ban.`, {parse_mode: 'Markdown'}); 
                 const paroleDate = Math.ceil(+new Date() / 1000) + 86400;
                 await bot.banChatMember(report.group_id, report.user_id, {until_date: paroleDate});
                 await setReport(question.id, true, true, activeTimestamp, 0);
                 break;
             }
             case 1:{
-                await bot.sendMessage(report.group_id, `*${fromUsername}* violated the rules for the second time and is subject to a 1 week ban.`, {parse_mode: 'Markdown'}); 
+                await bot.sendMessage(report.group_id, `*${fromUsername}*'s conduct due to this [message](${msgLink}) violated the [rules](${defaultRules}) for the second time and is subject to a 1 week ban.`, {parse_mode: 'Markdown'}); 
                 const paroleDate = Math.ceil(+new Date() / 1000) + 604800;
                 await bot.banChatMember(report.group_id, report.user_id, {until_date: paroleDate});
                 await setReport(question.id, true, true, activeTimestamp, 0);
                 break;
             }
             default:{
-                await bot.sendMessage(report.group_id, `*${fromUsername}* violated the rules for the third time and is subject to a permanent ban.`, {parse_mode: 'Markdown'}); 
+                await bot.sendMessage(report.group_id, `*${fromUsername}*'s conduct due to this [message](${msgLink}) violated the [rules](${defaultRules}) for the third time and is subject to a permanent ban.`, {parse_mode: 'Markdown'}); 
                 await bot.banChatMember(report.group_id, report.user_id);
                 await setReport(question.id, true, true, activeTimestamp, 0);
                 break;
@@ -186,7 +190,7 @@ const handleFinalizedTelegram = async (bot: any, fromUsername: string, report: a
         }
     }
     else{
-        await bot.sendMessage(report.group_id, `*${fromUsername}* did not violated the rules.`, {parse_mode: 'Markdown'});
+        await bot.sendMessage(report.group_id, `*${fromUsername}*'s conduct due to this [message](${msgLink}) did not violate the [rules](${defaultRules}).`, {parse_mode: 'Markdown'});
         await setReport(question.id, false, true, report.activeTimestamp, 0);
     }
 }
