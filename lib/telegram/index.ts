@@ -27,7 +27,6 @@ bot.on("my_chat_member", async function(myChatMember: TelegramBot.ChatMemberUpda
     //    await bot.sendMessage(myChatMember.chat.id, `The hosted Kleros Moderate service is in beta. This chat id ${myChatMember.chat.id} is not whitelisted. Submit an [interest form](https://forms.gle/3Yteu5YFTZoWGhXv7) to get whitelisted, or self-host the [bot](https://github.com/kleros/kleros-moderate).`, {parse_mode: 'Markdown'});
     //    return;
     //}
-    console.log('yppp');
     try {
         if (myChatMember.new_chat_member?.status === "administrator" && myChatMember.old_chat_member?.status === "member" ) {
             //await bot.sendMessage(myChatMember.chat.id, '/setrules https://ipfs.kleros.io/ipfs/QmeYuhtdsbyrpYa3tsRFTb92jcvUJNb2CJ2NdLE5fsRyAX/Kleros%20Moderate%20Community%20Guideline.pdf');
@@ -56,7 +55,6 @@ bot.on("my_chat_member", async function(myChatMember: TelegramBot.ChatMemberUpda
 });
 
 bot.on("new_chat_members", async function (msg: TelegramBot.Message) {
-    console.log('yo');
     const defaultRules = 'https://ipfs.kleros.io/ipfs/QmeYuhtdsbyrpYa3tsRFTb92jcvUJNb2CJ2NdLE5fsRyAX/Kleros%20Moderate%20Community%20Guideline.pdf';
 
     const rules = await getRule('telegram', String(msg.chat.id), Math.floor(Date.now()/1000));
