@@ -95,7 +95,7 @@ import {BigNumber} from "ethers";
                 if (report.platform === 'telegram') {
                     // @ts-ignore
                     const msgLink = 'https://t.me/c/' + report.group_id.substring(4) + '/' + report.msg_id;
-                    await bot.sendMessage(report.group_id, `The report on Reality is answered. *${fromUsername}*'s conduct due to this [message](${msgLink}) violated the [rules](${defaultRules}). The answer can be [appealed](${appealUrl}).`, {parse_mode: 'Markdown'});
+                    await bot.sendMessage(report.group_id, `The question: \"Did *${fromUsername}*'s conduct due to this [message](${msgLink}) violate the [rules](${defaultRules})\" is answered with Yes. Do you think the answer is wrong? Please help [correct](${appealUrl}) the answer.`, {parse_mode: 'Markdown'});
                     switch(reportHistoryCurrent){
                         case 0:{
                             const paroleDate = Math.ceil(+new Date() / 1000) + 86400;
@@ -126,7 +126,7 @@ import {BigNumber} from "ethers";
                 if (report.platform === 'telegram') {
                     // @ts-ignore
                     const msgLink = 'https://t.me/c/' + report.group_id.substring(4) + '/' + report.msg_id;
-                    await bot.sendMessage(report.group_id, `The report on Reality is answered. *${fromUsername}*'s conduct due to this [message](${msgLink}) did not violate the [rules](${defaultRules}). The answer can be [appealed](${appealUrl}).`, {parse_mode: 'Markdown'});
+                    await bot.sendMessage(report.group_id, `The question: \"Did *${fromUsername}*'s conduct due to this [message](${msgLink}) violate the [rules](${defaultRules})\" is answered with No. Do you think the answer on is wrong? Please help [correct](${appealUrl}) the answer.`, {parse_mode: 'Markdown'});
                     switch(reportHistoryCurrent){
                         case 0:{
                             await bot.restrictChatMember(report.group_id, report.user_id, {can_send_messages: true});
