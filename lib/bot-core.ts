@@ -26,7 +26,7 @@ export const reportUser = async (hasBanningPermission: boolean, fromUsername: st
     );
 
     if(hasBanningPermission){
-        await answerQuestion(questionId, privateKey);
+        //await answerQuestion(questionId, privateKey);
     }
 
     return {
