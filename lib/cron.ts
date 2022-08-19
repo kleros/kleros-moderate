@@ -1,14 +1,14 @@
 require('dotenv').config()
 const ModeratorBot = require('node-telegram-bot-api');
 //import * as TelegramBot from "node-telegram-bot-api";
-import {getFinalRecord, getCurrentRecord, setReportArbitration, getDisputedReports, setReport} from "./db";
+import {getFinalRecord, getRule, getCurrentRecord, setReportArbitration, getDisputedReports, setReport} from "./db";
 //import {getModerateBilling} from "./ethers";
 import request from "graphql-request";
 import {BigNumber} from "ethers";
 
 
 (async ()=> {
-    const defaultRules = 'https://ipfs.kleros.io/ipfs/QmeYuhtdsbyrpYa3tsRFTb92jcvUJNb2CJ2NdLE5fsRyAX/Kleros%20Moderate%20Community%20Guideline.pdf';
+
     const bot = new ModeratorBot(process.env.BOT_TOKEN, {polling: false});  
     //const moderateBilling = getModerateBilling(process.env.MODERATE_BILLING, '1111111111111111111111111111111111111111111111111111111111111111');
 
@@ -71,6 +71,7 @@ import {BigNumber} from "ethers";
             }
             continue;
         }
+        const rules = await getRule('telegram', String(report.group_id), Math.floor(Date.now()/1000));
 
         // only final records considered for now.
         const latestReportState = answer.toNumber();
@@ -94,7 +95,7 @@ import {BigNumber} from "ethers";
                 if (report.platform === 'telegram') {
                     // @ts-ignore
                     const msgLink = 'https://t.me/c/' + report.group_id.substring(4) + '/' + report.msg_id;
-                    await bot.sendMessage(report.group_id, `The question, \n\n\"Did *${report.username}*'s conduct due to this [message](${msgLink}) violate the [rules](${defaultRules}),\"\n\nis answered with *Yes*.\n\nDo you think this answer is true? If not, you can [correct](${appealUrl}) the answer.`, {parse_mode: 'Markdown'});
+                    await bot.sendMessage(report.group_id, `The question, \n\n\"Did *${report.username}*'s conduct due to this [message](${msgLink}) violate the [rules](${rules}),\"\n\nis answered with *Yes*.\n\nDo you think this answer is true? If not, you can [correct](${appealUrl}) the answer.`, {parse_mode: 'Markdown'});
                     switch(reportHistoryCurrent){
                         case 0:{
                             const paroleDate = Math.ceil(+new Date() / 1000) + 86400;
@@ -125,7 +126,7 @@ import {BigNumber} from "ethers";
                 if (report.platform === 'telegram') {
                     // @ts-ignore
                     const msgLink = 'https://t.me/c/' + report.group_id.substring(4) + '/' + report.msg_id;
-                    await bot.sendMessage(report.group_id, `The question, \n\n\"Did *${report.username}*'s conduct due to this [message](${msgLink}) violate the [rules](${defaultRules}),\"\n\nis answered with *No*.\n\nDo you think this answer is true? If not, you can [correct](${appealUrl}) the answer.`, {parse_mode: 'Markdown'});
+                    await bot.sendMessage(report.group_id, `The question, \n\n\"Did *${report.username}*'s conduct due to this [message](${msgLink}) violate the [rules](${rules})?\",\n\nis answered with *No*.\n\nDo you think this answer is true? If not, you can [correct](${appealUrl}) the answer.`, {parse_mode: 'Markdown'});
                     switch(reportHistoryCurrent){
                         case 0:{
                             await bot.restrictChatMember(report.group_id, report.user_id, {can_send_messages: true});
@@ -161,27 +162,27 @@ import {BigNumber} from "ethers";
 
 const handleFinalizedTelegram = async (bot: any, fromUsername: string, report: any, question: any, latestReportState: number, reportHistory: number) => {
     const msgLink = 'https://t.me/c/' + report.group_id.substring(4) + '/' + report.msg_id;
-    const defaultRules = 'https://ipfs.kleros.io/ipfs/QmeYuhtdsbyrpYa3tsRFTb92jcvUJNb2CJ2NdLE5fsRyAX/Kleros%20Moderate%20Community%20Guideline.pdf';
+    const rules = await getRule('telegram', String(report.group_id), Math.floor(Date.now()/1000));
     await bot.restrictChatMember(report.group_id, report.user_id, {can_send_messages: true}); // reset temporary mute
     if (latestReportState === 1){
         const activeTimestamp = latestReportState === report.active ? report.activeTimestamp : Math.ceil(+new Date() / 1000);
         switch(reportHistory){
             case 0:{
-                await bot.sendMessage(report.group_id, `*${report.username}*'s conduct due to this [message](${msgLink}) violated the [rules](${defaultRules}) for the first time and is subject to a 1 day ban.`, {parse_mode: 'Markdown'}); 
+                await bot.sendMessage(report.group_id, `*${report.username}*'s conduct due to this [message](${msgLink}) violated the [rules](${rules}) for the first time and is subject to a 1 day ban.`, {parse_mode: 'Markdown'}); 
                 const paroleDate = Math.ceil(+new Date() / 1000) + 86400;
                 await bot.banChatMember(report.group_id, report.user_id, {until_date: paroleDate});
                 await setReport(question.id, true, true, activeTimestamp, 0);
                 break;
             }
             case 1:{
-                await bot.sendMessage(report.group_id, `*${report.username}*'s conduct due to this [message](${msgLink}) violated the [rules](${defaultRules}) for the second time and is subject to a 1 week ban.`, {parse_mode: 'Markdown'}); 
+                await bot.sendMessage(report.group_id, `*${report.username}*'s conduct due to this [message](${msgLink}) violated the [rules](${rules}) for the second time and is subject to a 1 week ban.`, {parse_mode: 'Markdown'}); 
                 const paroleDate = Math.ceil(+new Date() / 1000) + 604800;
                 await bot.banChatMember(report.group_id, report.user_id, {until_date: paroleDate});
                 await setReport(question.id, true, true, activeTimestamp, 0);
                 break;
             }
             default:{
-                await bot.sendMessage(report.group_id, `*${report.username}*'s conduct due to this [message](${msgLink}) violated the [rules](${defaultRules}) for the third time and is subject to a permanent ban.`, {parse_mode: 'Markdown'}); 
+                await bot.sendMessage(report.group_id, `*${report.username}*'s conduct due to this [message](${msgLink}) violated the [rules](${rules}) for the third time and is subject to a permanent ban.`, {parse_mode: 'Markdown'}); 
                 await bot.banChatMember(report.group_id, report.user_id);
                 await setReport(question.id, true, true, activeTimestamp, 0);
                 break;
@@ -189,7 +190,7 @@ const handleFinalizedTelegram = async (bot: any, fromUsername: string, report: a
         }
     }
     else{
-        await bot.sendMessage(report.group_id, `*${report.username}*'s conduct due to this [message](${msgLink}) did not violate the [rules](${defaultRules}).`, {parse_mode: 'Markdown'});
+        await bot.sendMessage(report.group_id, `*${report.username}*'s conduct due to this [message](${msgLink}) did not violate the [rules](${rules}).`, {parse_mode: 'Markdown'});
         await setReport(question.id, false, true, report.activeTimestamp, 0);
     }
 }

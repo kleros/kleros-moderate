@@ -134,7 +134,7 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
         }
 
         await addReport(questionId, 'telegram', String(msg.chat.id), String(msg.reply_to_message.from.id), fromUsername , String(msg.reply_to_message.message_id), false);
-        await bot.sendMessage(msg.chat.id, `*${fromUsername}  (ID :${reportedUserID}) *'s conduct due to this [message](${privateMsgLink}) is reported for breaking the [rules](${rules}).\n\nDid *${fromUsername}* break the rules? The [question](${appealUrl}) can be answered with a minimum bond of 5 DAI.`, {parse_mode: 'Markdown'});
+        await bot.sendMessage(msg.chat.id, `*${fromUsername}  (ID :${reportedUserID}) *'s conduct due to this [message](${privateMsgLink}) is reported for breaking the [rules](${rules}).\n\nDid *${fromUsername}* break the rules? The [question](${appealUrl}) can be answered with a minimum bond of 5 DAI.\n\n To save a record of the reported messages, reply with the command \'/addevidence ${questionId}\'.`, {parse_mode: 'Markdown'});
     } catch (e) {
         console.log(e);
 
