@@ -1,6 +1,6 @@
 import * as TelegramBot from "node-telegram-bot-api";
 import {CommandCallback} from "../../../types";
-import {getPermissions, addReport, getGroup, getInviteURL, getQuestionId, getRules, getConcurrentReports, getAllowance, setAllowance} from "../../db";
+import {getPermissions, addReport, getGroup, getInviteURL, getQuestionId, getRule, getConcurrentReports, getAllowance, setAllowance} from "../../db";
 import {upload, submitEvidence} from "./addEvidence"
 import {reportUser} from "../../bot-core";
 
@@ -62,7 +62,7 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
         return;
     } 
 
-    const rules = await getRules('telegram', String(msg.chat.id), msg.reply_to_message.date);
+    const rules = await getRule('telegram', String(msg.chat.id), msg.reply_to_message.date);
     if (!rules){
         await bot.sendMessage(msg.chat.id, `No rules found for this message. Rules are not retroactive. Reports are only possible for messages after rules are set.`);
         return;

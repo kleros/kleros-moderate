@@ -4,11 +4,11 @@ schema:
 dataSources:
   - kind: ethereum
     name: RealityETHV30
-    network: rinkeby #xdai 
+    network: xdai #rinkeby #xdai 
     source:
-      address: "0xdf33060f476f8cff7511f806c72719394da1ad64" #<-- rinkeby, xdai "0xE78996A233895bE74a66F451f1019cA9734205cc"
+      address: "0xE78996A233895bE74a66F451f1019cA9734205cc" # "0xdf33060f476f8cff7511f806c72719394da1ad64" #<-- rinkeby, xdai "0xE78996A233895bE74a66F451f1019cA9734205cc"
       abi: RealityETHV30
-      startBlock: 11138020 # <--- rinkeby, xdai 23143918
+      startBlock: 23143918 # 11138020 # <--- rinkeby, xdai 23143918
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -62,11 +62,11 @@ dataSources:
       file: ./src/reality-ethv-30.ts
   - kind: ethereum
     name: Realitio_v2_1_ArbitratorWithAppeals
-    network: rinkeby
+    network: xdai
     source:
-      address: "0xF9D4D329E8b7f786b96666c0502cBA4981888705" # centralized arb <--- , 3 jurors new bundle.js"0xE34e3DF30932e7C0c1b4F465eCec90646e948568" # "0xe27768bDb76A9B742b7ddCFE1539fAdAf3b89bC7" 31 jurors, old bundle.js
+      address: "0x36a4e90568ce270aB671F55547C5EAe428B6c03A"
       abi: Realitio_v2_1_ArbitratorWithAppeals
-      startBlock: 11138020 # <--- rinkeby, xdai 23143918
+      startBlock: 23143918 # 11138020 rinkeby, xdai 23143918
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6

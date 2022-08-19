@@ -134,7 +134,7 @@ const setRules = async (platform: string, groupId: string, rules: string, timest
     );
 }
 
-const getRules = async (platform: string, groupId: string, timestamp: number) => {
+const getRule = async (platform: string, groupId: string, timestamp: number) => {
     const db = await openDb();
     const query = 
         `SELECT rules
@@ -397,7 +397,7 @@ export {
     getAllowance,
     setAllowance,
     setPermissions,
-    getRules,
+    getRule,
     addReport,
     setReport,
     getDisputedReports,

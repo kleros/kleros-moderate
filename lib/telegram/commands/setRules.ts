@@ -24,9 +24,9 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
         if (msg.reply_to_message) {
             const enc = new TextEncoder();
 
-            const rulesPath = await ipfsPublish('rules.json', enc.encode(msg.reply_to_message.text))
+            const rulesPath = await ipfsPublish('rules.txt', enc.encode(msg.reply_to_message.text))
 
-            await setRules('telegram', String(msg.chat.id), rulesPath, new Date().getTime()/1000);
+            await setRules('telegram', String(msg.chat.id), 'https://ipfs.kleros.io'+rulesPath, new Date().getTime()/1000);
 
             await bot.sendMessage(msg.chat.id, 'Rules updated');
         } else {

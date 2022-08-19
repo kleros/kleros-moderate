@@ -93,7 +93,7 @@ import {openDb} from "./db";
             group_id TEXT, 
             rules TEXT, 
             timestamp INTEGER, 
-            PRIMARY KEY (platform, group_id))`
+            PRIMARY KEY (platform, group_id, timestamp))`
         );
 
 })();
