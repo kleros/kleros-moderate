@@ -48,6 +48,9 @@ import {BigNumber} from "ethers";
         }
 
         const report = reports[question.id];
+        const msgLink = 'https://t.me/c/' + report.group_id.substring(4) + '/' + report.msg_id;
+        const appealUrl = `https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITITY_ETH_V30}-${question.id}\n`;
+
         console.log(await getCurrentRecord(report.platform, report.group_id, report.user_id));
         console.log(report);
         const reportHistoryFinal = await getFinalRecord(report.platform, report.group_id, report.user_id);
@@ -56,7 +59,7 @@ import {BigNumber} from "ethers";
         if(question.arbitrationRequested === true){
             if(report.arbitrationRequested != true){
                 await bot.restrictChatMember(report.group_id, report.user_id, {can_send_messages: true});
-                await bot.sendMessage(report.group_id, `Arbitration is requested. *${report.username}* is un-banned for the duration of the [dispute](https://court.kleros.io/cases/${BigNumber.from(question.disputeId).toNumber()}) (on Gnosis Chain).`, {parse_mode: 'Markdown'}); 
+                await bot.sendMessage(report.group_id, `Arbitration is requested for the [question](${appealUrl}) about *${report.username}*'s conduct due to the [message](${msgLink}) is un-banned for the duration of the [dispute](https://court.kleros.io/cases/${BigNumber.from(question.disputeId).toNumber()}) (on Gnosis Chain).`, {parse_mode: 'Markdown'}); 
                 await setReportArbitration(question.id, 0);
             } else if (question.ruling != null){
                 const msgLink = 'https://t.me/c/' + report.group_id.substring(4) + '/' + report.msg_id;
@@ -64,7 +67,7 @@ import {BigNumber} from "ethers";
                     await bot.sendMessage(report.group_id, `The dispute over *${report.username}*'s [message](${msgLink}) resolved.`, {parse_mode: 'Markdown'});
                     handleFinalizedTelegram(bot, report.username, report, question, 1, reportHistoryFinal);
                 } 
-                else if (question.ruling == 0){
+                else if (question.ruling == 2){
                     await bot.sendMessage(report.group_id, `The dispute over *${report.username}*'s [message](${msgLink}) resolved.`, {parse_mode: 'Markdown'});
                     handleFinalizedTelegram(bot, report.username, report, question, 0, reportHistoryFinal);
                 }
@@ -86,7 +89,6 @@ import {BigNumber} from "ethers";
             }
         } else if (latestReportState !== report.active) {
 
-            const appealUrl = `https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITITY_ETH_V30}-${question.id}\n`;
             if (latestReportState === 1) {
                 // ban
                 const reportHistoryCurrent = reportHistoryFinal + await getCurrentRecord(report.platform, report.group_id, report.user_id);
