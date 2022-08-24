@@ -3,12 +3,12 @@ import {CommandCallback} from "../../../types";
 import {ipfsPublish, ipfsPublishBuffer} from "../../ipfs-publish";
 import {getRealitioArbitrator} from "../../ethers";
 import fetch from 'node-fetch';
-import {getGroup, getActiveReportedUserAndGroupId, getPermissions, setAllowance, getAllowance} from "../../db";
+import {getGroup, getDisputedReportsInfo, getActiveEvidenceGroupId, getPermissions, setAllowance, getAllowance} from "../../db";
 
 const processCommand = async (bot: TelegramBot, msg: TelegramBot.Message, questionId: number|string, address: string, privateKey: string): Promise<string> => {
     const evidencePath = await upload(bot, msg, address);
     const evidenceJsonPath = await uploadEvidenceJson(msg, evidencePath, address);
-    await bot.sendMessage(msg.chat.id, `Evidence [submitted](https://ipfs.kleros.io${evidencePath})`, {parse_mode: "Markdown"});
+    await bot.sendMessage(msg.chat.id, `Evidence [submitted](https://ipfs.kleros.io${evidencePath}).`, {parse_mode: "Markdown"});
     await submitEvidence(evidenceJsonPath, questionId,privateKey);
 
     return evidenceJsonPath;
@@ -155,14 +155,18 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
     }
 
     if (!match || match.length < 2){
-        await bot.sendMessage(msg.chat.id, `/addevidence must be followed by a question id`);
+        await bot.sendMessage(msg.chat.id, `/addevidence must be followed by an Evidence Group ID`);
+        const errorMsg = await errorMessage(bot, msg);
+        await bot.sendMessage(msg.chat.id, errorMsg, {parse_mode: "Markdown", disable_web_page_preview: true});
         return; 
     }
 
-    const result = await getActiveReportedUserAndGroupId(match[1]);
+    const result = await getActiveEvidenceGroupId('telegram', String(msg.chat.id), Number(match[1]));
     const user = await bot.getChatMember(msg.chat.id, String(msg.from.id));
-    if (!result){
-        await bot.sendMessage(msg.chat.id, `The questionId is not active or does not exist.`);
+    if (result == null){
+        await bot.sendMessage(msg.chat.id, `The Evidence Group ID is not active or does not exist.`);
+        const errorMsg = await errorMessage(bot, msg);
+        await bot.sendMessage(msg.chat.id, errorMsg, {parse_mode: "Markdown", disable_web_page_preview: true});
         return;
     }
 
@@ -204,8 +208,22 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
     } catch (e) {
         console.log(e);
 
-        await bot.sendMessage(msg.chat.id, `An unexpected error has occurred: ${e.message}. Does the bot address has enough funds to pay the transaction?`);
+        await bot.sendMessage(msg.chat.id, `An unexpected error has occurred: ${e.message}. Does the bot address have enough funds to pay the transaction?`);
     }
 }
 
+const errorMessage = async (bot: TelegramBot, msg: TelegramBot.Message): Promise<string> => {
+    const reports = await getDisputedReportsInfo('telegram', String(msg.chat.id));
+
+    var reportMessage: string = 'Active Evidence Group IDs:\n\n';
+
+    await reports.forEach(async (report) => {
+        console.log(report.active);
+        const MsgLink = 'https://t.me/c/' + report.group_id.substring(4) + '/' + report.msg_id;
+        const msgTime = new Date(report.timestamp*1000).toISOString();
+        reportMessage += ` - ${report.username} reported for message sent [${msgTime.substring(0,msgTime.length-4)}](${MsgLink}) ([ipfs backup](${report.msgBackup})): Evidence Group ID ${report.evidenceIndex}\n`;
+    });
+
+    return reportMessage;
+}
 export {regexp, callback, processCommand, submitEvidence, upload};

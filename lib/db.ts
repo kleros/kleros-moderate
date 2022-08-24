@@ -1,4 +1,4 @@
-import {Database} from 'sqlite3'
+import sqlite3 from 'sqlite3'
 import {open} from 'sqlite'
 const path = require('path')
 const util = require('util')
@@ -17,12 +17,14 @@ export async function openDb() {
 
     return open({
         filename: dbFile,
-        driver: Database
+        driver: sqlite3.cached.Database
     })
 }
 
+
 const createAccount = async (address: string, privateKey: string, platform: string, userId: string) => {
     const db = await openDb();
+
     await db.run(
         'INSERT INTO accounts (address, private_key, platform, user_id) VALUES ($address, $private_key, $platform, $user_id);',
         {
@@ -44,6 +46,7 @@ const isAccountOwner = async (user_id: string, platform: string, address: string
 
 const setAccount = async (platform: string, groupId: string, address: string) => {
     const db = await openDb();
+
     await db.run(
         `INSERT INTO groups (platform, group_id, address) 
             VALUES ($platform, $group_id, $address) 
@@ -59,6 +62,7 @@ const setAccount = async (platform: string, groupId: string, address: string) =>
 
 const setPermissions = async (platform: string, groupId: string, permission: boolean) => {
     const db = await openDb();
+
     await db.run(
         `INSERT INTO groups (platform, group_id, permission) 
             VALUES ($platform, $group_id, $permission) 
@@ -70,10 +74,12 @@ const setPermissions = async (platform: string, groupId: string, permission: boo
             $permission: permission
         }
     );
+
 }
 
 const setInviteURL = async (platform: string, groupId: string, inviteUrl: string) => {
     const db = await openDb();
+
     await db.run(
         `INSERT INTO groups (platform, group_id, invite_url) 
             VALUES ($platform, $group_id, $invite_url) 
@@ -85,6 +91,7 @@ const setInviteURL = async (platform: string, groupId: string, inviteUrl: string
             $invite_url: inviteUrl,
         }
     );
+
 }
 
 const getGroup = async(platform: string, groupId: string): Promise<{address: string, private_key: string} | undefined> => {
@@ -95,13 +102,16 @@ SELECT groups.address, private_key FROM accounts
 LEFT JOIN groups ON groups.address = accounts.address
 WHERE groups.platform = $platform AND groups.group_id = $group_id`;
 
-    return await db.get(
+    const result =  await db.get(
         query,
         {
             $platform: platform,
             $group_id: groupId
         }
     );
+
+    return result;
+    
 }
 
 const getInviteURL = async(platform: string, groupId: string) => {
@@ -122,7 +132,8 @@ const getPermissions = async(platform: string, groupId: string) => {
 
 const setRules = async (platform: string, groupId: string, rules: string, timestamp: number) => {
     const db = await openDb();
-    await db.run(
+
+    const result = db.run(
         `INSERT INTO rules (platform, group_id, rules, timestamp)
             VALUES ($platform, $group_id, $rules, $timestamp);`, 
         {
@@ -132,6 +143,7 @@ const setRules = async (platform: string, groupId: string, rules: string, timest
             $timestamp: timestamp
         }
     );
+    return result;
 }
 
 const getRule = async (platform: string, groupId: string, timestamp: number) => {
@@ -146,15 +158,20 @@ const getRule = async (platform: string, groupId: string, timestamp: number) => 
     return result?.rules || '';
 }
 
-const addReport = async (questionId: string, 
+const addReport = async (
+                        questionId: string, 
                         platform: string, 
                         groupId: string, 
                         userId: string, 
                         username: string, 
                         msgId: string,
-                        active: boolean
+                        active: boolean,
+                        msgBackup: string,
+                        evidenceIndex: number,
+                        bond_paid: number,
                         ) => {
-    const db = await openDb();
+                            const db = await openDb();
+
     await db.run(
         `INSERT INTO reports (question_id, 
                                 platform, 
@@ -167,7 +184,10 @@ const addReport = async (questionId: string,
                                 active, 
                                 timeServed, 
                                 finalized,
-                                arbitrationRequested) 
+                                arbitrationRequested,
+                                msgBackup,
+                                evidenceIndex,
+                                bond_paid) 
         VALUES ($questionId, 
                 $platform, 
                 $group_id, 
@@ -179,7 +199,10 @@ const addReport = async (questionId: string,
                 $active, 
                 $timeServed, 
                 FALSE,
-                FALSE);`,
+                FALSE,
+                $msgBackup,
+                $evidenceIndex,
+                $bond_paid);`,
         {
             $questionId: questionId,
             $platform: platform,
@@ -190,24 +213,30 @@ const addReport = async (questionId: string,
             $timestamp: Math.floor(Date.now()/1000),
             $active_timestamp: active? Math.floor(Date.now()/1000): 0,
             $timeServed: 0,
-            $active: active
+            $active: active,
+            $msgBackup: msgBackup,
+            $evidenceIndex: evidenceIndex,
+            $bond_paid: bond_paid
         }
     );
+
 }
 
-const setReport = async (questionId: string, active: boolean, finalized: boolean, activeTimestamp: number, timeServed: number) => {
+const setReport = async (questionId: string, active: boolean, finalized: boolean, activeTimestamp: number, timeServed: number, bond_paid: number) => {
     const db = await openDb();
 
     await db.run(
-        'UPDATE reports SET active = $active, finalized = $finalized, active_timestamp = $active_timestamp, timeServed = $timeServed WHERE question_id = $question_id',
+        'UPDATE reports SET active = $active, finalized = $finalized, active_timestamp = $active_timestamp, timeServed = $timeServed, bond_paid = $bond_paid WHERE question_id = $question_id',
         {
             $question_id: questionId,
             $active: active,
             $active_timestamp: activeTimestamp,
             $finalized: finalized,
-            $timeServed : timeServed
+            $timeServed : timeServed,
+            $bond_paid : bond_paid
         }
     );
+
 }
 
 const setReportArbitration = async (questionId: string, timeServed: number) => {
@@ -222,35 +251,39 @@ const setReportArbitration = async (questionId: string, timeServed: number) => {
             $question_id: questionId
         }
     );
+
 }
 
 const getDisputedReports = async() => {
     const db = await openDb();
 
     return await db.all('SELECT * FROM reports WHERE finalized = FALSE');
+
 }
 
 const getDisputedReportsInfo = async(platform: string, groupId: string) => {
     const db = await openDb();
 
-    return await db.all('SELECT * FROM reports WHERE finalized = FALSE AND group_id = $group_id AND platform = $platform',
+    return await db.all('SELECT * FROM reports WHERE finalized = FALSE AND group_id = $group_id AND platform = $platform AND bond_paid > 0',
         {
         $group_id: groupId,
         $platform: platform
         }
     );
+
 }
 
 const getDisputedReportsUserInfo = async(platform: string, groupId: string, userId: string) => {
     const db = await openDb();
 
-    return await db.all('SELECT * FROM reports WHERE finalized = FALSE AND user_id = $user_id AND group_id = $group_id AND platform = $platform',
+    return await db.all('SELECT * FROM reports WHERE user_id = $user_id AND group_id = $group_id AND platform = $platform',
         {
         $user_id: userId,
         $group_id: groupId,
         $platform: platform
         }
     );
+
 }
 
 const getConcurrentReports = async(platform: string, groupId: string, userId: string, timestamp: number) => {
@@ -267,13 +300,14 @@ const getConcurrentReports = async(platform: string, groupId: string, userId: st
         }
     );
 
+
     return result;
 }
 
 const getQuestionId = async (platform: string, groupId: string, userId: string, msgId: string) => {
     const db = await openDb();
 
-    const result = await db.get(`SELECT question_id FROM reports WHERE platform = ? AND group_id = ? AND user_id = ? AND msg_id = ?;`, platform, groupId, userId, msgId);
+    const result: any = await db.get(`SELECT question_id FROM reports WHERE platform = ? AND group_id = ? AND user_id = ? AND msg_id = ?;`, platform, groupId, userId, msgId);
 
     return result?.question_id || '';
 }
@@ -294,9 +328,9 @@ const getAllowance = async(platform: string, groupId: string, userId: string): P
 }
 
 const setAllowance = async(platform: string, groupId: string, userId: string, reportAllowance: number, evidenceAllowance: number, timeRefresh: number) => {
-    const db = await openDb();
 //        'UPDATE allowance SET report_allowance = $report_allowance, evidence_allowance = $evidence_allowance, timestamp_refresh = $timestamp_refresh WHERE user_id = $user_id AND group_id = $group_id AND platform = $platform',
-    
+const db = await openDb();
+
     await db.run(
         `INSERT INTO allowance (platform, group_id, user_id, report_allowance, evidence_allowance, timestamp_refresh) 
         VALUES ($platform, $group_id, $user_id, $report_allowance, $evidence_allowance, $timestamp_refresh) 
@@ -311,6 +345,7 @@ const setAllowance = async(platform: string, groupId: string, userId: string, re
             $platform: platform
         }
     );
+
 }
 
 
@@ -329,14 +364,16 @@ const getRecentReports = async(userId: string, timestamp: number) => {
     return result;
 }
 
-const getActiveReportedUserAndGroupId = async(questionId: string) => {
+const getActiveEvidenceGroupId = async(platform: string, groupId: string, evidenceIndex: number) => {
     const db = await openDb();
 
     const result = await db.get(
-        `SELECT user_id, group_id, active FROM reports 
-        WHERE question_id = $question_id AND finalized = FALSE`,
+        `SELECT question_id FROM reports 
+        WHERE platform = $platform AND group_id = $group_id AND evidenceIndex = $evidenceIndex AND finalized = FALSE`,
         {
-            $question_id: questionId,
+            $platform: platform,
+            $group_id: groupId,
+            $evidenceIndex: evidenceIndex
         }
     );
 
@@ -346,7 +383,7 @@ const getActiveReportedUserAndGroupId = async(questionId: string) => {
 const getFinalRecord = async(platform: string, groupId: string, userId: string) => {
     const db = await openDb();
 
-    const result = await db.get(
+    const result: any = await db.get(
         `SELECT COUNT(*)  as total FROM reports 
         WHERE active = TRUE 
             AND finalized = TRUE 
@@ -363,10 +400,25 @@ const getFinalRecord = async(platform: string, groupId: string, userId: string) 
     return result?.total || 0;
 }
 
+const getRecordCount = async(platform: string, groupId: string) => {
+    const db = await openDb();
+
+    const result: any = await db.get(
+        `SELECT COUNT(*) as total FROM reports 
+        WHERE platform = $platform AND group_id = $group_id`,
+        {
+            $platform: platform,
+            $group_id: groupId
+        }
+    );
+
+    return result?.total || 0;
+}
+
 const getCurrentRecord = async(platform: string, groupId: string, userId: string) => {
     const db = await openDb();
 
-    const result = await db.get(
+    const result: any = await db.get(
         `SELECT COUNT(*)  as total FROM reports 
         WHERE active = TRUE 
             AND platform = $platform 
@@ -389,8 +441,9 @@ export {
     getQuestionId,
     setInviteURL,
     setAccount,
+    getRecordCount,
     getGroup,
-    getActiveReportedUserAndGroupId,
+    getActiveEvidenceGroupId,
     createAccount,
     setRules,
     getPermissions,

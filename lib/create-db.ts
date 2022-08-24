@@ -58,7 +58,10 @@ import {openDb} from "./db";
             active BOOLEAN, 
             timeServed INTEGER, 
             finalized BOOLEAN,
-            arbitrationRequested BOOLEAN 
+            arbitrationRequested BOOLEAN,
+            msgBackup TEXT,
+            evidenceIndex INTEGER,
+            bond_paid INTEGER
             )`
             );
 
@@ -95,5 +98,5 @@ import {openDb} from "./db";
             timestamp INTEGER, 
             PRIMARY KEY (platform, group_id, timestamp))`
         );
-
+    db.close();
 })();
