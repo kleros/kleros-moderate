@@ -48,8 +48,8 @@ async function askQuestionWithMinBond(fromUsername: string, UserID: string, plat
         fromUsername+delim+UserID+delim+platform+delim+group+delim+inviteURL+delim+groupID+delim+rulesUrl+delim+message+delim+messageBackup+delim+category+delim+lang,
         process.env.REALITIO_ARBITRATOR,
         86400, // 1 day
+        Math.floor(new Date().getTime()/1000),
         0,
-        +Math.floor(new Date().getTime()/1000),
         minBond,
         {
             value: 0
