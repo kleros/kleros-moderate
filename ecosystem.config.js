@@ -11,6 +11,20 @@ module.exports = {
             NODE_ENV: 'development'
           }
     }, {
+               name: 'realitio-reporting',
+               script: 'yarn',
+               args: '--cwd ../realitio-reporting-bot/ start',
+                interpreter: '/bin/bash',
+                log_date_format : 'YYYY-MM-DD HH:mm Z',
+                autorestart: false,
+                watch: false,
+                ignore_watch: ['\.git', 'node_modules', 'database\.db', 'database\.db-journal'],
+                cron_restart: '* */1 * * *',
+                env: {
+                    NODE_ENV: 'development'
+                  }
+                },
+    {
         name: 'moderator_cron',
         script: 'yarn',
         args: 'cron',
