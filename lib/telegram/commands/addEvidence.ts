@@ -1,5 +1,6 @@
 import * as TelegramBot from "node-telegram-bot-api";
 import {CommandCallback} from "../../../types";
+import {Wallet} from "@ethersproject/wallet";
 import {ipfsPublish, ipfsPublishBuffer} from "../../ipfs-publish";
 import {getRealitioArbitrator} from "../../ethers";
 import fetch from 'node-fetch';
@@ -163,48 +164,29 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
 
     const result = await getActiveEvidenceGroupId('telegram', String(msg.chat.id), Number(match[1]));
     const user = await bot.getChatMember(msg.chat.id, String(msg.from.id));
+    const isAdmin = user.status === 'creator' || user.status === 'administrator';
     if (result == null){
         await bot.sendMessage(msg.chat.id, `The Evidence Group ID is not active or does not exist.`);
         const errorMsg = await errorMessage(bot, msg);
         await bot.sendMessage(msg.chat.id, errorMsg, {parse_mode: "Markdown", disable_web_page_preview: true});
         return;
     }
-
-    const group = await getGroup('telegram', String(msg.chat.id));
-
-    if (!group) {
-        await bot.sendMessage(msg.chat.id, `This chat does not have a bot address. Execute /setaccount first.`);
-        return;
-    }
-
-    const hasEvidencePermission = user.status === 'creator' || user.status === 'administrator' || String(user.user.id) === result.user_id;
-
-    const res = await getPermissions('telegram', String(msg.chat.id));
-    const permissionless = res == true;
-
-    if (permissionless){
-        if (!hasEvidencePermission){
-            const reportAllowance = await getAllowance('telegram', String(msg.chat.id), String(msg.from.id));
-            if (reportAllowance === undefined){
-                setAllowance('telegram', String(msg.chat.id), String(msg.from.id), 3, 14, Math.ceil( new Date().getTime() / 1000));
-            } else if ((Math.ceil( new Date().getTime() / 1000) < reportAllowance.timestamp_refresh + 5760) && reportAllowance.evidence_allowance == 0 ){
-                await bot.sendMessage(msg.chat.id, `You have exhausted your daily evidence allowance.`);
-            } else{
-                const newReportAllowance = reportAllowance.report_allowance + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/28800);
-                const newEvidenceAllowance = reportAllowance.evidence_allowance + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/28800)*5 - 1;
-                const newRefreshTimestamp = reportAllowance.timestamp_refresh + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/28800)*28800;
-                setAllowance('telegram', String(msg.chat.id), String(msg.from.id), newReportAllowance, newEvidenceAllowance, newRefreshTimestamp);
-            }
+    if(!isAdmin){
+        const reportAllowance = await getAllowance('telegram', String(msg.chat.id), String(msg.from.id));
+        if (reportAllowance === undefined){
+            setAllowance('telegram', String(msg.chat.id), String(msg.from.id), 3, 14, Math.ceil( new Date().getTime() / 1000));
+        } else if ((Math.ceil( new Date().getTime() / 1000) < reportAllowance.timestamp_refresh + 5760) && reportAllowance.evidence_allowance == 0 ){
+            await bot.sendMessage(msg.chat.id, `You have exhausted your daily evidence allowance.`);
+        } else{
+            const newReportAllowance = reportAllowance.report_allowance + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/28800);
+            const newEvidenceAllowance = reportAllowance.evidence_allowance + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/28800)*5 - 1;
+            const newRefreshTimestamp = reportAllowance.timestamp_refresh + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/28800)*28800;
+            setAllowance('telegram', String(msg.chat.id), String(msg.from.id), newReportAllowance, newEvidenceAllowance, newRefreshTimestamp);
         }
-    } else {
-        if (!hasEvidencePermission){
-            await bot.sendMessage(msg.chat.id, `You do not have evidence permission.`);
-            return;
-        }   
     }
 
     try {
-        const evidencePath = await processCommand(bot, msg, match[1], group.address, group.private_key);
+        const evidencePath = await processCommand(bot, msg, match[1], await (await new Wallet(process.env.PRIVATE_KEY)).address, process.env.PRIVATE_KEY);
     } catch (e) {
         console.log(e);
 

@@ -222,6 +222,62 @@ const addReport = async (
 
 }
 
+const getReportRequest = async(platform: string, groupId: string, msgId: string) => {
+    const db = await openDb();
+
+    return await db.get('SELECT * FROM reportRequests WHERE platform = $platform AND group_id = $group_id AND msg_id = $msg_id',
+        {
+            $platform: platform,
+            $group_id: groupId,
+            $msg_id: msgId
+        }
+        );
+}
+
+const addReportRequest = async (
+                        platform: string, 
+                        groupId: string, 
+                        userId: string, 
+                        username: string, 
+                        msgId: string,
+                        msgBackup: string,
+                        msgRequestId: string
+                        ) => {
+    const db = await openDb();
+
+    await db.run(
+        `INSERT INTO reportRequests ( 
+                                platform, 
+                                group_id, 
+                                user_id, 
+                                username,
+                                msg_id, 
+                                confirmations,
+                                confirmed,
+                                msgBackup,
+                                msgRequestId) 
+        VALUES ($platform, 
+                $group_id, 
+                $user_id, 
+                $username,
+                $msg_id, 
+                1,
+                FALSE,
+                $msgBackup,
+                $msgRequestId);`,
+        {
+            $platform: platform,
+            $group_id: groupId,
+            $user_id: userId,
+            $username: username,
+            $msg_id: msgId,
+            $msgBackup: msgBackup,
+            $msgRequestId: msgRequestId
+        }
+    );
+
+}
+
 const setReport = async (questionId: string, active: boolean, finalized: boolean, activeTimestamp: number, timeServed: number, bond_paid: number) => {
     const db = await openDb();
 
@@ -446,6 +502,8 @@ export {
     getActiveEvidenceGroupId,
     createAccount,
     setRules,
+    getReportRequest,
+    addReportRequest,
     getPermissions,
     getAllowance,
     setAllowance,

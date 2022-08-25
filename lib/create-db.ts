@@ -45,7 +45,7 @@ import {openDb} from "./db";
      * `active` indicates whether the user is currently banned.
      * `finalized` indicates if the question has finalized.
      */
-    await db.exec(
+     await db.exec(
         `CREATE TABLE reports (
             question_id TEXT PRIMARY KEY, 
             platform TEXT, 
@@ -63,6 +63,29 @@ import {openDb} from "./db";
             evidenceIndex INTEGER,
             bond_paid INTEGER
             )`
+            );
+
+    /**
+     * `question_id` is the id of the question in reality.eth
+     * `platform` can be `telegram`, `reddit`, etc.
+     * `group_id` is the id of the group on the platform (eg. group on telegram, subreddit on reddit, etc.).
+     * `user_id` is the id of the banned user in `platform`.
+     * `chat_id` is the id of the banned user in `platform`.
+     * `active` indicates whether the user is currently banned.
+     * `finalized` indicates if the question has finalized.
+     */
+     await db.exec(
+        `CREATE TABLE reportRequests (
+            platform TEXT, 
+            group_id TEXT, 
+            user_id TEXT, 
+            username TEXT, 
+            msg_id TEXT, 
+            confirmations INTEGER, 
+            confirmed BOOLEAN, 
+            msgBackup TEXT,
+            msgRequestId TEXT,
+            PRIMARY KEY (platform, group_id, user_id, msg_id))`
             );
 
     /**
