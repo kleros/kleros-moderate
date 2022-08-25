@@ -8,8 +8,7 @@ interface RealityBanResult {
     questionUrl: string
 }
 
-export const reportUser = async (hasBanningPermission: boolean, fromUsername: string, UserID: string, platform: string, group: string, inviteURL: string, groupID: string, rules: string, message: string, messageBackup: string, privateKey: string): Promise<RealityBanResult> => {
-
+export const reportUser = async (hasBanningPermission: boolean, fromUsername: string, UserID: string, platform: string, group: string, inviteURL: string, groupID: string, rules: string, message: string, messageBackup: string): Promise<RealityBanResult> => {
     const minBond = utils.parseUnits('1', 15); // 0.001 DAI
     const questionId = await askQuestionWithMinBond(
         fromUsername,
@@ -21,8 +20,7 @@ export const reportUser = async (hasBanningPermission: boolean, fromUsername: st
         rules,
         message,
         messageBackup,
-        minBond,
-        privateKey
+        minBond
     );
 
     if(hasBanningPermission){
@@ -35,10 +33,10 @@ export const reportUser = async (hasBanningPermission: boolean, fromUsername: st
     };
 }
 
-async function askQuestionWithMinBond(fromUsername: string, UserID: string, platform: string, group: string, inviteURL: string, groupID: string, rulesUrl: string|BigNumber, message: string, messageBackup: string, minBond: number|BigNumber, privateKey: string): Promise<string> {
+async function askQuestionWithMinBond(fromUsername: string, UserID: string, platform: string, group: string, inviteURL: string, groupID: string, rulesUrl: string|BigNumber, message: string, messageBackup: string, minBond: number|BigNumber): Promise<string> {
     // A question is automatically created in Realitio with an answer in favor of banning the user.
     // Bond of the answer: 1 xDAI (initially the answer can be omitted).
-    const realityETHV30 = getRealityETHV30(process.env.REALITITY_ETH_V30, privateKey);
+    const realityETHV30 = getRealityETHV30(process.env.REALITITY_ETH_V30, process.env.PRIVATE_KEY);
 
     const delim = '\u241f';
     const category = 'misc';
@@ -88,7 +86,7 @@ async function answerQuestion(questionId: string, privateKey: string): Promise<s
 
 export const createWalletAndAccount = async (platform: string, userId: string) => {
     const wallet = Wallet.createRandom();
-
+    
     await createAccount(
         wallet.address,
         wallet.privateKey,
