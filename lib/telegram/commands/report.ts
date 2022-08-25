@@ -146,7 +146,7 @@ const reportMsg = async (bot: TelegramBot, msg: TelegramBot.Message, fromUsernam
             //await bot.sendMessage(msg.chat.id, `An unexpected error has occurred while adding the evidence: ${e.message}. Does the bot address has enough funds to pay the transaction?`);
         }
         const evidenceIndex = await getRecordCount('telegram', String(msg.chat.id));
-        await addReport(questionId, 'telegram', String(msg.chat.id), reportedUserID, fromUsername , msgLink, false, msgBackup, evidenceIndex, 0);
+        await addReport(questionId, 'telegram', String(msg.chat.id), reportedUserID, fromUsername , msgId, false, msgBackup, evidenceIndex, 0);
         
         await bot.sendMessage(msg.chat.id, `*${fromUsername}  (ID :${reportedUserID}) *'s conduct due to this [message](${msgLink}) ([backup](${msgBackup})) is reported for breaking the [rules](${rules}).\n\nDid *${fromUsername}* break the rules? The [question](${appealUrl}) can be answered with a minimum bond of 5 DAI.\n\n To save a record, reply to messages you want saved with the command below,`, {parse_mode: 'Markdown'});
         await bot.sendMessage(msg.chat.id, `/addevidence ${evidenceIndex}`, {parse_mode: 'Markdown'});

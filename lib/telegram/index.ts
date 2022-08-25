@@ -38,7 +38,7 @@ bot.on("my_chat_member", async function(myChatMember: TelegramBot.ChatMemberUpda
             if (!rules)
                 await setRules('telegram', String(myChatMember.chat.id), defaultRules, new Date().getTime()/1000);
 
-            await bot.sendMessage(myChatMember.chat.id, `Welcome, this group is mediated with [Kleros Moderate](https://kleros.io/moderate/).`, {parse_mode: "Markdown"});
+            await bot.sendMessage(myChatMember.chat.id, `Welcome, this group is moderated with [Kleros Moderate](https://kleros.io/moderate/).`, {parse_mode: "Markdown"});
             await bot.sendMessage(myChatMember.chat.id, `Please make sure to follow the [community rules](${defaultRules}). Users who break the rules can be reported by replying to a message with the command '/report'.`, {parse_mode: "Markdown"});
             //The Kleros Moderation Community Guidelines apply as the default rules. Crafting precise policies can be challenging, if you are certain in setting a new policy, you can set new rules with /setrules [url] or /setrules [reply to message].
             //Optional, for public groups, set the chat invite url with /setinviteurl [url] e.g. /setinviteurl https://t.me/groupInviteUrl.
