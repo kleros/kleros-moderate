@@ -80,7 +80,6 @@ import {BigNumber} from "ethers";
         if (finalized){
             if (report.platform === 'telegram') {
                 await bot.sendMessage(report.group_id, `The report on Reality is finalized.`, {parse_mode: 'Markdown'}); 
-                const latestReportState = answer.toNumber();
                 handleFinalizedTelegram(bot, report, question, latestReportState, reportHistoryFinal);
             } else {
                 console.error(`Invalid platform: ${report.platform}`);
