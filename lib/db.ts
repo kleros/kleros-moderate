@@ -36,10 +36,10 @@ const createAccount = async (address: string, privateKey: string, platform: stri
     );
 }
 
-const isAccountOwner = async (user_id: string, platform: string, address: string) => {
+const questionAnswered = async (questionId: string) => {
     const db = await openDb();
 
-    const result = await db.get('SELECT COUNT(*) as total FROM accounts WHERE user_id = ? AND platform = ? AND address = ?;', user_id, platform, address);
+    const result = await db.get('SELECT COUNT(*) as total FROM reports WHERE question_id = ? AND bond_paid > 0;', questionId);
 
     return result.total > 0;
 }
@@ -292,7 +292,6 @@ const setReport = async (questionId: string, active: boolean, finalized: boolean
             $bond_paid : bond_paid
         }
     );
-
 }
 
 const setReportArbitration = async (questionId: string, timeServed: number) => {
@@ -368,11 +367,11 @@ const getQuestionId = async (platform: string, groupId: string, userId: string, 
     return result?.question_id || '';
 }
 
-const getAllowance = async(platform: string, groupId: string, userId: string): Promise<{report_allowance: number, evidence_allowance: number, timestamp_refresh: number} | undefined> => {
+const getAllowance = async(platform: string, groupId: string, userId: string): Promise<{report_allowance: number, evidence_allowance: number, timestamp_refresh: number,  question_id_last: string, timestamp_last_question: number} | undefined> => {
     const db = await openDb();
 
     const result = await db.get(
-        'SELECT report_allowance, evidence_allowance, timestamp_refresh FROM allowance WHERE user_id = $user_id AND group_id = $group_id AND platform = $platform',
+        'SELECT report_allowance, evidence_allowance, timestamp_refresh, question_id_last, timestamp_last_question FROM allowance WHERE user_id = $user_id AND group_id = $group_id AND platform = $platform',
         {
             $user_id: userId,
             $group_id: groupId,
@@ -383,7 +382,34 @@ const getAllowance = async(platform: string, groupId: string, userId: string): P
     return result;
 }
 
-const setAllowance = async(platform: string, groupId: string, userId: string, reportAllowance: number, evidenceAllowance: number, timeRefresh: number) => {
+const setAllowanceAsked = async (
+    questionIdLast: string,
+    platform: string, 
+    groupId: string, 
+    userId: string) => {
+
+    const db = await openDb();
+
+    await db.run(
+        'UPDATE allowance SET question_id_last = $question_id_last, timestamp_last_question = $timestamp_last_question WHERE platform = $platform AND group_id = $group_id AND user_id = $user_id',
+        {
+            $question_id_last: questionIdLast,
+            $timestamp_last_question: Math.floor(Date.now()/1000),
+            $platform: platform,
+            $group_id: groupId,
+            $user_id: userId
+        }
+    );
+}
+
+const setAllowance = async(
+    platform: string, 
+    groupId: string, 
+    userId: string, 
+    reportAllowance: number, 
+    evidenceAllowance: number, 
+    timeRefresh: number
+    ) => {
 //        'UPDATE allowance SET report_allowance = $report_allowance, evidence_allowance = $evidence_allowance, timestamp_refresh = $timestamp_refresh WHERE user_id = $user_id AND group_id = $group_id AND platform = $platform',
 const db = await openDb();
 
@@ -493,7 +519,6 @@ const getCurrentRecord = async(platform: string, groupId: string, userId: string
 
 export {
     getInviteURL,
-    isAccountOwner,
     getQuestionId,
     setInviteURL,
     setAccount,
@@ -504,6 +529,8 @@ export {
     setRules,
     getReportRequest,
     addReportRequest,
+    setAllowanceAsked,
+    questionAnswered,
     getPermissions,
     getAllowance,
     setAllowance,

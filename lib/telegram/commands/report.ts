@@ -1,7 +1,7 @@
 import * as TelegramBot from "node-telegram-bot-api";
 import {CommandCallback} from "../../../types";
 import {Wallet} from "@ethersproject/wallet";
-import {addReportRequest, getReportRequest, addReport, getRecordCount, getGroup, setInviteURL, getInviteURL, getQuestionId, getRule, getConcurrentReports, getAllowance, setAllowance} from "../../db";
+import {addReportRequest, getReportRequest, addReport, getRecordCount, questionAnswered, setInviteURL, getInviteURL, getQuestionId, getRule, getConcurrentReports, getAllowance, setAllowance} from "../../db";
 import {upload} from "./addEvidence"
 import {reportUser} from "../../bot-core";
 
@@ -82,6 +82,15 @@ const callback: CommandCallback = async (bot: any, msg: TelegramBot.Message, mat
 
     if (!isAdmin){
         const reportAllowance = await getAllowance('telegram', String(msg.chat.id), String(msg.from.id));
+        if(reportAllowance != undefined && reportAllowance.question_id_last){
+            const isQuestionAnswered = await questionAnswered(reportAllowance.question_id_last);
+            const lastReport = `https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITITY_ETH_V30}-${reportAllowance.question_id_last}`;
+            if(!isQuestionAnswered && Math.floor(Date.now()/1000) < reportAllowance.timestamp_last_question + 604800){
+                await bot.sendMessage(msg.chat.id, `Your last [report](${lastReport}) was unanswered. Report permissions are limited for 1 week until the previous report is answered.`, {parse_mode: 'Markdown'});
+                return;
+            }
+        }
+
         if ( reportAllowance === undefined ){
             setAllowance('telegram', String(msg.chat.id), String(msg.from.id), 2, 15, Math.ceil( new Date().getTime() / 1000));
         } else if ((Math.ceil( new Date().getTime() / 1000) < reportAllowance.timestamp_refresh + 28800) && reportAllowance.report_allowance == 0 ){
@@ -137,19 +146,12 @@ const reportMsg = async (bot: TelegramBot, msg: TelegramBot.Message, fromUsernam
             msgLink, 
             msgBackup);
 
-        try {
-            //await submitEvidence(evidencepath[0], questionId, privateKey);
-        } catch (e) {
-            // let addEvidence fail, the question was created anyway
-            console.log(e);
-
-            //await bot.sendMessage(msg.chat.id, `An unexpected error has occurred while adding the evidence: ${e.message}. Does the bot address has enough funds to pay the transaction?`);
-        }
         const evidenceIndex = await getRecordCount('telegram', String(msg.chat.id));
         await addReport(questionId, 'telegram', String(msg.chat.id), reportedUserID, fromUsername , msgId, false, msgBackup, evidenceIndex, 0);
         
         await bot.sendMessage(msg.chat.id, `*${fromUsername}  (ID :${reportedUserID}) *'s conduct due to this [message](${msgLink}) ([backup](${msgBackup})) is reported for breaking the [rules](${rules}).\n\nDid *${fromUsername}* break the rules? The [question](${appealUrl}) can be answered with a minimum bond of 5 DAI.\n\n To save a record, reply to messages you want saved with the command below,`, {parse_mode: 'Markdown'});
         await bot.sendMessage(msg.chat.id, `/addevidence ${evidenceIndex}`, {parse_mode: 'Markdown'});
+        return questionId;
     } catch (e) {
         console.log(e);
 

@@ -4,22 +4,6 @@ import {openDb} from "./db";
     const db = await openDb();
 
     /**
-     * `platform` + `platform_user_id` is used to verify if the user is the owner of the bot.
-     *
-     * The owner is the only user who can call `/setaccount` to use this bot in a group.
-     *
-     * `platform` can be `telegram`, `reddit`, etc.
-     * `platform_user_id` is the id of the user in `app_type`.
-     */
-     await db.exec(
-        `CREATE TABLE accounts (
-            address TEXT PRIMARY KEY, 
-            private_key TEXT, 
-            platform TEXT, 
-            user_id TEXT)`
-        );
-
-    /**
      * A group can be a telegram chat, a subreddit, etc.
      *
      * `platform` can be `telegram`, `reddit`, etc.
@@ -82,7 +66,7 @@ import {openDb} from "./db";
             username TEXT, 
             msg_id TEXT, 
             confirmations INTEGER, 
-            confirmed BOOLEAN, 
+            confirmed BOOLEAN,
             msgBackup TEXT,
             msgRequestId TEXT,
             PRIMARY KEY (platform, group_id, user_id, msg_id))`
@@ -105,6 +89,8 @@ import {openDb} from "./db";
             report_allowance INTEGER, 
             evidence_allowance INTEGER, 
             timestamp_refresh INTEGER,
+            question_id_last TEXT,
+            timestamp_last_question INTEGER,
             PRIMARY KEY (platform, group_id, user_id))`
             );
     /**
