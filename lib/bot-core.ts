@@ -29,7 +29,7 @@ export const reportUser = async (hasBanningPermission: boolean, fromUsername: st
 
     return {
         questionId: questionId,
-        questionUrl: `https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITITY_ETH_V30}-${questionId}`
+        questionUrl: `https://realityeth.github.io/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITITY_ETH_V30}-${questionId}`
     };
 }
 
@@ -55,7 +55,6 @@ async function askQuestionWithMinBond(fromUsername: string, UserID: string, plat
     );
 
     const receipt = await tx.wait();
-
     const log = realityETHV30.interface.parseLog(receipt.logs[0]);
 
     return log.args[0];

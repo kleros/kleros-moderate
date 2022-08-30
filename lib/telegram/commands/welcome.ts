@@ -14,7 +14,7 @@ const callback = async (bot: TelegramBot, myChatMember: TelegramBot.ChatMemberUp
         if (myChatMember.new_chat_member?.status === "administrator" && myChatMember.old_chat_member?.status === "member" ) {
             //await bot.sendMessage(myChatMember.chat.id, '/setrules https://ipfs.kleros.io/ipfs/QmeYuhtdsbyrpYa3tsRFTb92jcvUJNb2CJ2NdLE5fsRyAX/Kleros%20Moderate%20Community%20Guideline.pdf');
             const rules = await getRule('telegram', String(myChatMember.chat.id), Math.floor(Date.now()/1000));
-            const defaultRules = 'https://ipfs.kleros.io/ipfs/QmeYuhtdsbyrpYa3tsRFTb92jcvUJNb2CJ2NdLE5fsRyAX/Kleros%20Moderate%20Community%20Guideline.pdf';
+            const defaultRules = 'https://ipfs.kleros.io/https://ipfs.kleros.io/ipfs/QmYYcNfEYLtxPM8fof4wf9Tqj7gBGMDMmNnBqZKR1zSczX/Kleros%20Moderate%20Community%20Guidelines%20v1.pdf';
 
             if (!rules)
                 await setRules('telegram', String(myChatMember.chat.id), defaultRules, new Date().getTime()/1000);
@@ -28,7 +28,7 @@ const callback = async (bot: TelegramBot, myChatMember: TelegramBot.ChatMemberUp
 
         } else if (myChatMember.new_chat_member?.status === "member" && myChatMember.old_chat_member?.status === "left" ){
             const rules = await getRule('telegram', String(myChatMember.chat.id), Math.floor(Date.now()/1000));
-            const defaultRules = 'https://ipfs.kleros.io/ipfs/QmeYuhtdsbyrpYa3tsRFTb92jcvUJNb2CJ2NdLE5fsRyAX/Kleros%20Moderate%20Community%20Guideline.pdf';
+            const defaultRules = 'https://ipfs.kleros.io/https://ipfs.kleros.io/ipfs/QmYYcNfEYLtxPM8fof4wf9Tqj7gBGMDMmNnBqZKR1zSczX/Kleros%20Moderate%20Community%20Guidelines%20v1.pdf';
             if (!rules)
                 await setRules('telegram', String(myChatMember.chat.id), defaultRules, new Date().getTime()/1000);
             

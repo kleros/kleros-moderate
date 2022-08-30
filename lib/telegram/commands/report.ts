@@ -34,7 +34,7 @@ const callback: CommandCallback = async (bot: any, msg: TelegramBot.Message, mat
     const reportedUserID = String(msg.reply_to_message.from.id);
     const reportedQuestionId = await getQuestionId('telegram', String(msg.chat.id), reportedUserID, String(msg.reply_to_message.message_id));
     if (reportedQuestionId){
-        await bot.sendMessage(msg.chat.id, `The message is already [reported](https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITITY_ETH_V30}-${reportedQuestionId})`, {parse_mode: 'Markdown'});
+        await bot.sendMessage(msg.chat.id, `The message is already [reported](https://realityeth.github.io/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITITY_ETH_V30}-${reportedQuestionId})`, {parse_mode: 'Markdown'});
         return;
     }
 
@@ -50,7 +50,7 @@ const callback: CommandCallback = async (bot: any, msg: TelegramBot.Message, mat
         var reportInfo = `Are you sure the user *${fromUsername} (ID :${reportedUserID})* was not already reported for this behavior?\n\nDuplicate reports will result in lost deposits. Reported messages from the same user within 24 hours include: \n\n`;
         (reports).forEach((report) => {
             const privateMsgLink = 'https://t.me/c/' + report.group_id.substring(4) + '/' + report.msg_id;
-            reportInfo += ` - [Message at ${new Date(report.timestamp*1000).toISOString()}](${privateMsgLink}): [Report](https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITITY_ETH_V30}-${report.question_id})\n`;
+            reportInfo += ` - [Message at ${new Date(report.timestamp*1000).toISOString()}](${privateMsgLink}): [Report](https://realityeth.github.io/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITITY_ETH_V30}-${report.question_id})\n`;
         });
         reportInfo += `\nIf you are sure, type \'/report confirm\'`
         await bot.sendMessage(msg.chat.id, reportInfo, {parse_mode: 'Markdown'});
@@ -84,7 +84,7 @@ const callback: CommandCallback = async (bot: any, msg: TelegramBot.Message, mat
         const reportAllowance = await getAllowance('telegram', String(msg.chat.id), String(msg.from.id));
         if(reportAllowance != undefined && reportAllowance.question_id_last){
             const isQuestionAnswered = await questionAnswered(reportAllowance.question_id_last);
-            const lastReport = `https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITITY_ETH_V30}-${reportAllowance.question_id_last}`;
+            const lastReport = `https://realityeth.github.io/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITITY_ETH_V30}-${reportAllowance.question_id_last}`;
             if(!isQuestionAnswered && Math.floor(Date.now()/1000) < reportAllowance.timestamp_last_question + 604800){
                 await bot.sendMessage(msg.chat.id, `Your last [report](${lastReport}) was unanswered. Report permissions are limited for 1 week until the previous report is answered.`, {parse_mode: 'Markdown'});
                 return;
@@ -115,7 +115,7 @@ const callback: CommandCallback = async (bot: any, msg: TelegramBot.Message, mat
                 ]
             }
         };
-        const reportRequestMsg = await bot.sendMessage(msg.chat.id, `Reports require atleast 3 confirmations.\n\n Should ${fromUsername} (ID: ${reportedUserID}) be repoted for breaking the [rules](${rules}) due to conduct over this [message](${msgLink}) ([ipfs backup](${msgBackup}))?`, opts);   
+        const reportRequestMsg = await bot.sendMessage(msg.chat.id, `Reports require atleast 3 confirmations.\n\n Should ${fromUsername} (ID: ${reportedUserID}) be reported for breaking the [rules](${rules}) due to conduct over this [message](${msgLink}) ([ipfs backup](${msgBackup}))?`, opts);   
         addReportRequest('telegram',String(msg.chat.id),reportedUserID,fromUsername,String(msg.reply_to_message.message_id),msgBackup, String(reportRequestMsg.message_id));
     } else{
         reportMsg(bot, msg, fromUsername, reportedUserID, rules, String(msg.reply_to_message.message_id), msgBackup)

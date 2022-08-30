@@ -60,7 +60,7 @@ const callback = async (bot: any, callbackQuery: TelegramBot.CallbackQuery) => {
     if (newConfirmations > 2){
         const reportedQuestionId = await getQuestionId('telegram', String(msg.chat.id), reportRequest.user_id, String(reportRequest.msg_id));
         if (reportedQuestionId)
-            await bot.sendMessage(msg.chat.id, `The message is already [reported](https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITITY_ETH_V30}-${reportedQuestionId})`, {parse_mode: 'Markdown'});
+            await bot.sendMessage(msg.chat.id, `The message is already [reported](https://realityeth.github.io/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITITY_ETH_V30}-${reportedQuestionId})`, {parse_mode: 'Markdown'});
         else{
             const optsFinal = {
                 chat_id: msg.chat.id,
