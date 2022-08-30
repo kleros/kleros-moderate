@@ -1,6 +1,7 @@
 import * as TelegramBot from "node-telegram-bot-api";
 import {CommandCallback} from "../../../types";
 import {getDisputedReportsInfo, getDisputedReportsUserInfo} from "../../db";
+const escape = require('markdown-escape')
 
 /*
  * /getaccount
@@ -13,10 +14,10 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
         const reports = await getDisputedReportsUserInfo('telegram', String(msg.chat.id), String(msg.reply_to_message.from.id));
         const fromUsername = (msg.reply_to_message.from.username || msg.reply_to_message.from.first_name || `no-username-set`);
         if (reports.length == 0){
-            await bot.sendMessage(msg.chat.id, `No reports for user *${fromUsername}*.`, {parse_mode: "Markdown"});
+            await bot.sendMessage(msg.chat.id, `No reports for user *${escape(fromUsername)}*.`, {parse_mode: "Markdown"});
             return;
         }
-        var reportMessage: string = `Reports for ${fromUsername}:\n\n`;
+        var reportMessage: string = `Reports for ${escape(fromUsername)}:\n\n`;
         await reports.forEach(async (report) => {
             const reportAnswer = report.active? 'broke the rules.' : 'did not break the rules.';
             const MsgLink = 'https://t.me/c/' + report.group_id.substring(4) + '/' + report.msg_id;

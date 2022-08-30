@@ -4,7 +4,7 @@ import {Wallet} from "@ethersproject/wallet";
 import {addReportRequest, getReportRequest, addReport, getRecordCount, questionAnswered, setInviteURL, getInviteURL, getQuestionId, getRule, getConcurrentReports, getAllowance, setAllowance} from "../../db";
 import {upload} from "./addEvidence"
 import {reportUser} from "../../bot-core";
-
+const escape = require('markdown-escape')
 /*
  * /report
  */
@@ -47,7 +47,7 @@ const callback: CommandCallback = async (bot: any, msg: TelegramBot.Message, mat
     const reports = await getConcurrentReports('telegram', String(msg.chat.id), reportedUserID, msg.reply_to_message.date);
 
     if (reports.length > 0 && match[1] != 'confirm') {
-        var reportInfo = `Are you sure the user *${fromUsername} (ID :${reportedUserID})* was not already reported for this behavior?\n\nDuplicate reports will result in lost deposits. Reported messages from the same user within 24 hours include: \n\n`;
+        var reportInfo = `Are you sure the user *${escape(fromUsername)} (ID :${reportedUserID})* was not already reported for this behavior?\n\nDuplicate reports will result in lost deposits. Reported messages from the same user within 24 hours include: \n\n`;
         (reports).forEach((report) => {
             const privateMsgLink = 'https://t.me/c/' + report.group_id.substring(4) + '/' + report.msg_id;
             reportInfo += ` - [Message at ${new Date(report.timestamp*1000).toISOString()}](${privateMsgLink}): [Report](https://realityeth.github.io/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITITY_ETH_V30}-${report.question_id})\n`;
@@ -95,7 +95,7 @@ const callback: CommandCallback = async (bot: any, msg: TelegramBot.Message, mat
             setAllowance('telegram', String(msg.chat.id), String(msg.from.id), 2, 15, Math.ceil( new Date().getTime() / 1000));
         } else if ((Math.ceil( new Date().getTime() / 1000) < reportAllowance.timestamp_refresh + 28800) && reportAllowance.report_allowance == 0 ){
             await bot.sendMessage(msg.chat.id, `You have exhausted your daily report allowance.`);
-            return;
+            //return;
         } else{
             const newReportAllowance = reportAllowance.report_allowance + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/28800) - 1;
             const newEvidenceAllowance = reportAllowance.evidence_allowance + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/28800)*5;
@@ -115,8 +115,8 @@ const callback: CommandCallback = async (bot: any, msg: TelegramBot.Message, mat
                 ]
             }
         };
-        const reportRequestMsg = await bot.sendMessage(msg.chat.id, `Reports require atleast 3 confirmations.\n\n Should ${fromUsername} (ID: ${reportedUserID}) be reported for breaking the [rules](${rules}) due to conduct over this [message](${msgLink}) ([ipfs backup](${msgBackup}))?`, opts);   
-        addReportRequest('telegram',String(msg.chat.id),reportedUserID,fromUsername,String(msg.reply_to_message.message_id),msgBackup, String(reportRequestMsg.message_id));
+        const reportRequestMsg = await bot.sendMessage(msg.chat.id, `Reports require atleast 3 confirmations.\n\n Should ${escape(fromUsername)} (ID: ${reportedUserID}) be reported for breaking the [rules](${rules}) due to conduct over this [message](${msgLink}) ([ipfs backup](${msgBackup}))?`, opts);   
+        addReportRequest('telegram',String(msg.chat.id),reportedUserID,escape(fromUsername),String(msg.reply_to_message.message_id),msgBackup, String(reportRequestMsg.message_id));
     } else{
         reportMsg(bot, msg, fromUsername, reportedUserID, rules, String(msg.reply_to_message.message_id), msgBackup)
     }
@@ -149,7 +149,7 @@ const reportMsg = async (bot: TelegramBot, msg: TelegramBot.Message, fromUsernam
         const evidenceIndex = await getRecordCount('telegram', String(msg.chat.id));
         await addReport(questionId, 'telegram', String(msg.chat.id), reportedUserID, fromUsername , msgId, false, msgBackup, evidenceIndex, 0);
         
-        await bot.sendMessage(msg.chat.id, `*${fromUsername}  (ID :${reportedUserID}) *'s conduct due to this [message](${msgLink}) ([backup](${msgBackup})) is reported for breaking the [rules](${rules}).\n\nDid *${fromUsername}* break the rules? The [question](${appealUrl}) can be answered with a minimum bond of 5 DAI.\n\n To save a record, reply to messages you want saved with the command below,`, {parse_mode: 'Markdown'});
+        await bot.sendMessage(msg.chat.id, `*${escape(fromUsername)}  (ID :${reportedUserID}) *'s conduct due to this [message](${msgLink}) ([backup](${msgBackup})) is reported for breaking the [rules](${rules}).\n\nDid *${escape(fromUsername)}* break the rules? The [question](${appealUrl}) can be answered with a minimum bond of 5 DAI.\n\n To save a record, reply to messages you want saved with the command below,`, {parse_mode: 'Markdown'});
         await bot.sendMessage(msg.chat.id, `/addevidence ${evidenceIndex}`, {parse_mode: 'Markdown'});
         return questionId;
     } catch (e) {
