@@ -9,7 +9,7 @@ interface RealityBanResult {
 }
 
 export const reportUser = async (hasBanningPermission: boolean, fromUsername: string, UserID: string, platform: string, group: string, inviteURL: string, groupID: string, rules: string, message: string, messageBackup: string): Promise<RealityBanResult> => {
-    const minBond = utils.parseUnits('1', 15); // 0.001 DAI
+    const minBond = utils.parseUnits('5', 18); // 5 DAI
     const questionId = await askQuestionWithMinBond(
         fromUsername,
         UserID,
