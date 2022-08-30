@@ -6,7 +6,7 @@ import {getRule, setRules} from "../../db";
  */
 
 const callback = async (bot: TelegramBot, msg: TelegramBot.Message) => {
-    const defaultRules = 'https://ipfs.kleros.io/https://ipfs.kleros.io/ipfs/QmYYcNfEYLtxPM8fof4wf9Tqj7gBGMDMmNnBqZKR1zSczX/Kleros%20Moderate%20Community%20Guidelines%20v1.pdf';
+    const defaultRules = 'https://ipfs.kleros.io/ipfs/QmYYcNfEYLtxPM8fof4wf9Tqj7gBGMDMmNnBqZKR1zSczX/Kleros%20Moderate%20Community%20Guidelines%20v1.pdf';
 
     const rules = await getRule('telegram', String(msg.chat.id), Math.floor(Date.now()/1000));
     
