@@ -13,7 +13,7 @@ const callback = async (bot: TelegramBot, msg: TelegramBot.Message) => {
     if (!rules)
         await setRules('telegram', String(msg.chat.id), defaultRules, new Date().getTime()/1000);
 
-    await bot.sendMessage(msg.chat.id, `Welcome, this group is mediated with [Kleros Moderate](https://kleros.io/moderate/).`, {parse_mode: "Markdown"});
+    await bot.sendMessage(msg.chat.id, `Welcome, this group is moderated with [Kleros Moderate](https://kleros.io/moderate/).`, {parse_mode: "Markdown"});
     await bot.sendMessage(msg.chat.id, `Please make sure to follow the [community rules](${defaultRules}). Users who break the rules can be reported by replying to a message with the command '/report'.`, {parse_mode: "Markdown"});
 }
 
