@@ -10,7 +10,7 @@ const regexp = /\/getrules/
 const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Message) => {
     const rules = await getRule('telegram', String(msg.chat.id), Math.floor(Date.now()/1000));
     if (rules)
-        await bot.sendMessage(msg.chat.id, `User conduct is moderated according to these [rules](${rules}).`,{parse_mode: "Markdown"});        
+        await bot.sendMessage(msg.chat.id, `User conduct is moderated according to these [rules](${rules}).`,{parse_mode: "Markdown", disable_web_page_preview: false});        
     else
         await bot.sendMessage(msg.chat.id, 'No rules found for this chat.');        
 
