@@ -41,7 +41,7 @@ import {BigNumber} from "ethers";
         const answer = question.answer == null? null : BigNumber.from(question.answer);
         const report = reports[question.id];
         const msgLink = 'https://t.me/c/' + report.group_id.substring(4) + '/' + report.msg_id;
-        const appealUrl = `https://realityeth.github.io/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITITY_ETH_V30}-${question.id}\n`;
+        const appealUrl = `https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITITY_ETH_V30}-${question.id}\n`;
         const reportHistoryFinal = await getFinalRecord(report.platform, report.group_id, report.user_id);
         const finalized = question.finalize_ts <= Math.ceil(+new Date() / 1000) + 60; // 1 min buffer for graph syncing and finality
         if(question.arbitrationRequested === true){

@@ -1,6 +1,7 @@
 import * as TelegramBot from "node-telegram-bot-api";
 import {getRule, getAllowance, setAllowance, setAllowanceAsked, getReportRequest, getQuestionId} from "../../db";
 import  {reportMsg} from "./report";
+const escape = require('markdown-escape')
 
 /*
  * /getrules
@@ -60,7 +61,7 @@ const callback = async (bot: any, callbackQuery: TelegramBot.CallbackQuery) => {
     if (newConfirmations > 2){
         const reportedQuestionId = await getQuestionId('telegram', String(msg.chat.id), reportRequest.user_id, String(reportRequest.msg_id));
         if (reportedQuestionId)
-            await bot.sendMessage(msg.chat.id, `The message is already [reported](https://realityeth.github.io/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITITY_ETH_V30}-${reportedQuestionId})`, {parse_mode: 'Markdown'});
+            await bot.sendMessage(msg.chat.id, `The message is already [reported](https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITITY_ETH_V30}-${reportedQuestionId})`, {parse_mode: 'Markdown'});
         else{
             const optsFinal = {
                 chat_id: msg.chat.id,
@@ -73,7 +74,7 @@ const callback = async (bot: any, callbackQuery: TelegramBot.CallbackQuery) => {
             setAllowanceAsked(questionId, 'telegram', String(msg.chat.id), String(callbackQuery.from.id));
         }
     } else
-        bot.editMessageText(`Reports require atleast 3 confirmations.\n\n Should ${reportRequest.username} (ID: ${reportRequest.user_id}) be reported for breaking the [rules](${rules}) due to conduct over this [message](${msgLink}) ([ipfs backup](${reportRequest.msgBackup}))?`, opts);
+        bot.editMessageText(`Reports require atleast 3 confirmations.\n\n Should ${escape(reportRequest.username)} (ID: ${reportRequest.user_id}) be reported for breaking the [rules](${rules}) due to conduct over this [message](${msgLink}) ([ipfs backup](${reportRequest.msgBackup}))?`, opts);
     //bot.sendMessage(msg.chat.id, "You have already confirmed");
 }
 

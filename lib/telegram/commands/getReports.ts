@@ -23,7 +23,7 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
             const MsgLink = 'https://t.me/c/' + report.group_id.substring(4) + '/' + report.msg_id;
             const msgTime = new Date(report.timestamp*1000).toISOString();
             const reportState = report.finalized? 'final' : 'current';
-            reportMessage += ` - [Report](https://realityeth.github.io/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITITY_ETH_V30}-${report.question_id}), Evidence ID ${report.evidenceIndex}, [Message sent ${msgTime.substring(0,msgTime.length-4)}](${MsgLink}) ([backup](${report.msgBackup})), ${reportState} answer, ${reportAnswer}\n`;
+            reportMessage += ` - [Report](https://reality.eth.limo/app/#!/network/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITITY_ETH_V30}-${report.question_id}), Evidence ID ${report.evidenceIndex}, [Message sent ${msgTime.substring(0,msgTime.length-4)}](${MsgLink}) ([backup](${report.msgBackup})), ${reportState} answer, ${reportAnswer}\n`;
         });
         await bot.sendMessage(msg.chat.id, reportMessage,  {parse_mode: "Markdown", disable_web_page_preview: true});
         return;
@@ -41,7 +41,7 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
         const reportAnswer = report.active? 'broke the rules.' : 'did not break the rules.'
         const MsgLink = 'https://t.me/c/' + report.group_id.substring(4) + '/' + report.msg_id;
         const msgTime = new Date(report.timestamp*1000).toISOString();
-        reportMessage += ` - ${report.username} reported for message sent [${msgTime.substring(0,msgTime.length-4)}](${MsgLink}) ([backup](${report.msgBackup})): [Report](https://realityeth.github.io/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITITY_ETH_V30}-${report.question_id}), current answer, ${reportAnswer}\n`;
+        reportMessage += ` - ${report.username} reported for message sent [${msgTime.substring(0,msgTime.length-4)}](${MsgLink}) ([backup](${report.msgBackup})): [Report](https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITITY_ETH_V30}-${report.question_id}), current answer, ${reportAnswer}\n`;
     });
     reportMessage += '\n\nTo find all reports for a specific user, reply to their message with \'/getreports\'.';
     await bot.sendMessage(msg.chat.id, reportMessage,  {parse_mode: "Markdown", disable_web_page_preview: true});
