@@ -1,7 +1,8 @@
-import {openDb} from "./db";
+const Database = require('better-sqlite3');
 
 (async () => {
-    const db = await openDb();
+    const db = new Database('database.db', { verbose: console.log });
+    db.pragma('journal_mode = WAL');
 
     /**
      * A group can be a telegram chat, a subreddit, etc.
@@ -17,6 +18,7 @@ import {openDb} from "./db";
             invite_url TEXT, 
             address TEXT, 
             permission BOOLEAN,
+            lang TEXT,
             PRIMARY KEY (platform, group_id))`
         );
 
