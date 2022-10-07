@@ -1,7 +1,7 @@
 import * as TelegramBot from "node-telegram-bot-api";
-import {CommandCallback} from "../../../types";
 import {setRules} from "../../db";
 import {ipfsPublish} from "../../ipfs-publish";
+import langJson from "../assets/lang.json";
 
 /*
  * /setrules [ipfs file path]
@@ -17,7 +17,7 @@ const validateUrl = (s: string): boolean => {
     }
 };
 
-const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Message, match: string[]) => {
+const callback = async (db: any, lang: string, bot: TelegramBot, msg: TelegramBot.Message, match: string[]) => {
     const user = await bot.getChatMember(msg.chat.id, String(msg.from.id));
 
     if (user.status === 'creator' || user.status === 'administrator') {
@@ -26,19 +26,19 @@ const callback: CommandCallback = async (bot: TelegramBot, msg: TelegramBot.Mess
 
             const rulesPath = await ipfsPublish('rules.txt', enc.encode(msg.reply_to_message.text))
 
-            await setRules('telegram', String(msg.chat.id), 'https://ipfs.kleros.io'+rulesPath, new Date().getTime()/1000);
+            await setRules(db, 'telegram', String(msg.chat.id), 'https://ipfs.kleros.io'+rulesPath, new Date().getTime()/1000);
 
-            await bot.sendMessage(msg.chat.id, 'Rules updated');
+            await bot.sendMessage(msg.chat.id, langJson[lang].rulesUpdated);
         } else {
             if (validateUrl(match[1])) {
-                await setRules('telegram', String(msg.chat.id), match[1], new Date().getTime()/1000);
-                await bot.sendMessage(msg.chat.id, 'Rules updated');
+                await setRules(db, 'telegram', String(msg.chat.id), match[1], Math.floor(new Date().getTime()/1000));
+                await bot.sendMessage(msg.chat.id, langJson[lang].rulesUpdated);
             } else {
-                await bot.sendMessage(msg.chat.id, 'Invalid url passed to /setrules');
+                await bot.sendMessage(msg.chat.id, langJson[lang].errorRules);
             }
         }
     } else {
-        await bot.sendMessage(msg.chat.id, `Only admins can execute this command.`);
+        await bot.sendMessage(msg.chat.id, langJson[lang].errorAdminOnly);
     }
 }
 
