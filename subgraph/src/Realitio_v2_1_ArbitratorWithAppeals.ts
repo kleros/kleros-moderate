@@ -1,81 +1,68 @@
 import {
-    Contribution as ContributionEvent,
-    Dispute as DisputeEvent,
     DisputeIDToQuestionID as DisputeIDToQuestionIDEvent,
-    Evidence as EvidenceEvent,
-    MetaEvidence as MetaEvidenceEvent,
-    Ruling as RulingEvent,
     RulingFunded as RulingFundedEvent,
-    Withdrawal as WithdrawalEvent
-  } from "../generated/Contract/Contract"
-  import {
-    Ruling,
-    Question,
-    DisputeIDToQuestionID
+    Ruling as RulingEvent
+  } from "../generated/Realitio_v2_1_ArbitratorWithAppeals/Realitio_v2_1_ArbitratorWithAppeals"
+import {
+    ModerationDispute, ModerationInfo, UserHistory, 
   } from "../generated/schema"
-  import { BigInt, log } from "@graphprotocol/graph-ts"
-  
-  
-  export function handleContribution(event: ContributionEvent): void {
-    
-  }
-  
-  export function handleDispute(event: DisputeEvent): void {
-  }
+  import { log, Bytes, BigInt } from "@graphprotocol/graph-ts"
   
   export function handleDisputeIDToQuestionID(
     event: DisputeIDToQuestionIDEvent
   ): void {
-    let question = Question.load(event.params._questionID.toHexString());
-  
-    if (question === null) {
-      log.error(`handleSubmitAnswerByArbitrator: question ${event.params._questionID.toHexString()} not found`, [])
-      return;
-    }
-    question.disputeId = event.params._disputeID;
-    question.save();
-  
-    let entity = new DisputeIDToQuestionID(event.params._disputeID.toHexString());
-  
-    entity._questionID = event.params._questionID.toHexString();
-    entity.save();
+    const moderationDispute = new ModerationDispute(event.params._disputeID.toHexString());
+    moderationDispute.moderationInfo = event.params._questionID.toHexString()
+    moderationDispute.timestampLastUpdated = event.block.timestamp
+    moderationDispute.save();
   }
-  
-  export function handleEvidence(event: EvidenceEvent): void {
-  }
-  
-  export function handleMetaEvidence(event: MetaEvidenceEvent): void {
-  }
-  
+
   export function handleRuling(event: RulingEvent): void {
-    let entity = DisputeIDToQuestionID.load(
-      event.params._disputeID.toHexString()
-    )
-    if (entity === null) {
-      log.error(`dispute ${event.params._disputeID.toHexString()} not found`, [])
+    const moderationDispute = ModerationDispute.load(event.params._disputeID.toHexString());
+    if (!moderationDispute){
+      log.error('Moderation Dispute not found. {}',[event.params._disputeID.toHexString()]);
       return;
     }
-    let question = Question.load(entity._questionID);
-  
-    if (question === null) {
-      log.error(`question ${entity._questionID} not found`, [])
+    moderationDispute.finalRuling = event.params._ruling
+    moderationDispute.save()
+
+    const modinfo = ModerationInfo.load(moderationDispute.moderationInfo)
+    if (!modinfo){
+      log.error("ModerationInfo not found {}.", [moderationDispute.moderationInfo]);
       return;
     }
-    question.ruling = event.params._ruling;
-    question.save();
+    const userHistory = UserHistory.load(modinfo.user)
+    if (!userHistory){
+      log.error("UserHistory not found {}.", [modinfo.user]);
+      return;
+    }
+
+    if (event.params._ruling.equals(BigInt.fromU32(1))){
+      userHistory.countBrokeRulesOptimisticAndArbitrated++
+      userHistory.countBrokeRulesArbitrated++
+      userHistory.timestampLastUpdated = event.block.timestamp
+      if(userHistory.countBrokeRulesOptimisticAndArbitrated === 1)
+        userHistory.timestampParole = event.block.timestamp.plus(BigInt.fromU32(86400))
+      if(userHistory.countBrokeRulesOptimisticAndArbitrated === 2)
+        userHistory.timestampParole = event.block.timestamp.ge(userHistory.timestampParole) ? event.block.timestamp.plus(BigInt.fromU32(604800)) : userHistory.timestampParole.plus(BigInt.fromU32(604800))
+    }
+    userHistory.save()
   }
-  // appeal funding
+
   export function handleRulingFunded(event: RulingFundedEvent): void {
-    let question = Question.load(event.params._localDisputeID.toHexString());
-  
-    if (question === null) {
-      log.error(`handleRulingFunded: question ${event.params._localDisputeID.toHexString()} not found`, [])
+    let moderationInfo = ModerationInfo.load(event.params._localDisputeID.toHexString());
+    if (!moderationInfo){
+      log.error('Moderation Info not found {}.',[event.params._localDisputeID.toHexString()]);
       return;
     }
-    question.appeals = event.params._round;
-    question.save();
+    const dispute = moderationInfo.dispute
+    const dispute_non_null = dispute ? dispute : 'no-dispute';
+    const moderationDispute = ModerationDispute.load(dispute_non_null);
+    if (!moderationDispute){
+      log.error('Moderation Dispute not found {}.',[])
+      return;
+    }
+    moderationDispute.rulingFunded = event.params._ruling
+    moderationDispute.timestampLastRound = event.block.timestamp
+    moderationDispute.save();
   }
-  
-  export function handleWithdrawal(event: WithdrawalEvent): void {
-  }
-  
