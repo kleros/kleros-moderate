@@ -1,19 +1,19 @@
 import * as TelegramBot from "node-telegram-bot-api";
-import {setRules, getRule} from "../../db";
 import langJson from "../assets/lang.json";
+import { groupSettings } from "./types";
 
 /*
  * Welcome Message
  */
 
-const callback = async (db: any, lang: string, bot: TelegramBot, myChatMember: TelegramBot.ChatMemberUpdated) => {
+const callback = async (settings: groupSettings, bot: any, msg: any) => {
     try {
-        const rules = await getRule(db, 'telegram', String(myChatMember.chat.id), Math.floor(Date.now()/1000));
-    
-        if (!rules){
-            await bot.sendMessage(myChatMember.chat.id, `${langJson[lang].defaultRulesMsg1}(${langJson[lang].defaultRules}). ${langJson[lang].defaultRulesMsg2}.`, {parse_mode: "Markdown"});
-            await setRules(db, 'telegram', String(myChatMember.chat.id), langJson[lang].defaultRules, Math.floor(Date.now()/1000));
-        }
+        if (msg.old_chat_member.status !== "left")
+            return;
+        const message = `${langJson[settings.lang].welcome}[Kleros Moderate](https://kleros.io/moderate/) bot. \n\n/start to begin community sourced moderation.`;
+        bot.sendMessage(msg.chat.id, `${langJson[settings.lang].welcome}[Kleros Moderate](https://kleros.io/moderate/) bot. \n\n/start to begin community sourced moderation.`, msg.chat.is_forum? {parse_mode: "Markdown"} : {message_thread_id: msg.message_thread_id, parse_mode: "Markdown"});
+        //const options = msg.chat.is_forum? {message_thread_id: msg.message_thread_id, caption: "To get started, give Susie admin rights."} : {caption: "To get started, give Susie admin rights."}
+        //bot.sendVideo(msg.chat.id, 'https://ipfs.kleros.io/ipfs/QmbnEeVzBjcAnnDKGYJrRo1Lx2FFnG62hYfqx4fLTqYKC7/guide.mp4', options);
     } catch (error) {
         console.log(error);   
     }

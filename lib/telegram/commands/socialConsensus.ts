@@ -1,81 +1,61 @@
 import * as TelegramBot from "node-telegram-bot-api";
-import {getRule, getAllowance, setAllowance, setAllowanceAsked, getReportRequest, getQuestionId} from "../../db";
+import { getQuestionId } from "../../graph";
 import  {reportMsg} from "./report";
 import langJson from "../assets/lang.json";
+import { groupSettings } from "../../../types";
 const escape = require('markdown-escape')
 
 /*
  * /getrules
  */
 
-const callback = async (db: any, lang: string, bot: any, callbackQuery: TelegramBot.CallbackQuery) => {
+const callback = async (db: any, settings: groupSettings, botaddress: string, bot: TelegramBot, callbackQuery: TelegramBot.CallbackQuery, batchedSend: any) => {
     const rawCalldata = callbackQuery.data;
     const calldata = rawCalldata.split('|');
     const match = callbackQuery.message.reply_markup.inline_keyboard[0][0].text;
-    const msg = callbackQuery.message;
-    const user = await bot.getChatMember(msg.chat.id, String(callbackQuery.from.id));
-    const isAdmin = user.status === 'creator' || user.status === 'administrator';
-
-    if (!isAdmin){
-        if (callbackQuery.from.id == Number(calldata[1])) {
-            return;
-        }
-    
-        if (calldata.length > 2 && callbackQuery.from.id == Number(calldata[2])){
-            return;
-        }
-        const reportAllowance = await getAllowance(db, 'telegram', String(msg.chat.id), String(msg.from.id));
-        if ( reportAllowance === undefined ){
-            setAllowance(db, 'telegram', String(msg.chat.id), String(msg.from.id), 2, 15, Math.ceil( new Date().getTime() / 1000));
-        } else if ((Math.ceil( new Date().getTime() / 1000) < reportAllowance.timestamp_refresh + 28800) && reportAllowance.report_allowance == 0 ){
-            return;
-        } else{
-            const newReportAllowance = reportAllowance.report_allowance + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/28800) - 1;
-            const newEvidenceAllowance = reportAllowance.evidence_allowance + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/28800)*5;
-            const newRefreshTimestamp = reportAllowance.timestamp_refresh + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/28800)*28800;
-            setAllowance(db, 'telegram', String(msg.chat.id), String(msg.from.id), Math.min(newReportAllowance,3), Math.min(newEvidenceAllowance,15), newRefreshTimestamp);
-        }
-    }
-
+    const msg: any = callbackQuery.message;
     const newConfirmations = Number(match.substring(9,10)) + 1;
 
-    const opts = {
-        chat_id: msg.chat.id,
-        message_id: msg.message_id,
-        parse_mode: 'Markdown',
-        reply_markup: {
+    if (callbackQuery.from.id == Number(calldata[2]))
+        return;
+    //if (calldata.length > 3 && callbackQuery.from.id == Number(calldata[3]))
+    //    return;
+
+    const markdown = {
           inline_keyboard: [
             [
               {
-                text: langJson[lang].socialConsensus.confirm + '('+newConfirmations+'/3)',
+                text: langJson[settings.lang].socialConsensus.confirm + '('+newConfirmations+'/3)',
                 callback_data: rawCalldata+'|'+String(callbackQuery.from.id)
               }
             ]
           ]
-        }
-      };
-      const reportRequest = await getReportRequest(db, 'telegram', String(msg.chat.id),calldata[0]);
+        };
+      const opts = msg.chat.is_forum? {
+        chat_id: msg.chat.id,
+        message_id: msg.message_id,
+      } : {
+        chat_id: msg.chat.id,
+        message_id: msg.message_id,
+        message_thread_id: msg.message_thread_id
+      }
       //todo proper rule chronology
-      const rules = await getRule(db, 'telegram', String(msg.chat.id), Math.floor(Date.now()/1000));
-      const msgLink = 'https://t.me/c/' + String(msg.chat.id).substring(4) + '/' + String(reportRequest.msg_id);
-
-    if (newConfirmations > 2){
-        const reportedQuestionId = await getQuestionId(db, 'telegram', String(msg.chat.id), reportRequest.user_id, String(reportRequest.msg_id));
-        if (reportedQuestionId)
-            await bot.sendMessage(msg.chat.id, `${langJson[lang].socialConsensus.reported}(https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITITY_ETH_V30}-${reportedQuestionId})`, {parse_mode: 'Markdown'});
-        else{
-            const optsFinal = {
-                chat_id: msg.chat.id,
-                message_id: msg.message_id,
-              };
-            bot.editMessageText(langJson[lang].socialConsensus.reportConfirm, optsFinal);
-            const questionId = await reportMsg(db, bot, msg, reportRequest.username, reportRequest.user_id, rules, reportRequest.msg_id, reportRequest.msgBackup);
-            setAllowanceAsked(db, questionId, 'telegram', String(msg.chat.id), calldata[1]);
-            setAllowanceAsked(db, questionId, 'telegram', String(msg.chat.id), calldata[2]);
-            setAllowanceAsked(db, questionId, 'telegram', String(msg.chat.id), String(callbackQuery.from.id));
+    if (newConfirmations > 1){
+        const reportedQuestionId = await getQuestionId(botaddress, 'Telegram', String(msg.chat.id), String(calldata[0]), String(calldata[1]));
+        if (reportedQuestionId){
+          return;
         }
-    } else
-        bot.editMessageText(`${langJson[lang].socialConsensus.consensus1}\n\n ${langJson[lang].socialConsensus.consensus2} ${escape(reportRequest.username)} (ID: ${reportRequest.user_id}) ${langJson[lang].socialConsensus.consensus3}(${rules}) due to conduct over this [message]${langJson[lang].socialConsensus.consensus4}(${msgLink}) ([${langJson[lang].socialConsensus.consensus5}](${reportRequest.msgBackup}))?`, opts);
+        if (reportedQuestionId)
+            await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].socialConsensus.reported}(https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${reportedQuestionId})`, {parse_mode: 'Markdown'});
+        else{
+            bot.deleteMessage(msg.chat.id, String(msg.message_id))
+            const user = (await bot.getChatMember(String(msg.chat.id), String(calldata[0]))).user;
+            const fromUsername = escape(user.username || user.first_name || `no-username-set`);
+            await reportMsg(settings, db, bot, msg, fromUsername, String(calldata[0]), msg.entities[0].url, String(calldata[1]), msg.entities[2].url, calldata[2],batchedSend);
+        }
+    } else{
+      bot.editMessageReplyMarkup(markdown, opts)
+    }
 }
 
 export {callback};

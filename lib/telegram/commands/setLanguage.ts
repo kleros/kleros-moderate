@@ -1,37 +1,64 @@
 import * as TelegramBot from "node-telegram-bot-api";
 import {setLang, setRules} from "../../db";
 import langJson from "../assets/lang.json";
-
+import { groupSettings } from "../../../types";
 /*
  * /setlanguage ?
  */
 const regexp = /\/setlanguage/
 const regexpFull = /\/setlanguage (.+)/
 
-const callback = async (db: any, lang: string, bot: TelegramBot, msg: TelegramBot.Message) => {
+const callback = async (db: any, settings: groupSettings, bot: any, botId: number, msg: any) => {
     const user = await bot.getChatMember(msg.chat.id, String(msg.from.id));
-    const match = msg.text.match(regexpFull);
-
-    if (!match || match.length < 2){
-        await bot.sendMessage(msg.chat.id, langJson[lang].errorMatchLanguage);
+    if (!(user.status === 'creator' || user.status === 'administrator')) {
+        msg.chat.is_forum? await bot.sendMessage(msg.chat.id, langJson[settings.lang].errorAdminOnly, {message_thread_id: msg.message_thread_id}): await bot.sendMessage(msg.chat.id, langJson[settings.lang].errorAdminOnly);
         return;
     }
+    const match = msg.text.match(regexpFull);
+    const langCode = match? match[1].toLowerCase(): '';
 
-    const langCode = match[1].toLowerCase();
-
-    if (user.status === 'creator' || user.status === 'administrator') {
-        if (langJson[langCode]) {
-            await bot.sendMessage(msg.chat.id, langJson[langCode].confirmationLanguage);
-            setLang(db, 'telegram', String(msg.chat.id),langCode);
-            await setRules(db, 'telegram', String(msg.chat.id), langJson[lang].defaultRules, Math.floor(Date.now()/1000));
-            await bot.sendMessage(msg.chat.id, `${langJson[lang].defaultRulesMsg1}(${langJson[lang].defaultRules}). ${langJson[lang].defaultRulesMsg2}.`, {parse_mode: "Markdown"});
-
-        } else {
-            await bot.sendMessage(msg.chat.id, `${langCode} `+ langJson[lang].errorLanguage);
-        }
+    if (langJson[langCode]) {
+        setLanguageConfirm(db, bot, settings, langCode, msg)
     } else {
-        await bot.sendMessage(msg.chat.id, langJson[lang].errorAdminOnly);
+        const errorLanguage = `The language you requested is not yet available. Head to @SusieSupportChannel or linguo for information on how to add more translations!`
+        await bot.sendMessage(msg.chat.id, errorLanguage, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})
+        const opts = msg.chat.is_forum? {
+            message_thread_id: msg.message_thread_id,
+            parse_mode: 'Markdown',
+            reply_markup: {
+                inline_keyboard: [
+                [
+                    {
+                        text: 'English',
+                        callback_data: 'en'
+                    }
+                ]
+                ]
+            }
+        }: {
+            parse_mode: 'Markdown',
+            reply_markup: {
+                inline_keyboard: [
+                [
+                    {
+                        text: 'English',
+                        callback_data: 'en'
+                    }
+                ]
+                ]
+            }
+        }
+        await bot.sendMessage(msg.chat.id,'List of available languages',opts)
     }
 }
 
-export {regexp, callback};
+const setLanguageConfirm = async (db: any, bot: any, settings: groupSettings, langCode: string, msg: any) => {
+    setLang(db, 'telegram', String(msg.chat.id),langCode);
+    setRules(db, 'telegram', String(msg.chat.id), langJson[langCode].defaultRules, Math.floor(Date.now()/1000));
+    bot.sendMessage(msg.chat.id, langJson[langCode].confirmationLanguage, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {});
+    const msgDefaultRules = await bot.sendMessage(msg.chat.id, `${langJson[langCode].defaultRulesMsg1}(${langJson[langCode].defaultRules}). ${langJson[settings.lang].defaultRulesMsg2}.`, msg.chat.is_forum? {parse_mode: "Markdown", message_thread_id: settings.thread_id_rules}: {})
+    const msgRules = await bot.forwardMessage(msg.chat.id, msg.chat.id, msgDefaultRules.message_id, {message_thread_id: settings.thread_id_rules});
+    bot.pinChatMessage(msg.chat.id, msgRules.message_id, {message_thread_id: settings.thread_id_rules})
+}
+
+export {regexp, callback, setLanguageConfirm};

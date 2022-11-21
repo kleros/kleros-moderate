@@ -1,16 +1,29 @@
 import * as TelegramBot from "node-telegram-bot-api";
 import {Wallet} from "@ethersproject/wallet";
 import {ipfsPublish, ipfsPublishBuffer} from "../../ipfs-publish";
-import {getRealitioArbitrator} from "../../ethers";
+import { existsQuestionId } from "../../graph";
 import fetch from 'node-fetch';
+import { groupSettings } from "../../../types";
 import langJson from "../assets/lang.json";
-import {getDisputedReportsInfo, getActiveEvidenceGroupId, setAllowance, getAllowance} from "../../db";
+import { newSettings } from "../../ddb/ddb";
+const _contract = require('../../abi/Realitio_v2_1_ArbitratorWithAppeals.json')
+const Web3 = require('web3')
+const web3 = new Web3(process.env.WEB3_PROVIDER_URL)
 
-const processCommand = async (bot: TelegramBot, lang: string, msg: TelegramBot.Message, questionId: number|string, address: string, privateKey: string): Promise<string> => {
-    const evidencePath = await upload(bot, lang, msg, address);
-    const evidenceJsonPath = await uploadEvidenceJson(lang, msg, evidencePath, address);
-    await bot.sendMessage(msg.chat.id, `${langJson[lang].addEvidence.submitted}(https://ipfs.kleros.io${evidencePath}).`, {parse_mode: "Markdown"});
-    await submitEvidence(evidenceJsonPath, questionId,privateKey);
+const contract = new web3.eth.Contract(
+    _contract,
+    process.env.REALITIO_ARBITRATOR
+  )
+
+var botAddress: string;
+
+const processCommand = async (bot: TelegramBot, settings: groupSettings, msg: TelegramBot.Message, questionId: number|string, address: string, batchedSend: any, ): Promise<string> => {
+    const evidencePath = await upload(bot, settings.lang, msg, address);
+    const evidenceJsonPath = await uploadEvidenceJson(settings.lang, msg, evidencePath, address);
+        await bot.sendMessage(settings.channelID, `${langJson[settings.lang].addevidence.submitted}(https://ipfs.kleros.io${evidencePath}).`, {parse_mode: "Markdown"});
+        //await bot.sendMessage(channelId, `${langJson[lang].addevidence.submitted}(https://ipfs.kleros.io${evidencePath}).`, {parse_mode: "Markdown"});
+
+    await submitEvidence(batchedSend, evidenceJsonPath, questionId);
 
     return evidenceJsonPath;
 }
@@ -27,7 +40,7 @@ const upload = async (bot: TelegramBot, lang: string, msg: TelegramBot.Message, 
         if (msg.reply_to_message.sticker){
             file = await bot.getFile(msg.reply_to_message.sticker.file_id);
         } else if (msg.reply_to_message.photo){
-            file = await bot.getFile(msg.reply_to_message.photo[0].file_id);   
+            file = await bot.getFile(msg.reply_to_message.photo[msg.reply_to_message.photo.length-1].file_id);   
         } else if (msg.reply_to_message.audio){
             file = await bot.getFile(msg.reply_to_message.audio.file_id);   
         } else if (msg.reply_to_message.voice){
@@ -57,7 +70,7 @@ const uploadFileEvidence = async (filePath: string, fileName: string): Promise<s
 const uploadLocationEvidence = async (lang: string, msg: TelegramBot.Message, address: string): Promise<string> => {
     const enc = new TextEncoder();
     const author = (msg.reply_to_message.from.username || msg.reply_to_message.from.first_name) + ' ID:'+msg.reply_to_message.from.id ;
-    const fileName = `${langJson[lang].addevidence.location}.txt`;
+    const fileName = `${langJson[lang]["addevidence"].location}.txt`;
     const chatHistory = `${langJson[lang].addevidence.Chat}: ${msg.chat.title} (${String(msg.chat.id)})
     
 ${langJson[lang].addevidence.Author}: ${author} (${(new Date(msg.reply_to_message.date*1000)).toISOString()})
@@ -132,13 +145,15 @@ const uploadEvidenceJson = async (lang: string, msg: TelegramBot.Message, eviden
     return evidenceJsonPath;
 }
 
-const submitEvidence = async (evidencePath: string, questionId: number|string, privateKey: string) => {
+const submitEvidence = async (batchedSend: any, evidencePath: string, questionId: number|string) => {
 
-    await getRealitioArbitrator(process.env.REALITIO_ARBITRATOR, privateKey)
-        .submitEvidence(
+    batchedSend({
+        args: [        
             questionId,
-            evidencePath
-        )
+            evidencePath],
+        method: contract.methods.submitEvidence,
+        to: contract.options.address
+      });
 }
 
 /*
@@ -147,64 +162,68 @@ const submitEvidence = async (evidencePath: string, questionId: number|string, p
 const regexp = /\/addevidence/
 const regexpFull = /\/addevidence (.+)/
 
-const callback = async (db: any, lang: string, bot: TelegramBot, msg: TelegramBot.Message) => {
-    const match = msg.text.match(regexpFull);
-
+const callback = async (db: any, settings: groupSettings, bot: any, msg: any, batchedSend: any) => {
     if (!msg.reply_to_message) {
-        await bot.sendMessage(msg.chat.id, `/addevidence ${langJson[lang].errorReply}`);
+        msg.chat.is_forum? await bot.sendMessage(msg.chat.id, `/addevidence ${langJson[settings.lang].errorReply}`, {message_thread_id: msg.message_thread_id}) : await bot.sendMessage(msg.chat.id, `/addevidence ${langJson[settings.lang].errorReply}`);
         return;
     }
 
+    const match = msg.text.match(regexpFull);
+
+    //TODO Evidence IDs and button callback UX
     if (!match || match.length < 2){
-        await bot.sendMessage(msg.chat.id, `/addevidence ${langJson[lang].addEvidence.error1} ${langJson[lang].addEvidence.id}`);
-        const errorMsg = await errorMessage(db, lang, bot, msg);
-        await bot.sendMessage(msg.chat.id, errorMsg, {parse_mode: "Markdown", disable_web_page_preview: true});
+        msg.chat.is_forum? await bot.sendMessage(msg.chat.id, `/addevidence ${langJson[settings.lang].addevidence.error1} ${langJson[settings.lang].addevidence.id}`, {message_thread_id: msg.message_thread_id}) : await bot.sendMessage(msg.chat.id, `/addevidence ${langJson[settings.lang].addevidence.error1} ${langJson[settings.lang].addevidence.id}`);
+        //const errorMsg = await errorMessage(db, lang, bot, msg);
+        //await bot.sendMessage(msg.chat.id, errorMsg, {parse_mode: "Markdown", disable_web_page_preview: true});
         return; 
     }
 
-    const result = await getActiveEvidenceGroupId(db, 'telegram', String(msg.chat.id), Number(match[1]));
-    const user = await bot.getChatMember(msg.chat.id, String(msg.from.id));
-    const isAdmin = user.status === 'creator' || user.status === 'administrator';
-    if (result == null){
-        await bot.sendMessage(msg.chat.id, langJson[lang].errorId);
-        const errorMsg = await errorMessage(db, lang, bot, msg);
-        await bot.sendMessage(msg.chat.id, errorMsg, {parse_mode: "Markdown", disable_web_page_preview: true});
+    if (!await existsQuestionId(match[1])){
+        msg.chat.is_forum? await bot.sendMessage(msg.chat.id, langJson[settings.lang].errorId, {message_thread_id: msg.message_thread_id}) : bot.sendMessage(msg.chat.id, langJson[settings.lang].errorId);
+        await bot.sendMessage(msg.chat.id, langJson[settings.lang].errorId);
+        //const errorMsg = await errorMessage(db, lang, bot, msg);
+        //await bot.sendMessage(msg.chat.id, errorMsg, {parse_mode: "Markdown", disable_web_page_preview: true});
         return;
     }
-    if(!isAdmin){
-        const reportAllowance = await getAllowance(db, 'telegram', String(msg.chat.id), String(msg.from.id));
-        if (reportAllowance === undefined){
-            setAllowance(db, 'telegram', String(msg.chat.id), String(msg.from.id), 3, 14, Math.ceil( new Date().getTime() / 1000));
-        } else if ((Math.ceil( new Date().getTime() / 1000) < reportAllowance.timestamp_refresh + 5760) && reportAllowance.evidence_allowance == 0 ){
-            await bot.sendMessage(msg.chat.id, langJson[lang].errorAllowance);
-        } else{
-            const newReportAllowance = reportAllowance.report_allowance + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/28800);
-            const newEvidenceAllowance = reportAllowance.evidence_allowance + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/28800)*5 - 1;
-            const newRefreshTimestamp = reportAllowance.timestamp_refresh + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/28800)*28800;
-            setAllowance(db, 'telegram', String(msg.chat.id), String(msg.from.id), Math.min(newReportAllowance,3), Math.min(newEvidenceAllowance,15), newRefreshTimestamp);
-        }
+    
+    // TODO Allowance
+    /*
+    const reportAllowance = await getAllowance(db, 'telegram', String(msg.chat.id), String(msg.from.id));
+    if (reportAllowance === undefined){
+        setAllowance(db, 'telegram', String(msg.chat.id), String(msg.from.id), 3, 14, Math.ceil( new Date().getTime() / 1000));
+    } else if ((Math.ceil( new Date().getTime() / 1000) < reportAllowance.timestamp_refresh + 5760) && reportAllowance.evidence_allowance == 0 ){
+        await bot.sendMessage(msg.chat.id, langJson[lang].errorAllowance);
+    } else{
+        const newReportAllowance = reportAllowance.report_allowance + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/28800);
+        const newEvidenceAllowance = reportAllowance.evidence_allowance + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/28800)*5 - 1;
+        const newRefreshTimestamp = reportAllowance.timestamp_refresh + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/28800)*28800;
+        setAllowance(db, 'telegram', String(msg.chat.id), String(msg.from.id), Math.min(newReportAllowance,3), Math.min(newEvidenceAllowance,15), newRefreshTimestamp);
     }
+*/
+    if (!botAddress)
+        botAddress = await (await new Wallet(process.env.PRIVATE_KEY)).address
 
     try {
-        const evidencePath = await processCommand(bot, lang, msg, match[1], await (await new Wallet(process.env.PRIVATE_KEY)).address, process.env.PRIVATE_KEY);
+        const evidencePath = await processCommand(bot, settings, msg, match[1], botAddress,batchedSend);
     } catch (e) {
         console.log(e);
 
-        await bot.sendMessage(msg.chat.id, `${langJson[lang].errorTxn}: ${e.message}.`);
+        await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].errorTxn}: ${e.message}.`);
     }
 }
-
+/*
 const errorMessage = async (db: any, lang: string, bot: TelegramBot, msg: TelegramBot.Message): Promise<string> => {
     const reports = await getDisputedReportsInfo(db, 'telegram', String(msg.chat.id));
 
-    var reportMessage: string = `${langJson[lang].addEvidence.msg1}:\n\n`;
+    var reportMessage: string = `${langJson[lang].addevidence.msg1}:\n\n`;
 
     await reports.forEach(async (report) => {
         const MsgLink = 'https://t.me/c/' + report.group_id.substring(4) + '/' + report.msg_id;
         const msgTime = new Date(report.timestamp*1000).toISOString();
-        reportMessage += ` - ${report.username} ${langJson[lang].addEvidence.msg2} [${msgTime.substring(0,msgTime.length-4)}](${MsgLink}) ([${langJson[lang].socialConsensus.consensus5}](${report.msgBackup})): ${langJson[lang].addEvidence.id} ${report.evidenceIndex}\n`;
+        reportMessage += ` - ${report.username} ${langJson[lang].addevidence.msg2} [${msgTime.substring(0,msgTime.length-4)}](${MsgLink}) ([${langJson[lang].socialConsensus.consensus5}](${report.msgBackup})): ${langJson[lang].addevidence.id} ${report.evidenceIndex}\n`;
     });
 
     return reportMessage;
 }
+*/
 export {regexp, callback, processCommand, submitEvidence, upload};
