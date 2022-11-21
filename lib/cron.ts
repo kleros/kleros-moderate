@@ -1,302 +1,331 @@
 require('dotenv').config()
 const ModeratorBot = require('node-telegram-bot-api');
-//import * as TelegramBot from "node-telegram-bot-api";
-import {openDb, getFinalRecord, getRule, getCurrentRecord, setReportArbitration, getDisputedReports, setReport} from "./db";
-//import {getModerateBilling} from "./ethers";
+import {openDb, getChannelID, getLang} from "./db";
 import request from "graphql-request";
 import {BigNumber} from "ethers";
 import TelegramBot from "node-telegram-bot-api";
+import langJson from "./telegram/assets/lang.json";
+import {Wallet} from "@ethersproject/wallet";
+
 const db = openDb();
+const bot: TelegramBot = new ModeratorBot(process.env.BOT_TOKEN, {polling: false});  
+const channelIDs : Map<number, string> = new Map();
+const lang : Map<number, string> = new Map();
+
+// Only need DB for
+// - channelID
+// - finalizedReportCount
+// Can put in DB or make template
+// - language (for new reports)
+// - rules (for new reports)
 
 (async ()=> {
-    const t0 = Date.now();
-    const bot: TelegramBot = new ModeratorBot(process.env.BOT_TOKEN, {polling: false});  
+    const botaddress = await (await new Wallet(process.env.PRIVATE_KEY)).address;
+    const timestampLastUpdated = 0;
+    const timestampNew = Math.floor(Date.now()/1000);
+    const graphSyncingPeriod = 300;
 
     const reports = {};
 
-    (await getDisputedReports(db)).forEach((report) => {
-        reports[report.question_id] = report;
-    });
+    /*
+      var moderationTypes: string = '';
+      for (const lang in templates[process.env.CHAIN_ID]) 
+        for (const template in templates[process.env.CHAIN_ID][lang])
+            moderationTypes += '\"'+process.env.REALITY_ETH_V30+'-0x'+Number(templates[process.env.CHAIN_ID][lang][template]).toString(16)+"\",";
+    */
+    // dispute final
+    // dispute appealsPossible
+    // dispute disputesAppeal
+    // dispute created
+    // dispute appeal ruling funded
+    // realityQuestionUnanswered and finalized
+    // realityQuestionAnswered and finalized
+    // realityQuestionAnswered and not finalized
+    // jannies sheriff
+    // jannies deputysheriff
+    const lastPageUpdated = 0;
+    const queryModeration = getQuery(lastPageUpdated, timestampLastUpdated, botaddress, timestampNew, graphSyncingPeriod)
 
-    const query = `{
-        questions(
-          where: { 
-            bond_not: null, id_in: ${JSON.stringify(Object.keys(reports))}
-          }
-        ) {
-          id
-          answer
-          finalize_ts
-          arbitrationRequested
-          disputeId
-          bond
-          ruling
-        }
-      }`;
-    const result = await request(
-        'https://api.thegraph.com/subgraphs/name/shotaronowhere/kleros-moderate-rinkeby',
-        query
-    )
-    for (const question of result.questions) {
-        console.log((Date.now()-t0)/1000);
-        const answer = question.answer == null? null : BigNumber.from(question.answer);
-        const report = reports[question.id];
-        const botUser = await bot.getChatMember(report.group_id,String((await bot.getMe()).id));
-        const msgLink = 'https://t.me/c/' + report.group_id.substring(4) + '/' + report.msg_id;
-        const appealUrl = `https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITITY_ETH_V30}-${question.id}\n`;
-        const reportHistoryFinal = await getFinalRecord(db, report.platform, report.group_id, report.user_id);
-        const finalized = question.finalize_ts <= Math.ceil(+new Date() / 1000) + 60; // 1 min buffer for graph syncing and finality
-        if(question.arbitrationRequested === true){
-            if(report.arbitrationRequested != true){
-                //await bot.restrictChatMember(report.group_id, report.user_id, {can_send_messages: true});
-                await setReport(db, question.id, false, true, report.activeTimestamp, 0, question.bond);
-                const reportHistoryCurrent = await getCurrentRecord(db, report.platform, report.group_id, report.user_id);
-                if (botUser.can_send_messages == true ){
-                    await bot.sendMessage(report.group_id, `Arbitration is requested for the [question](${appealUrl}) about *${report.username}*'s conduct due to the [message](${msgLink}) ([backup](${report.msgBackup})). Consequences of the report are lifted for the duration of the [dispute](https://court.kleros.io/cases/${BigNumber.from(question.disputeId).toNumber()}) (on Gnosis Chain).`, {parse_mode: 'Markdown'}); 
-                }
-                if(reportHistoryCurrent == 0){
-                    const options = {can_send_messages: true, can_send_media_messages: true, can_send_polls: true, can_send_other_messages: true, can_add_web_page_previews: true, can_change_info: false, can_pin_messages: false};
-                    if (botUser.status == "administrator" && botUser.can_restrict_members == true){
-                        await bot.restrictChatMember(report.group_id, report.user_id, options);
-                    } else {
-                        if (botUser.can_send_messages == true ){
-                            await bot.sendMessage(report.group_id, `My admin rights are limited. I am unable to lift the temporary mute on *${report.username}* for the duration of the dispute. Please ask an admin of the group to lift the mute on *${report.username}*, if one exists.`);
-                        }
-                    }
-                } else
-                    handleCurrentTelegramUnrestrict(bot, report, reportHistoryCurrent+reportHistoryFinal);
-                await setReportArbitration(db, question.id, 0);
-            } else if (question.ruling != null){
-                const msgLink = 'https://t.me/c/' + report.group_id.substring(4) + '/' + report.msg_id;
-                if (botUser.can_send_messages == true ){
-                    await bot.sendMessage(report.group_id, `The dispute over *${report.username}*'s [message](${msgLink}) ([backup](${report.msgBackup})) resolved.`, {parse_mode: 'Markdown'});
-                }
-                if (question.ruling == 1){ // check rulings
-                    handleFinalizedTelegram(bot, report, question, 1, reportHistoryFinal);
-                }  else{
-                    handleFinalizedTelegram(bot, report, question, 2, reportHistoryFinal);
-                }
+    console.log(queryModeration);
+
+    const moderationActions = await request(
+        'https://api.thegraph.com/subgraphs/name/shotaronowhere/kleros-moderate-goerli',
+        queryModeration
+    );
+
+    for (const data of moderationActions.disputesFinal) {
+        const settings = getGroupSettings(data.moderationInfo.user.group.groupID);
+        // settings[1] language
+        try{
+            const msgLink = data.message;
+            const disputeURL = `https://resolve.kleros.io/${BigNumber.from(data.id).toNumber()}`;
+            // check rulings, note down shift since reality uses 0,1 for no, yes and kleros uses 1,2 for yes, no
+            const message = (data.finalRuling === 1)? 'broke the rules' : 'did not break the rules'
+            try{
+                await bot.sendMessage(settings[0], `The [dispute](${disputeURL}) over *${data.moderationInfo.user.username}*'s [message](${msgLink}) ([backup](${data.moderationInfo.messageBackup})) resolved. *${data.moderationInfo.user.username}* ${message}`, {parse_mode: 'Markdown'});
+            } catch(e){
+                console.log(e)
             }
-            continue;
-        }
-        const rules = await getRule(db, 'telegram', String(report.group_id), Math.floor(Date.now()/1000));
 
-        // only final records considered for now.
-        if (answer == null && !finalized)
-            continue;
-        const latestReportState = (answer == null)? 2: answer.toNumber();
-
-
-        if (finalized){
-            if (report.platform === 'telegram') {
-                if (botUser.can_send_messages == true ){
-                    await bot.sendMessage(report.group_id, `The report on Reality is finalized.`, {parse_mode: 'Markdown'}); 
-                }
-                handleFinalizedTelegram(bot, report, question, latestReportState, reportHistoryFinal);
-            } else {
-                console.error(`Invalid platform: ${report.platform}`);
-            }
-        } else if (question.bond != report.bond_paid) {
-            if (latestReportState === 1) {
-                // ban
-                await setReport(db, question.id, true, finalized,  Math.ceil(+new Date() / 1000), 0, question.bond);
-                const currentRecord = await getCurrentRecord(db, report.platform, report.group_id, report.user_id);
-                const reportHistoryCurrent = reportHistoryFinal + currentRecord;
-                if (report.platform === 'telegram') {
-                    // @ts-ignore
-                    const msgLink = 'https://t.me/c/' + report.group_id.substring(4) + '/' + report.msg_id;
-                    if (botUser.can_send_messages == true ){
-                        await bot.sendMessage(report.group_id, `The question, \n\n\"Did *${report.username}*'s conduct due to this [message](${msgLink}) ([backup](${report.msgBackup})) violate the [rules](${rules})?\",\n\nis answered with *Yes*.\n\nDo you think this answer is true? If not, you can [correct](${appealUrl}) the answer.`, {parse_mode: 'Markdown'});
-                        await bot.sendMessage(report.group_id, `*${report.username}* is muted while the question is answered with yes and the answer is not yet final.`, {parse_mode: 'Markdown'});
-                    }
-                    var options;
-                    switch(reportHistoryCurrent){
-                        case 1:{
-                            const paroleDate = Math.ceil(+new Date() / 1000) + 86400;
-                            options = {can_send_messages: false, can_send_media_messages: false, can_send_polls: false, can_send_other_messages: false, can_add_web_page_previews: false, can_change_info: false, can_pin_messages: false, until_date: paroleDate};
-                            break;
-                        }
-                        case 2:{
-                            const paroleDate = Math.ceil(+new Date() / 1000) + 604800;
-                            options = {can_send_messages: false, can_send_media_messages: false, can_send_polls: false, can_send_other_messages: false, can_add_web_page_previews: false, can_change_info: false, can_pin_messages: false, until_date: paroleDate};
-                            break;
-                        }
-                        default:{
-                            options = {can_send_messages: false, can_send_media_messages: false, can_send_polls: false, can_send_other_messages: false, can_add_web_page_previews: false, can_change_info: false, can_pin_messages: false};
-                            break;
-                        }
-                    }
-                    if (botUser.status == "administrator" && botUser.can_restrict_members == true ){
-                        await bot.restrictChatMember(report.group_id, report.user_id, options);
-                    } else if (botUser.can_send_messages == true){
-                            await bot.sendMessage(report.group_id, `My admin rights are limited. I am unable to mute *${report.username}*. Please ask an admin to apply the mute.`);
-                    }
-                } else {
-                    console.error(`Invalid platform: ${report.platform}`);
-                }
-            } else {
-                // unban
-                await setReport(db, question.id, false, finalized, Math.floor(Date.now()/1000), 0, question.bond);
-                const reportHistoryCurrent = reportHistoryFinal + await getCurrentRecord(db, report.platform, report.group_id, report.user_id);
-
-                if (report.platform === 'telegram') {
-                    // @ts-ignore
-                    const msgLink = 'https://t.me/c/' + report.group_id.substring(4) + '/' + report.msg_id;
-                    if (botUser.can_send_messages === true)
-                    await bot.sendMessage(report.group_id, `The question, \n\n\"Did *${report.username}*'s conduct due to this [message](${msgLink}) ([backup](${report.msgBackup})) violate the [rules](${rules})?\",\n\nis answered with *No*.\n\nDo you think this answer is true? If not, you can [correct](${appealUrl}) the answer.`, {parse_mode: 'Markdown'});
-                    handleCurrentTelegramUnrestrict(bot, report, reportHistoryCurrent);
-                } else {
-                    console.error(`Invalid platform: ${report.platform}`);
-                }
-            }
+        } catch(e){
+            console.log(e)
         }
     }
+
+    for (const data of moderationActions.disputesAppealPossible) {
+        const settings = getGroupSettings(data.moderationInfo.user.group.groupID);
+        // settings[1] language
+        try{
+            bot.sendMessage(settings[0], `The dispute id ${data.id} has concluded it's current round. The ruling is ${data.currentRuling}. An appeal is possible.`);
+            //TODO
+            //await bot.sendMessage(settings[0], `The current dispute over the [question](${realityURL}) about *${report.username}*'s conduct due to the [message](${msgLink}) ([backup](${report.msgBackup})) has concluded it's current round. *${report.username}*'s conduct ${disputeInfo[question.disputeId].currentRulling == 2? 'broke the rules': 'did not break the rules'} If you think the decision is incorrect, you can request an [appeal](https://resolve.kleros.io/cases/${BigNumber.from(question.disputeId).toNumber()})`, {parse_mode: 'Markdown'}); 
+        } catch(e){
+            console.log(e)
+        }
+    }
+
+    for (const data of moderationActions.disputesCreated) {
+        const settings = getGroupSettings(data.moderationInfo.user.group.groupID);
+        // settings[1] language
+        const realityURL = `https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${data.moderationInfo.id}`;
+        const disputeURL = `https://resolve.kleros.io/${BigNumber.from(data.id).toNumber()}`;
+        try{
+            await bot.sendMessage(settings[0], `Arbitration is requested for the [question](${realityURL}) about *${data.moderationInfo.user.username}*'s conduct due to the [message](${data.moderationInfo.message}) ([backup](${data.moderationInfo.messageBackup})). Consequences of the report are lifted for the duration of the [dispute](${disputeURL}) (on Gnosis Chain).`, {parse_mode: 'Markdown'}); 
+            handleTelegramUpdateRestrict(bot,settings[0],data,timestampNew, false);
+        } catch (e){
+            console.log(e)
+        }
+    }
+
+    for (const data of moderationActions.disputesAppealFunded) {
+        const settings = getGroupSettings(data.moderationInfo.user.group.groupID);
+        // settings[1] language
+        try{
+            bot.sendMessage(settings[0], "An appeal has been funded");
+        } catch(e){
+            console.log(e)
+        }
+    }
+
+    for(const data of moderationActions.realityQuestionUnansweredFinalized){
+        const settings = getGroupSettings(data.user.group.groupID);
+        // settings[1] language
+        try{
+            bot.sendMessage(settings[0], `The reality question ${data.id} was unanswered`);
+        } catch(e){
+            console.log(e)
+        }
+    }
+
+    for(const data of moderationActions.realityQuestionAnsweredFinalized){
+        const settings = getGroupSettings(data.moderationInfo.user.group.groupID);
+        // settings[1] language
+        try{
+            //bot.sendMessage(settings[0], `The reality question ${data.id} is finalized with ${data.currentAnswer}`);
+            
+            await bot.sendMessage(settings[0], `The report on Reality is finalized.`, {parse_mode: 'Markdown'}); 
+            // finalize
+            await handleTelegramFinalize(bot, settings[0], data, timestampNew, botaddress);
+        } catch(e){
+            console.log(e)
+        }
+    }
+
+    for(const data of moderationActions.realityQuestionAnsweredNotFinalized){
+        const settings = getGroupSettings(data.moderationInfo.user.group.groupID);
+        // settings[1] language
+        try{
+            bot.sendMessage(settings[0], `The reality question ${data.id} was answered with ${data.currentAnswer}`);
+            const realityURL = `https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${data.moderationInfo.id}`;
+            await bot.sendMessage(settings[0], `The question, \n\n\"Did *${data.moderationInfo.user.username}*'s conduct due to this [message](${data.moderationInfo.message}) ([backup](${data.moderationInfo.messageBackup})) violate the [rules](${data.moderationInfo.rules})?\",\n\nis answered with *Yes*.\n\nDo you think this answer is true? If not, you can [correct](${realityURL}) the answer.`, {parse_mode: 'Markdown'});
+            handleTelegramUpdateRestrict(bot,settings[0], data,timestampNew, data.currentAnswer.equals("0x0000000000000000000000000000000000000000000000000000000000000001"));
+        } catch(e){
+            console.log(e)
+        }
+    }
+
+    for(const data of moderationActions.sheriff){
+        const settings = getGroupSettings(data.group.groupID);
+        // settings[1] language
+        try{
+            bot.sendMessage(settings[0], `There's a new sheriff in town ${data.sheriff.userID}`);
+        } catch(e){
+            console.log(e)
+        }
+    }
+
+    for(const data of moderationActions.deputySheriff){
+        const settings = getGroupSettings(data.group.groupID);
+        // settings[1] language
+        try{
+            bot.sendMessage(settings[0], `There's a new deputy sheriff in town ${data.sheriff.userID}`);
+        } catch(e){
+            console.log(e)
+        }
+    }
+
+    return;
+
 })()
 
-const handleCurrentTelegramUnrestrict = async (bot: TelegramBot, report: any, reportHistoryCurrent: number) => {
-    const botUser = await bot.getChatMember(report.group_id,String((await bot.getMe()).id));
-    switch(reportHistoryCurrent){
-        case 0:{
-            const options = {can_send_messages: true, can_send_media_messages: true, can_send_polls: true, can_send_other_messages: true, can_add_web_page_previews: true, can_change_info: false, can_pin_messages: false};
-            if (botUser.status === "administrator" && botUser.can_restrict_members === true){
-                if (botUser.can_restrict_members === true){
-                    await bot.restrictChatMember(report.group_id, report.user_id, options);
-                }
-                if (botUser.can_send_messages === true){
-                    await bot.sendMessage(report.group_id, `*${report.username}* has not broken the rules and all temporary mutes are lifted.`, {parse_mode: 'Markdown'});
-                }
-            } else {
-                if (botUser.can_send_messages === true ){
-                    await bot.sendMessage(report.group_id, `My admin rights are limited. I am unable to remove any temporary mute on *${report.username}*. Please ask an admin to remove any temporary mute.`);
-                }
-            }
-            break;
+const getGroupSettings = async (chatId: number): Promise<[string, string]> => {
+        var language = lang.get(chatId);
+        if (!language){
+            language = getLang(db, 'telegram', String(chatId));
+            lang.set(chatId, language);
         }
-        case 1:{
-            const paroleDate = Math.ceil(+new Date() / 1000) + 86400;
-            const options = {can_send_messages: false, can_send_media_messages: false, can_send_polls: false, can_send_other_messages: false, can_add_web_page_previews: false, can_change_info: false, can_pin_messages: false, until_date: paroleDate};
+        var channelId = channelIDs.get(chatId)
+        if (!channelId){
+            channelId = getChannelID(db, 'telegram', String(chatId))
+            if (channelId === '0'){
+                channelIDs.set(chatId, String(chatId));
+                channelId = String(chatId)
+            }else
+                channelIDs.set(chatId, channelId);
+        }
+        return [channelId, language]
+}
 
-            if (botUser.status === "administrator" && botUser.can_restrict_members === true){
-                await bot.restrictChatMember(report.group_id, report.user_id, options);
-                if (botUser.can_send_messages === true)
-                    await bot.sendMessage(report.group_id, `*${report.username}* has broken the rules once. The ban on *${report.username}* is lifted to 24 hours.`, {parse_mode: 'Markdown'});
-            } else {
-                if (botUser.can_send_messages === true ){
-                    await bot.sendMessage(report.group_id, `*${report.username}* has broken the rule at least once. My admin rights are limited. I am unable to apply the remporary mute of 24 hours on *${report.username}*. Please ask an admin of the group to apply the temporary 24 hour ban if not already applied.`);
-                }
-            }
-            break;
-        }
-        case 2:{
-            const paroleDate = Math.ceil(+new Date() / 1000) + 604800;
-            const options = {can_send_messages: false, can_send_media_messages: false, can_send_polls: false, can_send_other_messages: false, can_add_web_page_previews: false, can_change_info: false, can_pin_messages: false, until_date: paroleDate};
 
-            if (botUser.status === "administrator" && botUser.can_restrict_members === true){
-                    await bot.restrictChatMember(report.group_id, report.user_id, options);
-                if (botUser.can_send_messages === true)
-                    await bot.sendMessage(report.group_id, `*${report.username}* has broken the rules two times. The ban on *${report.username}* is lifted to 7 days.`, {parse_mode: 'Markdown'});
-            } else if (botUser.can_send_messages === true ){
-                    await bot.sendMessage(report.group_id, `*${report.username}* has broken the rule at least two times. My admin rights are limited. I am unable to apply the temporary mute of 7 days on *${report.username}*. Please ask an admin of the group to apply the 7 day mute if not already applied.`);
-            }
-            break;
-        }
-        default:{
-            const options = {can_send_messages: false, can_send_media_messages: false, can_send_polls: false, can_send_other_messages: false, can_add_web_page_previews: false, can_change_info: false, can_pin_messages: false};
+const handleTelegramUpdateRestrict = async (bot: TelegramBot, channelID: string, moderationInfo: any, timestampNew: number, restrict: boolean) => {
+    try{
+        if (restrict){
+            var duration: string;
+            if(moderationInfo.user.history.countBrokeRulesArbitrated == 1)
+                duration = 'first time and is subject to a 1 day';
+            else if (moderationInfo.user.history.countBrokeRulesArbitrated == 2)
+                duration = 'second time and is subject to a 1 week';
+            else
+                duration = 'third time and is subject to a 1 year';
 
-            if (botUser.status === "administrator" && botUser.can_restrict_members === true){
-                await bot.restrictChatMember(report.group_id, report.user_id, options);
-                if (botUser.can_send_messages === true)
-                    await bot.sendMessage(report.group_id, `*${report.username}* has broken the rule at least three times. A permanent mute is imposed on *${report.username}*.`, {parse_mode: 'Markdown'});
-            } else if (botUser.can_send_messages === true ){
-                    await bot.sendMessage(report.group_id, `*${report.username}* has broken the rule at least three times. My admin rights are limited. I am unable to apply the permanent mute on *${report.username}*. Please ask an admin of the group to apply the permanent mute if not already applied.`);
+            await bot.sendMessage(channelID, `*${moderationInfo.user.username}*'s conduct due to this [message](${moderationInfo.message}) ([backup](${moderationInfo.messsageBackup})) violated the [rules](${moderationInfo.rulesUrl}) for the ${duration} ban.`, {parse_mode: 'Markdown'}); 
+            await bot.banChatMember(moderationInfo.user.group.groupID, moderationInfo.user.userID, Number(moderationInfo.user.history.timestampParole));
+        } else {
+            const options = timestampNew > Number(moderationInfo.user.history.timestampParole)? {can_send_messages: true, can_send_media_messages: true, can_send_polls: true, can_send_other_messages: true, can_add_web_page_previews: true, can_change_info: false, can_pin_messages: false}: {can_send_messages: false, can_send_media_messages: false, can_send_polls: false, can_send_other_messages: false, can_add_web_page_previews: false, can_change_info: false, can_pin_messages: false, until_date: Number(moderationInfo.user.userHistory.timestampParole)};
+            await bot.restrictChatMember(moderationInfo.user.group.groupID, moderationInfo.user.userID, options);
+            if (timestampNew > Number(moderationInfo.user.history.timestampParole))
+                await bot.sendMessage(channelID, `*${moderationInfo.user.userID}* has no other active reports. All bans are lifted.`, {parse_mode: 'Markdown'});
+            else {
+                const date = new Date(Number(moderationInfo.user.history.timestampParole) * 1000).toISOString();
+                await bot.sendMessage(moderationInfo.user.group.groupID, `*${moderationInfo.user.username}* has other active reports. The ban on *${moderationInfo.user.username}* is reduced and now expires on ${date}`, {parse_mode: 'Markdown'});
             }
-            break;
         }
+    } catch(e){
+        console.log(e)
+        await bot.sendMessage(moderationInfo.user.group.groupID, `My admin rights are limited. I am unable to lift the ban/mute duration for *${moderationInfo.user.username}*. Please ask an admin.`);
     }
 }
 
-const handleFinalizedTelegram = async (bot: any, report: any, question: any, latestReportState: number, reportHistory: number) => {
-    const msgLink = 'https://t.me/c/' + report.group_id.substring(4) + '/' + report.msg_id;
-    const botUser = await bot.getChatMember(report.group_id,String((await bot.getMe()).id));
-    const rules = await getRule(db, 'telegram', String(report.group_id), Math.floor(Date.now()/1000));
-    const bond = question.bond == null? 0: question.bond;
-    if (latestReportState === 1){
-        const activeTimestamp = latestReportState === report.active ? report.activeTimestamp : Math.ceil(+new Date() / 1000);
-        switch(reportHistory){
-            case 0:{
-                if (botUser.can_send_messages === true ){
-                    await bot.sendMessage(report.group_id, `*${report.username}*'s conduct due to this [message](${msgLink}) ([backup](${report.msgBackup})) violated the [rules](${rules}) for the first time and is subject to a 1 day ban.`, {parse_mode: 'Markdown'}); 
-                }
-                const paroleDate = Math.ceil(+new Date() / 1000) + 86400;
-                if (botUser.status === "administrator" && botUser.can_restrict_members === true ){
-                    try{
-                        await bot.banChatMember(report.group_id, report.user_id, {until_date: paroleDate});
-                    } catch {
-                        if (botUser.can_send_messages === true ){
-                            await bot.sendMessage(report.group_id, `My admin rights are limited. I am unable to ban *${report.username}* for 24 hours. Please ask an admin to apply the 24 hour ban.`);
-                        }
-                        console.log("ban error");
-                    }
-                }
-                await setReport(db, question.id, true, true, activeTimestamp, 0, bond);
-                break;
-            }
-            case 1:{
-                if (botUser.can_send_messages === true ){
-                    await bot.sendMessage(report.group_id, `*${report.username}*'s conduct due to this [message](${msgLink}) ([backup](${report.msgBackup})) violated the [rules](${rules}) for the second time and is subject to a 1 week ban.`, {parse_mode: 'Markdown'}); 
-                }
-                const paroleDate = Math.ceil(+new Date() / 1000) + 604800;
-                if (botUser.status === "administrator" && botUser.can_restrict_members === true ){
-                    try{
-                        await bot.banChatMember(report.group_id, report.user_id, {until_date: paroleDate});
-                    } catch {
-                        if (botUser.can_send_messages === true ){
-                            await bot.sendMessage(report.group_id, `My admin rights are limited. I am unable to ban *${report.username}* for 7 days. Please ask an admin to apply the 7 day ban.`);
-                        }
-                        console.log("ban error");
-                    }
-                }
-                await setReport(db, question.id, true, true, activeTimestamp, 0, bond);
-                break;
-            }
-            default:{
-                if (botUser.can_send_messages === true ){
-                    await bot.sendMessage(report.group_id, `*${report.username}*'s conduct due to this [message](${msgLink}) ([backup](${report.msgBackup})) violated the [rules](${rules}) for the third time and is subject to a permanent ban.`, {parse_mode: 'Markdown'}); 
-                }
-                if (botUser.status === "administrator" && botUser.can_restrict_members === true ){
-                    try{
-                        await bot.banChatMember(report.group_id, report.user_id);
-                    } catch {
-                        if (botUser.can_send_messages === true ){
-                            await bot.sendMessage(report.group_id, `My admin rights are limited. I am unable to permaban *${report.username}*. Please ask an admin to apply the permaban.`);
-                        }
-                        console.log("ban error");
-                    }
-                }
-                await setReport(db, question.id, true, true, activeTimestamp, 0, bond);
-                break;
-            }
-        }
-    } else{
-        await setReport(db, question.id, false, true, report.activeTimestamp, 0, bond);
-        const reportHistoryCurrent = await getCurrentRecord(db, report.platform, report.group_id, report.user_id);
-        if (botUser.can_send_messages === true ){
-            await bot.sendMessage(report.group_id, `*${report.username}*'s conduct due to this [message](${msgLink}) ([backup](${report.msgBackup})) did not violate the [rules](${rules}).`, {parse_mode: 'Markdown'}); 
-        }
-        if(reportHistoryCurrent === 0){
-            const options = {can_send_messages: true, can_send_media_messages: true, can_send_polls: true, can_send_other_messages: true, can_add_web_page_previews: true, can_change_info: false, can_pin_messages: false};
-            if (botUser.status === "administrator" && botUser.can_restrict_members === true ){
-                try{
-                    await bot.restrictChatMember(report.group_id, report.user_id, options);
-                } catch{
-                    if (botUser.can_send_messages === true ){
-                        await bot.sendMessage(report.group_id, `My admin rights are limited. I am unable to lift any active mute on *${report.username}*. Please ask an admin to remove any mute related to this question.`);
-                    }
-                    console.log("unrestrict error");
-                }
-            }
-        } else{
-            handleCurrentTelegramUnrestrict(bot, report, reportHistoryCurrent+reportHistory);
-        }
+const handleTelegramFinalize = async (bot: TelegramBot, channelID: string, realityCheck: any, timestampNew: number, botaddress: string) => {
+    const finalizedCount = await getFinalizedCount(realityCheck.moderationInfo.user, timestampNew, botaddress);
+    if (finalizedCount == 1){
+
     }
+    var duration: string;
+    if(finalizedCount == 1)
+        duration = 'first time and is subject to a 1 day';
+    else if (finalizedCount == 2)
+        duration = 'second time and is subject to a 1 week';
+    else
+        duration = 'third time and is subject to a 1 year';
+    try{
+        await bot.sendMessage(channelID, `*${realityCheck.moderationInfo.user.username}*'s conduct due to this [message](${realityCheck.moderationInfo.message}) ([backup](${realityCheck.moderationInfo.messsageBackup})) violated the [rules](${realityCheck.moderationInfo.rulesUrl}) for the ${duration} ban.`, {parse_mode: 'Markdown'}); 
+        await bot.banChatMember(realityCheck.moderationInfo.user.group.groupID, realityCheck.moderationInfo.userID, Number(realityCheck.moderationInfo.user.history.timestampParole));
+    
+    } catch(e){
+        await bot.sendMessage(channelID, `My admin rights are limited. I am unable to lift any active mute on *${realityCheck.moderationInfo.user.username}*. Please ask an admin to remove any mute related to this question.`);
+    }
+}
+
+
+const getFinalizedCount = async (moderationInfo: any, timestampNew: number, botaddress: string): Promise<number> => {
+    const queryOptimisticallyFinalized =`{
+        realityChecks(where: {deadline_lt: ${timestampNew}, currentAnswer: "0x0000000000000000000000000000000000000000000000000000000000000001", moderationInfo_: {askedBy: "${botaddress}", user: "${moderationInfo.user}"}}) {
+            id
+        }
+    }`;
+    const moderationActions = await request(
+        'https://api.thegraph.com/subgraphs/name/shotaronowhere/kleros-moderate-goerli',
+        queryOptimisticallyFinalized
+    );
+    return moderationInfo.user.history.countBrokeRulesArbitrated + moderationActions.data.length;
+}
+
+const getQuery = (lastPageUpdated: number, timestampLastUpdated: number, botaddress: string, timestampNew: number, graphSyncingPeriod: number): string => {
+    const moderationInfoContent = `        id
+                message
+                messageBackup
+                moderationType
+                rulesUrl
+                user {
+                    username
+                    userID
+                    group {
+                        groupID
+                    }
+                    history{
+                        timestampParole
+                        countBrokeRulesArbitrated
+                    }
+                }`;
+    const moderationInfo = `moderationInfo {
+        ${moderationInfoContent}
+            }`;
+return `{
+        disputesFinal: moderationDisputes(first: 1000, skip: ${lastPageUpdated*1000}, where: {timestampLastAppealPossible_gt: ${timestampLastUpdated}, finalRuling_not: null, moderationInfo_: {askedBy: "${botaddress}"}}) {
+            id
+            finalRuling
+        }
+        disputesAppealPossible: moderationDisputes(first: 1000, skip: ${lastPageUpdated*1000}, where: {timestampLastAppealPossible_gt: ${timestampLastUpdated}, finalRuling: null, moderationInfo_: {askedBy: "${botaddress}"}}) {
+            id
+            currentRuling
+            ${moderationInfo}
+        }
+        disputesAppeal: moderationDisputes(first: 1000, skip: ${lastPageUpdated*1000}, where: {timestampLastAppeal_gt: ${timestampLastUpdated}, finalRuling: null, moderationInfo_: {askedBy: "${botaddress}"}}) {
+            id
+            currentRuling
+            ${moderationInfo}
+        }
+        disputesCreated: moderationDisputes(first: 1000, skip: ${lastPageUpdated*1000}, where: {timestampLastUpdated_gt: ${timestampLastUpdated}, finalRuling: null, currentRuling: null, rulingFunded: null, moderationInfo_: {askedBy: "${botaddress}"}}) {
+            id
+            ${moderationInfo}
+        }
+        disputesAppealFunded: moderationDisputes(first: 1000, skip: ${lastPageUpdated*1000}, where: {timestampLastUpdated_gt: ${timestampLastUpdated}, rulingFunded_not: null, moderationInfo_: {askedBy: "${botaddress}"}}) {
+            id
+            rulingFunded
+            ${moderationInfo}
+        }
+        realityQuestionUnansweredFinalized: moderationInfos(first: 1000, skip: ${lastPageUpdated*1000}, where: {deadline_gt: ${timestampLastUpdated}, deadline_lt: ${timestampNew}, reality: null, askedBy: "${botaddress}"}) {
+            ${moderationInfoContent}
+        }
+        realityQuestionAnsweredFinalized: realityChecks(first: 1000, skip: ${lastPageUpdated*1000}, where: {deadline_gt: ${timestampLastUpdated}, deadline_lt: ${timestampNew - graphSyncingPeriod}, moderationInfo_: {askedBy: "${botaddress}"}}) {
+            id
+            currentAnswer
+            timeServed
+            ${moderationInfo}
+        }
+        realityQuestionAnsweredNotFinalized: realityChecks(first: 1000, skip: ${lastPageUpdated*1000}, where: {deadline_gt: ${timestampNew}, moderationInfo_: {askedBy: "${botaddress}"}}) {
+            id
+            currentAnswer
+            ${moderationInfo}
+        }
+        sheriffs: jannies(first: 1000, skip: ${lastPageUpdated*1000}, where: {timestampLastUpdatedSheriff_gt: ${timestampLastUpdated}, group_: {botAddress: "${botaddress}"}}) {
+            id
+            group{
+                groupID
+            }
+            sheriff{
+                userID
+            }
+        }
+        deputySheriffs: jannies(first: 1000, skip: ${lastPageUpdated*1000}, where: {timestampLastUpdatedDeputySheriff_gt: ${timestampLastUpdated}, group_: {botAddress: "${botaddress}"}}) {
+            id
+            group{
+                groupID
+            }
+            deputySheriff{
+                userID
+            }
+        }
+    }`;
 }
