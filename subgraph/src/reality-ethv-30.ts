@@ -13,9 +13,9 @@ export function handleLogNotifyOfArbitrationRequest(event: LogNotifyOfArbitratio
     log.error('moderation info not found. {}',[event.params.question_id.toHexString()])
     return
   }
-  let userHistory = UserHistory.load(moderationInfo.user)
+  let userHistory = UserHistory.load(moderationInfo.UserHistory)
   if (!userHistory){
-    log.error('user history not found. {}',[moderationInfo.user])
+    log.error('user history not found. {}',[moderationInfo.UserHistory])
     return
   }
   if(RealityETHV30.bind(event.address).getBestAnswer(event.params.question_id) === new Bytes(1)){
@@ -42,19 +42,11 @@ export function handleLogNewAnswer(event: LogNewAnswer): void {
   if (!realityCheck)
     realityCheck = new RealityCheck(event.params.question_id.toHexString())
 
-  let userHistory = UserHistory.load(moderationInfo.user)
+  let userHistory = UserHistory.load(moderationInfo.UserHistory)
   if (!userHistory){
-    userHistory = new UserHistory(moderationInfo.user)
-    userHistory.countBrokeRulesArbitrated = 0
-    userHistory.countBrokeRulesOptimisticAndArbitrated = 0
-    userHistory.countReportsMade = 0
-    userHistory.countReportsMadeAndResponded = 0
-    userHistory.timestampLastReport = BigInt.fromU32(0)
-    userHistory.timestampLastUpdated = BigInt.fromU32(0)
-    userHistory.timestampParole = BigInt.fromU32(0)
-    userHistory.user = moderationInfo.user
+    log.error('user missing {}',[moderationInfo.UserHistory]);
+    return;
   }
-
   const reportedByUserHistory = UserHistory.load(moderationInfo.reportedBy)
   if (!reportedByUserHistory){
     log.error('reportedByUserHistory missing {}',[moderationInfo.reportedBy]);
@@ -63,16 +55,11 @@ export function handleLogNewAnswer(event: LogNewAnswer): void {
   reportedByUserHistory.countReportsMadeAndResponded++
   reportedByUserHistory.save()
 
-  const user = User.load(moderationInfo.user)
-  if (!user){
-    log.error('user missing {}',[moderationInfo.user]);
-    return;
-  }
   
-  var janny = Janny.load(user.group)
+  var janny = Janny.load(userHistory.group)
   if(!janny){
-    janny = new Janny(user.group)
-    janny.group = user.group
+    janny = new Janny(userHistory.group)
+    janny.group = userHistory.group
   }
 
   let sheriffOld = janny.sheriff
@@ -154,7 +141,7 @@ export function handleLogNewQuestion(event: LogNewQuestion): void {
   //if (event.params.template_id.toU32() === 60){ //XDAI
   const questionString = event.params.question;    
   const params = questionString.split('\u241f');
-  if (params.length < 10)
+  if (params.length < 8)
     return;
 
   let group = Group.load(event.transaction.from.toHexString() + params[2] + params[5]);
@@ -169,11 +156,10 @@ export function handleLogNewQuestion(event: LogNewQuestion): void {
   }
 
   let user = User.load(event.transaction.from.toHexString() + params[2] + params[1]);
-  if (user === null) {
+  if (!user) {
     user = new User(event.transaction.from.toHexString() + params[2] + params[1]);
     user.userID = params[1];
     user.username = params[0];
-    user.group = event.transaction.from.toHexString() + params[2] + params[5]; 
     user.save();
   }
 
@@ -182,7 +168,6 @@ export function handleLogNewQuestion(event: LogNewQuestion): void {
   moderationInfo.reportedBy = event.transaction.from.toHexString()+params[2] + params[9]    
   if (!User.load(moderationInfo.reportedBy)){
     const userReportedBy = new User(moderationInfo.reportedBy)
-    userReportedBy.group = user.group
     userReportedBy.userID = params[9]
     userReportedBy.save()
   }
@@ -193,14 +178,31 @@ export function handleLogNewQuestion(event: LogNewQuestion): void {
   moderationInfo.message = params[7];
   moderationInfo.reality = event.params.question_id.toHexString()
   moderationInfo.messageBackup = params[8];
-  moderationInfo.user = event.transaction.from.toHexString() + params[2] + params[1];
+
+  var reportedUser = UserHistory.load(event.transaction.from.toHexString() + params[2] + params[1]+params[5])
+  if (!reportedUser){
+    reportedUser = new UserHistory(event.transaction.from.toHexString() + params[2] + params[1]+params[5])
+    reportedUser.countBrokeRulesArbitrated = 0
+    reportedUser.countBrokeRulesOptimisticAndArbitrated = 0
+    reportedUser.countReportsMade = 0
+    reportedUser.countReportsMadeAndResponded = 0
+    reportedUser.timestampLastReport = BigInt.fromU32(0)
+    reportedUser.timestampLastUpdated = BigInt.fromU32(0)
+    reportedUser.timestampParole = BigInt.fromU32(0)
+    reportedUser.user = event.transaction.from.toHexString() + params[2] + params[1]
+    reportedUser.group = group.id
+    reportedUser.save()
+  }
+  moderationInfo.UserHistory = reportedUser.id;
+
 
   moderationInfo.save();    
   
-  var reportedByUserHistory = UserHistory.load(moderationInfo.reportedBy)
+  var reportedByUserHistory = UserHistory.load(moderationInfo.reportedBy+params[5])
   if (!reportedByUserHistory){
-    reportedByUserHistory = new UserHistory(moderationInfo.reportedBy)
+    reportedByUserHistory = new UserHistory(moderationInfo.reportedBy+params[5])
     reportedByUserHistory.user = moderationInfo.reportedBy
+    reportedByUserHistory.group = group.id
     reportedByUserHistory.countReportsMade = 0
     reportedByUserHistory.countBrokeRulesOptimisticAndArbitrated = 0
     reportedByUserHistory.countBrokeRulesArbitrated = 0

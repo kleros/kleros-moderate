@@ -20,7 +20,7 @@ type ModerationInfo @entity(immutable: true){
     askedBy: Bytes!
     deadline: BigInt
     timeout: BigInt!
-    user: User!
+    UserHistory: UserHistory!
     dispute: ModerationDispute @derivedFrom(field: "moderationInfo")
     reality: RealityCheck
 }
@@ -38,6 +38,7 @@ type RealityCheck @entity{
 type UserHistory @entity{
     id: ID!
     user: User!
+    group: Group!
     timestampLastUpdated: BigInt!
     timestampParole: BigInt!
     countBrokeRulesOptimisticAndArbitrated: Int!
@@ -45,15 +46,14 @@ type UserHistory @entity{
     countReportsMade: Int!
     countReportsMadeAndResponded: Int!
     timestampLastReport: BigInt!
+    moderation: [ModerationInfo!]! @derivedFrom(field: "UserHistory")
 }
 
 type User @entity(immutable: true){
     id: ID!
     username: String
     userID: String!
-    group: Group!
-    history: UserHistory @derivedFrom(field: "user")
-    moderation: [ModerationInfo!]! @derivedFrom(field: "user")
+    history: [UserHistory!]! @derivedFrom(field: "user")
 }
 
 type Janny @entity{
@@ -73,14 +73,5 @@ type Group @entity(immutable: true){
     platform: String!
     groupID: String!
     botAddress: Bytes!
-    users: [User!]! @derivedFrom(field: "group")
-}
-
-type Group @entity(immutable: true){
-    id: ID!
-    name: String
-    platform: String!
-    groupID: String!
-    botAddress: Bytes!
-    users: [User!]! @derivedFrom(field: "group")
+    UserHistory: [UserHistory!]! @derivedFrom(field: "group")
 }

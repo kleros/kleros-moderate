@@ -1,7 +1,8 @@
 import {
     DisputeIDToQuestionID as DisputeIDToQuestionIDEvent,
     RulingFunded as RulingFundedEvent,
-    Ruling as RulingEvent
+    Ruling as RulingEvent,
+    Evidence as EvidenceEvent
   } from "../generated/Realitio_v2_1_ArbitratorWithAppeals/Realitio_v2_1_ArbitratorWithAppeals"
 import {
     ModerationDispute, ModerationInfo, UserHistory, 
@@ -16,7 +17,13 @@ import {
     moderationDispute.timestampLastUpdated = event.block.timestamp
     moderationDispute.save();
   }
-
+/*
+  export function handleEvidenceEvent(
+    event: EvidenceEvent
+  ): void {
+    event.params._event.logIndex
+  }
+*/
   export function handleRuling(event: RulingEvent): void {
     const moderationDispute = ModerationDispute.load(event.params._disputeID.toHexString());
     if (!moderationDispute){
@@ -31,9 +38,9 @@ import {
       log.error("ModerationInfo not found {}.", [moderationDispute.moderationInfo]);
       return;
     }
-    const userHistory = UserHistory.load(modinfo.user)
+    const userHistory = UserHistory.load(modinfo.UserHistory)
     if (!userHistory){
-      log.error("UserHistory not found {}.", [modinfo.user]);
+      log.error("UserHistory not found {}.", [modinfo.UserHistory]);
       return;
     }
 
