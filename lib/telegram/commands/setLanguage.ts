@@ -9,11 +9,6 @@ const regexp = /\/setlanguage/
 const regexpFull = /\/setlanguage (.+)/
 
 const callback = async (db: any, settings: groupSettings, bot: any, botId: number, msg: any) => {
-    const user = await bot.getChatMember(msg.chat.id, String(msg.from.id));
-    if (!(user.status === 'creator' || user.status === 'administrator')) {
-        msg.chat.is_forum? await bot.sendMessage(msg.chat.id, langJson[settings.lang].errorAdminOnly, {message_thread_id: msg.message_thread_id}): await bot.sendMessage(msg.chat.id, langJson[settings.lang].errorAdminOnly);
-        return;
-    }
     const match = msg.text.match(regexpFull);
     const langCode = match? match[1].toLowerCase(): '';
 
@@ -30,7 +25,7 @@ const callback = async (db: any, settings: groupSettings, bot: any, botId: numbe
                 [
                     {
                         text: 'English',
-                        callback_data: 'en'
+                        callback_data: `0|${msg.from.id}`+'|'+`en`
                     }
                 ]
                 ]
@@ -42,7 +37,7 @@ const callback = async (db: any, settings: groupSettings, bot: any, botId: numbe
                 [
                     {
                         text: 'English',
-                        callback_data: 'en'
+                        callback_data: `0|${msg.from.id}`+'|'+`en`
                     }
                 ]
                 ]

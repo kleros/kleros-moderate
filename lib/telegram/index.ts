@@ -9,14 +9,15 @@ import * as toggleWelcome from "../../lib/telegram/commands/toggleWelcome";
 import * as greeting from "../../lib/telegram/commands/greeting";
 import * as socialConsensus from "../../lib/telegram/commands/socialConsensus";
 import * as addEvidence from "../../lib/telegram/commands/addEvidence";
+import * as leaveFed from "../../lib/telegram/commands/leavefed";
+import * as joinFed from "../../lib/telegram/commands/joinfed";
 import * as start from "../../lib/telegram/commands/start";
 import * as setLanguage from "../../lib/telegram/commands/setLanguage";
 import * as setChannel from "../../lib/telegram/commands/setChannel";
 import * as getReports from "../../lib/telegram/commands/getReports";
 import langJson from "./assets/lang.json";
-import {groupSettings} from "../../types";
-import {openDb, getGroupSettings, eraseThreadID, dbstart, dbstarted} from "../db";
-import {Wallet} from "@ethersproject/wallet";
+import {groupSettings, groupSettingsUnderspecified} from "../../types";
+import {openDb, getGroupSettings, getRule, eraseThreadID} from "../db";
 
 const Web3 = require('web3')
 const _batchedSend = require('web3-batched-send')
@@ -27,74 +28,83 @@ const batchedSend = _batchedSend(
     process.env.PRIVATE_KEY,
     20000 // The debounce timeout period in milliseconds in which transactions are batched.
   )
-var botAddress: string;
+  const defaultSettings: groupSettings = {
+    lang: 'en',
+    rules: langJson['en'].defaultRules,
+    channelID: '',
+    greeting_mode: false,
+    thread_id_rules: '',
+    thread_id_welcome: '',
+    thread_id_notifications: ''
+}
 const ModeratorBot = require('node-telegram-bot-api');
 const bot: any = new ModeratorBot(process.env.BOT_TOKEN, {polling: true, testEnvironment: false});
 //bot.
 var botId: number; 
 const db = openDb();
-const started : Map<number, boolean> = new Map();
-const settings : Map<number, groupSettings> = new Map();
+const NodeCache = require( "node-cache" );
+const myCache = new NodeCache( { stdTTL: 900, checkperiod: 1200 } );
 // Throttling
-const msgCounters : Map<number, number> = new Map();
-const lastMsgEpochs : Map<number, number> = new Map();
 
 bot.on("my_chat_member", async function(myChatMember: any) {
     try{
-        console.log(myChatMember)
-        if(myChatMember.chat.is_forum){
-            return;
-        }
+        if(throttled(myChatMember.from.id) || myChatMember.chat.is_forum)
+            return
         const settings = validate(myChatMember.chat);
 
         if(myChatMember.chat.type === "channel"){
             try{
-                bot.sendMessage(myChatMember.chat.id, "The channel id is " + myChatMember.chat.id);
+                bot.sendMessage(myChatMember.chat.id, `The channel id is <code>${myChatMember.chat.id}</code>`, {parse_mode: "HTML"});
             } catch(e) {
                 console.log(e)
             }
             return;
-        }
-        await welcome.callback(settings, bot, myChatMember);
+        } else if (myChatMember.chat.type === "supergroup")
+            welcome.callback(settings, bot, myChatMember);
+        else if (myChatMember.chat.type === "private")
+            return
+        else
+            try{
+                bot.sendVideo(myChatMember.chat.id, 'https://ipfs.kleros.io/ipfs/QmbnEeVzBjcAnnDKGYJrRo1Lx2FFnG62hYfqx4fLTqYKC7/guide.mp4', {caption: "Group is not a supergroup. Please promote me to an admin."});
+            } catch(e){
+                console.log(e)
+            }
     } catch(e){
         console.log("Welcome error." + e);
     }
 });
 
-bot.on("new_chat_members", async function (chatMemberUpdated: any) {
-    console.log('new chat member')
+bot.on("new_chat_members", async function (chatMemberUpdated: TelegramBot.ChatMemberUpdated) {
+    if(!hasStarted(chatMemberUpdated.chat.id)||throttled(chatMemberUpdated.from.id) )
+        return;
     const settings = validate(chatMemberUpdated.chat);
-    if(!started.has(chatMemberUpdated.chat.id))
+    if (chatMemberUpdated.chat.type !== "supergroup")
         return;
-    if (chatMemberUpdated.chat.type === "channel"){
-        return;
-    }
-
     if (settings.greeting_mode)
         await greeting.callback(bot, settings, chatMemberUpdated);        
 });
 
 // Handle callback queries
 bot.on('callback_query', async function onCallbackQuery(callbackQuery: TelegramBot.CallbackQuery) {
+    if(!hasStarted(callbackQuery.message.chat.id)||throttled(callbackQuery.from.id))
+        return;
+    const settings = validate(callbackQuery.message.chat);
+    const rawCalldata = callbackQuery.data;
+    const calldata = rawCalldata.split('|');
     try{
-        if(!botAddress)
-            botAddress = (await new Wallet(process.env.PRIVATE_KEY)).address;
-        if(!started.has(callbackQuery.message.chat.id))
-            return;
-            const settings = validate(callbackQuery.message.chat);
-
-            if (callbackQuery.data.length < 3){
-            const user = await bot.getChatMember(callbackQuery.message.chat.id, String(callbackQuery.from.id))
-            if (user.status !== "creator" && user.status !== "administrator")
+        if (Number(calldata[0]) === 0){ // set language
+            if (callbackQuery.from.id !== Number(calldata[1]))
                 return;
             bot.deleteMessage(callbackQuery.message.chat.id, String(callbackQuery.message.message_id))
             setLanguage.setLanguageConfirm(db, bot, settings, callbackQuery.data, callbackQuery.message);
-        }
-        else 
-            await socialConsensus.callback(db, settings, botAddress, bot, callbackQuery, batchedSend);
-    } catch(error){
-        console.log(error);
-        console.log("Social Consensus Error");
+        } else if (Number(calldata[0]) === 1){ // add evidence
+            if (callbackQuery.from.id !== Number(calldata[1]))
+                return;
+            // handle addevidence callback
+        } else
+            await socialConsensus.callback(db, settings, bot, callbackQuery, batchedSend);
+    } catch(e){
+        console.log("Callback Query Error" + e);
     }
   });
 
@@ -105,20 +115,25 @@ const commands: {regexp: RegExp, callback: any}[] = [
     report,
     toggleWelcome,
     start,
+    leaveFed,
+    joinFed,
     setChannel,
     addEvidence,
     getReports,
     setLanguage,
 ];
 
+const adminOnlyCommands = [joinFed, leaveFed, setLanguage, setChannel, toggleWelcome, start, setRulesCommand ]
+
 commands.forEach((command) => {
     bot.onText(
         command.regexp,
         async (msg: any, match: string[]) => {  
+            if(throttled(msg.from.id) || msg.chat.type !== "supergroup")
+                return
             const groupSettings = validate(msg.chat);
-
             if (command === start){
-                if (started.has(msg.chat.id)){
+                if (hasStarted(msg.chat.id)){
                     try{
                         bot.sendMessage(msg.chat.id, "Susie is already moderating this community.", msg.chat.is_forum? {message_thread_id: msg.message_thread_id} : {})
                         return
@@ -126,80 +141,104 @@ commands.forEach((command) => {
                         console.log(e)
                     }
                 }
-            } else if(!started.has(msg.chat.id)){
+            } else if(!hasStarted(msg.chat.id)){
                 return;
             }
 
-            if (!botId)
-            botId = (await bot.getMe()).id;
+            try{
+                if (!botId)
+                    botId = (await bot.getMe()).id;
+            } catch(e){
+                console.log(e)
+            }
 
+            if (adminOnlyCommands.indexOf(command)!==-1){
+                var status = myCache.get("status"+msg.chat.id+msg.from.id)
+                if (!status){
+                    try{
+                        status = (await bot.getChatMember(msg.chat.id, String(msg.from.id))).status;
+                        myCache.set("status"+msg.chat.id+msg.from.id,status)
+                    } catch(e){
+                        console.log(e)
+                        return;
+                    }
+                }
+                if (!(status === 'creator' || status === 'administrator')) {
+                    bot.sendMessage(msg.chat.id, langJson[groupSettings.lang].errorAdminOnly, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})
+                    return;
+                }
+            }
+
+            // todo success bool return val, to not always delete settings
             command.callback(db, groupSettings, bot, botId, msg, match,batchedSend);
             if (command === setLanguage || command === setRulesCommand || command === setChannel || command === toggleWelcome || command === start)
-                settings.delete(msg.chat.id)
+                myCache.del(msg.chat.id)
         }
     )
 })
 
-const throttling = (chat: TelegramBot.Chat): boolean => {
-    const lastEpoch = lastMsgEpochs.get(chat.id) ?? 0;
-    const currentEpoch = Math.floor(Date.now()/1000) % 60;
-    if (currentEpoch > lastEpoch){
-        lastMsgEpochs.set(chat.id, currentEpoch);
-        msgCounters.set(chat.id,1);
-    }
-    const msgCounter = msgCounters.get(chat.id);
-    if (msgCounter > 20)
-        return false;
-    msgCounters.set(chat.id,msgCounter+1);
-    return true;
 
+const throttled = (userId: number): boolean => {
+    const count = myCache.get(userId) ?? 1
+    if (count >100)
+        return true
+    myCache.set(userId.toString(), count + 1)
+    return false;
+}
+
+const hasStarted = (chatid: number): boolean=> {
+    const cachedStarted = myCache.get("started"+chatid);
+    if (typeof cachedStarted !== 'undefined')
+        return cachedStarted;
+    const rules = getRule(db, 'telegram', String(chatid), Math.floor(Date.now()/1000))
+    if (rules){
+        myCache.set("started"+chatid, true)
+        return true;
+    }
+    else {
+        myCache.set("started"+chatid, false)
+        return false;
+    }
 }
 
 const validate = (chat: any): groupSettings=> {
-    var groupSettings : groupSettings = settings.get(chat.id)
-    if (!groupSettings){
-        groupSettings = getGroupSettings(db, 'telegram', String(chat.id))
-        console.log ('groupSettings fetched from db');
-        console.log(groupSettings)
-        if(groupSettings){
-            settings.set(chat.id, groupSettings)
-            started.set(chat.id, true)
-        }
+    if (!hasStarted(chat.id)){
+        return defaultSettings;
     }
-    /*
-    if (groupSettings && !chat.is_forum && groupSettings.thread_id_notifications){ // turn topics off
-        eraseThreadID(db, 'telegram', String(chat.id))
-        groupSettings.thread_id_notifications = ''
-        groupSettings.thread_id_rules = ''
-        groupSettings.thread_id_welcome = ''
-        settings.set(chat.id, groupSettings)
-    }*/
+    var groupSettings : groupSettingsUnderspecified = myCache.get(chat.id)
+    if (!groupSettings){
+        const rules = getRule(db, 'telegram', String(chat.id), Math.floor(Date.now()/1000))
+        groupSettings = getGroupSettings(db, 'telegram', String(chat.id))
+        groupSettings.rules = rules
+        myCache.set(chat.id, groupSettings)
+    }
     const fullSettings = {
-        lang: groupSettings?.lang ?? 'en',
-        rules: groupSettings?.rules ?? langJson['en'].defaultRules,
+        lang: groupSettings?.lang ?? defaultSettings.lang,
+        rules: groupSettings?.rules ?? defaultSettings.rules,
         channelID: groupSettings?.channelID ?? String(chat.id),
-        greeting_mode: groupSettings?.greeting_mode ?? false,
-        thread_id_rules: groupSettings?.thread_id_rules ?? '',
-        thread_id_welcome: groupSettings?.thread_id_welcome ?? '',
-        thread_id_notifications: groupSettings?.thread_id_notifications ?? ''
+        greeting_mode: groupSettings?.greeting_mode ?? defaultSettings.greeting_mode,
+        thread_id_rules: groupSettings?.thread_id_rules ?? defaultSettings.thread_id_rules,
+        thread_id_welcome: groupSettings?.thread_id_welcome ?? defaultSettings.thread_id_rules,
+        thread_id_notifications: groupSettings?.thread_id_notifications ?? defaultSettings.thread_id_notifications
     }
     console.log(fullSettings);
     return fullSettings
 }
-
+/*
 const checkMigration = async (groupSettings: groupSettings, chat: any): Promise<groupSettings> => {
+    await bot.sendMessage(chat.id, "Started topic mode", {messsage_thread_id: groupSettings.thread_id_notifications})
     if (chat.is_forum && !groupSettings.thread_id_notifications){ // turn topics on
         try{
             const threads = await start.topicMode(db, bot, groupSettings, String(chat.id));
             groupSettings.thread_id_rules = threads[0]
             groupSettings.thread_id_notifications = threads[1]
             groupSettings.channelID = String(chat.id)
-            settings.set(chat.id, groupSettings)
+            myCache.set(chat.id, groupSettings)
         } catch(e){
             console.log(e)
         }
     }
     return groupSettings
-}
+}*/
 
 console.log('Telegram bot ready...');

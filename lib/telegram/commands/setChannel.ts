@@ -12,14 +12,9 @@ const regexpFull = /\/setchannel (.+)/
 
 const callback = async (db: any, settings: groupSettings, bot: TelegramBot, botId: string, msg: TelegramBot.Message, match: string[], batchedSend: any) => {
     try {
-        const user = await bot.getChatMember(msg.chat.id, String(msg.from.id));
-        if (!(user.status === 'creator' || user.status === 'administrator')) {
-            await bot.sendMessage(msg.chat.id, langJson[settings.lang].errorAdminOnly);
-            return;
-        }
         const newmatch = msg.text.match(regexpFull);
         if (!newmatch || newmatch.length < 2){
-            bot.sendMessage(msg.chat.id, `/setchannel ${langJson[settings.lang].addevidence.error1} ${langJson[settings.lang].addevidence.id}`);
+            bot.sendMessage(msg.chat.id, `/setchannel must be followed by a channel id`);
             return; 
         }
         try{

@@ -2,7 +2,7 @@ import request from "graphql-request";
 
 const getQuestionId = async (botAddress: string, platform: string, groupId: string, userId: string, msgId: string): Promise<string | undefined> => {
     const query = `{
-        moderationInfos(where: {message: "https://t.me/c/${groupId.substring(4)}/${msgId}",user_: {id:"${botAddress}${platform}${userId}", group: "${botAddress}Telegram${groupId}"}}) {
+        moderationInfos(where: {message: "https://t.me/c/${groupId.substring(4)}/${msgId}",UserHistory_: {id:"${botAddress}${platform}${userId}${groupId}"}) {
               id
           }
         }`;
@@ -11,8 +11,27 @@ const getQuestionId = async (botAddress: string, platform: string, groupId: stri
             'https://api.thegraph.com/subgraphs/name/shotaronowhere/kleros-moderate-goerli',
             query
         );
-        console.log(result)
-        return (result)?.data?.moderationInfos[0]?.id;
+        return (result)?.moderationInfos[0]?.id;
+    } catch(e){
+        console.log(e)
+        return undefined
+    }
+}
+
+const getAllowance = async (botAddress: string, platform: string, groupId: string, userId: string): Promise<[number, number, number]|undefined> => {
+    const query = `{
+        userHistories(where: {id:"${botAddress}${platform}${userId}${groupId}"}) {
+            countReportsMade
+            countReportsMadeAndResponded
+            timestampLastUpdated
+          }
+        }`;
+    try{
+        const result = await request(
+            'https://api.thegraph.com/subgraphs/name/shotaronowhere/kleros-moderate-goerli',
+            query
+        );
+        return result?.userHistories.length>0? result?.userHistories[0] : undefined;
     } catch(e){
         console.log(e)
         return undefined
@@ -29,11 +48,11 @@ const existsQuestionId = async (question_id: string): Promise<boolean | undefine
         return (await request(
             'https://api.thegraph.com/subgraphs/name/shotaronowhere/kleros-moderate-goerli',
             query
-        ))?.data.moderationInfos.length === 1;
+        ))?.moderationInfos?.length >= 1;
     } catch(e){
         console.log(e)
         return undefined
     }
 }
 
-export{getQuestionId, existsQuestionId}
+export{getQuestionId, existsQuestionId, getAllowance}

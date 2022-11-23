@@ -1,5 +1,5 @@
 const Database = require('better-sqlite3');
-import { groupSettings } from "../types";
+import { groupSettingsUnderspecified } from "../types";
 
 export function openDb() {
     const db = new Database('database.db');
@@ -17,6 +17,34 @@ const setLang = (db: any, platform: string, groupId: string, lang: string) => {
         const info = stmt.run(platform, groupId, lang, lang);
     } catch(err) {
         console.log("db error: setLang");
+        console.log(err);
+    }
+}
+
+const joinFederation = (db: any, platform: string, groupId: string, owner_user_id: string) => {
+    try{
+        const stmt = db.prepare(
+            `INSERT INTO groups (platform, group_id, owner_user_id) 
+            VALUES (?, ?, ?) 
+            ON CONFLICT(platform, group_id) DO UPDATE SET 
+            owner_user_id=?;`);
+        const info = stmt.run(platform, groupId, owner_user_id, owner_user_id);
+    } catch(err) {
+        console.log("db error: joinFederation");
+        console.log(err);
+    }
+}
+
+const leaveFederation = (db: any, platform: string, groupId: string, owner_user_id: string) => {
+    try{
+        const stmt = db.prepare(
+            `INSERT INTO groups (platform, group_id, owner_user_id) 
+            VALUES (?, ?, ?) 
+            ON CONFLICT(platform, group_id) DO UPDATE SET 
+            owner_user_id=?;`);
+        const info = stmt.run(platform, groupId, owner_user_id, owner_user_id);
+    } catch(err) {
+        console.log("db error: leaveFederation");
         console.log(err);
     }
 }
@@ -64,26 +92,23 @@ const setChannelID = (db: any, platform: string, groupId: string, channel_id: st
     }
 }
 
-const dbstart = (db: any, platform: string, groupId: string) => {
+const getDisputedReportsInfo = (db:any, platform: string, groupId: string) => {
     try{
-        const stmt = db.prepare(
-            `INSERT INTO groups (platform, group_id) 
-            VALUES (?, ?);`);
-        const info = stmt.run(platform, groupId);
-    } catch(err) {
-        console.log("db error: set dbstart");
+        const stmt = db.prepare('SELECT * FROM reports WHERE finalized = 0 AND group_id = ? AND platform = ? AND bond_paid > 0');
+        return stmt.all(groupId, platform);
+    } catch(err){
+        console.log("db error: getDisputedReports");
         console.log(err);
     }
 }
 
-const dbstarted = (db: any, platform: string, groupId: string) => {
+const getFederationGroups = (db: any, platform: string, owner_user_id: string) => {
     try{
         const stmt = db.prepare(
-            `INSERT INTO groups (platform, group_id) 
-            VALUES (?, ?);`);
-        const info = stmt.run(platform, groupId);
+            `SELECT group_id FROM groups WHERE platform=? AND owner_user_id=?;`);
+        const info = stmt.run(platform, platform, owner_user_id);
     } catch(err) {
-        console.log("db error: set dbstarted");
+        console.log("db error: setLang");
         console.log(err);
     }
 }
@@ -199,10 +224,21 @@ const getChannelID = (db: any, platform: string, groupId: string): string => {
     }
 }
 
-const getGroupSettings = (db: any, platform: string, groupId: string): groupSettings => {
+
+
+const getGroupSettings = (db: any, platform: string, groupId: string): groupSettingsUnderspecified => {
     try{
         const stmt = db.prepare('SELECT * FROM groups WHERE platform = ? AND group_id = ?');
-        return stmt.get(platform, groupId);
+        const result = stmt.get(platform, groupId);
+        return {
+            lang: result?.lang,
+            rules: undefined,
+            channelID: result?.channelID,
+            thread_id_rules: result?.thread_id_rules,
+            thread_id_notifications: result?.thread_id_notifications,
+            thread_id_welcome: result?.thread_id_welcome,
+            greeting_mode: result?.greeting_mode,
+        }
     } catch(err){
         console.log("db error: getGroupSettings");
         console.log(err);
@@ -217,6 +253,89 @@ const getThreadIDRules = (db: any, platform: string, groupId: string) => {
         console.log("db error: getThreadIDRules");
         console.log(err);
     }
+}
+
+const getConcurrentReports = (db: any, platform: string, groupId: string, userId: string, timestamp: number) => {
+    try{
+        const stmt = db.prepare('SELECT question_id, msg_id, group_id, timestamp FROM reports WHERE timestamp BETWEEN ? AND ? AND user_id = ? AND group_id = ? AND platform = ?');
+        return stmt.all(timestamp - 3600, timestamp + 3600, userId, groupId, platform);
+    } catch(err){
+        console.log("db error: getConcurrentReports");
+        console.log(err);
+    }
+}
+
+const getDisputedReportsUserInfo = (db:any, platform: string, groupId: string, userId: string) => {
+    try{
+        const stmt = db.prepare('SELECT * FROM reports WHERE user_id = ? AND group_id = ? AND platform = ?');
+        return stmt.all(userId, groupId, platform);
+    } catch(err){
+        console.log("db error: getDisputedReportsUserInfo");
+        console.log(err);
+    }
+}
+
+const getQuestionId = (db: any, platform: string, groupId: string, userId: string, msgId: string) => {
+    try{
+        const stmt = db.prepare(`SELECT question_id FROM reports WHERE platform = ? AND group_id = ? AND user_id = ? AND msg_id = ?`);
+        return stmt.get(platform, groupId, userId, msgId)?.question_id || '';
+    } catch{
+        console.log("db error: getQuestionId");
+    }
+}
+
+const getRecordCount = (db: any, platform: string, groupId: string) => {
+    try{
+        const stmt = db.prepare(  
+        `SELECT COUNT(*) as total FROM reports 
+        WHERE platform = ? AND group_id = ?`
+        );
+        return stmt.get(platform, groupId)?.total || 0;
+    } catch(err) {
+        console.log("db error: getRecordCount");
+        console.log(err);
+    }
+}
+
+const getAllowance = (db: any, platform: string, groupId: string, userId: string): {report_allowance: number, evidence_allowance: number, timestamp_refresh: number,  question_id_last: string, timestamp_last_question: number} | undefined => {
+    try{
+        const stmt = db.prepare('SELECT report_allowance, evidence_allowance, timestamp_refresh, question_id_last, timestamp_last_question FROM allowance WHERE user_id = ? AND group_id = ? AND platform = ?');
+        return stmt.all(userId, groupId, platform);
+    } catch{
+        console.log("db error: getAllowance");
+    }
+}
+
+const getActiveEvidenceGroupId = (db: any, platform: string, groupId: string, evidenceIndex: number) => {
+    try{
+        const stmt = db.prepare( `SELECT question_id FROM reports WHERE platform = ? AND group_id = ? AND evidenceIndex = ? AND finalized = 0`);
+        return stmt.get(platform, groupId, evidenceIndex);
+    } catch(err) {
+        console.log("db error: getActiveEvidenceGroupId");
+        console.log(err);
+    }
+}
+
+const setAllowance = async(
+    db: any,
+    platform: string, 
+    groupId: string, 
+    userId: string, 
+    reportAllowance: number, 
+    evidenceAllowance: number, 
+    timeRefresh: number
+    ) => {
+        try{
+            const stmt = db.prepare(
+                `INSERT INTO allowance (platform, group_id, user_id, report_allowance, evidence_allowance, timestamp_refresh) 
+                VALUES ($platform, $group_id, $user_id, $report_allowance, $evidence_allowance, $timestamp_refresh) 
+                ON CONFLICT(platform, group_id, user_id) DO UPDATE SET 
+                report_allowance=$report_allowance, evidence_allowance = $evidence_allowance, timestamp_refresh = $timestamp_refresh;`
+            );
+            const info = stmt.run(platform, groupId, userId, reportAllowance, evidenceAllowance, timeRefresh);
+        } catch {
+            console.log("db error: setAllowance");
+        }
 }
 
 const getThreadIDWelcome = (db: any, platform: string, groupId: string) => {
@@ -274,6 +393,52 @@ const getRule = (db:any, platform: string, groupId: string, timestamp: number): 
     }
 }
 
+const addReport = (
+    db: any,
+    questionId: string, 
+    platform: string, 
+    groupId: string, 
+    userId: string, 
+    username: string, 
+    msgId: string,
+    msgTimestamp: number,
+    evidenceIndex: number
+    ) => {
+        try{
+            const stmt = db.prepare(
+                `INSERT INTO reports (
+                    question_id, 
+                    platform, 
+                    group_id, 
+                    user_id, 
+                    username,
+                    msg_id, 
+                    timestamp, 
+                    evidenceIndex) 
+                    VALUES (
+                        ?, 
+                        ?, 
+                        ?, 
+                        ?, 
+                        ?,
+                        ?, 
+                        ?, 
+                        ?);`);
+            const info = stmt.run(
+                questionId,
+                platform,
+                groupId,
+                userId,
+                username,
+                msgId,
+                msgTimestamp,
+                evidenceIndex);
+        } catch(e) {
+            console.log("db error: addReport."+e);
+        }
+
+}
+
 export {
     getInviteURL,
     setInviteURL,
@@ -282,13 +447,23 @@ export {
     getThreadIDWelcome,
     getGroupSettings,
     setThreadIDWelcome,
+    setAllowance,
+    getAllowance,
+    addReport,
+    getQuestionId,
+    getConcurrentReports,
+    getActiveEvidenceGroupId,
     setChannelID,
+    getDisputedReportsUserInfo,
     getChannelID,
-    dbstart,
-    dbstarted,
+    getDisputedReportsInfo,
+    leaveFederation,
+    joinFederation,
+    getFederationGroups,
     getGreetingMode,
     eraseThreadID,
     setGreetingMode,
+    getRecordCount,
     setLang,
     getLang,
     setRules,

@@ -1,5 +1,5 @@
 import * as TelegramBot from "node-telegram-bot-api";
-import {setThreadID, getThreadIDNotifications, dbstart, setRules} from "../../db";
+import {setThreadID, getThreadIDNotifications, setRules} from "../../db";
 import langJson from "../assets/lang.json";
 import {groupSettings} from "../../../types";
 
@@ -11,12 +11,6 @@ const regexp = /\/start/
 const callback = async (db: any, settings: groupSettings, bot: any, botID: string, msg: any) => {
     // admin check
     try{
-        console.log(msg)
-        const requestUser = await bot.getChatMember(msg.chat.id, msg.from.id)
-        if (requestUser.status !== "administrator" && requestUser.status !== "creator"){
-            bot.sendMessage(settings.channelID, "Please ask an admin to start Susie's community moderation.");
-            return;
-        }
         const botUser = await bot.getChatMember(msg.chat.id, botID)
         if(botUser.status !== "administrator" || !botUser.can_restrict_members){
             bot.sendVideo(msg.chat.id, 'https://ipfs.kleros.io/ipfs/QmbnEeVzBjcAnnDKGYJrRo1Lx2FFnG62hYfqx4fLTqYKC7/guide.mp4', msg.chat.is_forum? {message_thread_id: msg.message_thread_id, caption: "Please give Susie full admin rights.\n\nThen try to /start community moderation again."} : {caption: "Please give Susie full admin rights.\n\nThen try to /start community moderation again."});
@@ -29,13 +23,12 @@ const callback = async (db: any, settings: groupSettings, bot: any, botID: strin
             }
             const thread_ids = getThreadIDNotifications(db, 'telegram', String(msg.chat.id));
             if (thread_ids){
-                bot.sendMessage(msg.chat.id, "Already started.");
+                bot.sendMessage(msg.chat.id, "Already started.", {message_thread_id: msg.message_thread_id});
             }
             await topicMode(db,bot,settings,String(msg.chat.id));
         }
-        dbstart(db, 'telegram', String(msg.chat.id))
         setRules(db, 'telegram', String(msg.chat.id), langJson[settings.lang].defaultRules, Math.floor(Date.now()/1000));
-        bot.sendMessage(msg.chat.id, "I am now moderating this community.", msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {});
+        bot.sendMessage(msg.chat.id, `Hi! I'm a Kleros Moderator. I help communities crowdsource moderation. If you need help, just DM me : )\n\n${langJson[settings.lang].defaultRulesMsg1}(${langJson[settings.lang].defaultRules}).`, msg.chat.is_forum? {parse_mode: "Markdown", message_thread_id: msg.message_thread_id}: {parse_mode: "Markdown"})
         return;
     } catch (e){
         try{
