@@ -26,6 +26,7 @@
         },
         "report" : {
             "errorAdmin": "An admin can't be reported.",
+            "errorModBot": "Bots can't be reported.",
             "reported": "The message is already [reported]",
             "requested": "This message report is already [requested]",
             "info1": "Are you sure the user",
@@ -36,7 +37,7 @@
             "allowance2": "was unanswered. Report permissions are limited for 3 days until the previous report is answered.",
             "noallowance": "You have exhausted your daily report allowance."
         },
-        "socialCensensus" : {
+        "socialConsensus" : {
             "confirm": "confirm",
             "reported": "The message is already [reported]",
             "reportConfirm": "Report confirmed.",
@@ -46,7 +47,7 @@
             "consensus4": "due to conduct over this [message]",
             "consensus5": "backup"
         },
-        "addEvidence" : {
+        "addevidence" : {
             "submitted": "Evidence [submitted]",
             "error1": "must be followed by a",
             "id": "Evidence Group ID",
@@ -74,12 +75,14 @@
         "errorRules" : "Invalid url passed to /setrules",
         "rulesUpdated" : "Rules updated.",
         "answer": "answer",
+        "welcome": "Hi, I'm Susie, a ",
         "greeting1": "Welcome, this group is moderated with ",
         "greeting2": "Please make sure to follow the [community rules]",
-        "greeting3": "Users who break the rules can be reported by replying to a message with the command '/report'.",
+        "greeting3": "Users who break the rules can be reported by replying to a message with the command /report.",
         "defaultRules": "https://ipfs.kleros.io/ipfs/QmYYcNfEYLtxPM8fof4wf9Tqj7gBGMDMmNnBqZKR1zSczX/Kleros%20Moderate%20Community%20Guidelines%20v1.pdf",
-        "defaultRulesMsg1": "The Kleros Moderate Community Guidelines apply as the default [rules].",
-        "defaultRulesMsg2": "Crafting precise policies can be challenging, if you are certain in setting a new policy, you can set new rules with /setrules [url] or /setrules [reply to message]."
+        "defaultRulesMsg1": "The Kleros Moderate Community Guidelines apply as the default [rules]",
+        "defaultRulesMsg1alt": "The Kleros Moderate Community Guidelines apply as the default rules",
+        "defaultRulesMsg2": "Crafting precise policies can be challenging, if you are certain in setting a new policy, you can set new rules with /setrules \\[url] or /setrules \\[reply to message]"
     },
     "es":{
         "errorMatchLanguage": "/setlanguage must be followed by a supported language code ('en', 'es')",
@@ -128,7 +131,7 @@
             "consensus4": "due to conduct over this [message]",
             "consensus5": "backup"
         },
-        "addEvidence" : {
+        "addevidence" : {
             "submitted": "Evidence [submitted]",
             "error1": "must be followed by a",
             "id": "Evidence Group ID",
@@ -158,7 +161,7 @@
         "answer": "answer",
         "greeting1": "Welcome, this group is moderated with ",
         "greeting2": "Please make sure to follow the [community rules]",
-        "greeting3": "Users who break the rules can be reported by replying to a message with the command '/report'.",
+        "greeting3": "Users who break the rules can be reported by replying to a message with the command /report.",
         "defaultRules": "https://ipfs.kleros.io/ipfs/QmYYcNfEYLtxPM8fof4wf9Tqj7gBGMDMmNnBqZKR1zSczX/Kleros%20Moderate%20Community%20Guidelines%20v1.pdf",
         "defaultRulesMsg1": "The Kleros Moderate Community Guidelines apply as the default [rules].",
         "defaultRulesMsg2": "Crafting precise policies can be challenging, if you are certain in setting a new policy, you can set new rules with /setrules [url] or /setrules [reply to message]."

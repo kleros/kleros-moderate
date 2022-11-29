@@ -55,4 +55,22 @@ const existsQuestionId = async (question_id: string): Promise<boolean | undefine
     }
 }
 
-export{getQuestionId, existsQuestionId, getAllowance}
+const getQuestionsNotFinalized = async (botaddress: string): Promise<boolean | undefined> => {
+    const query = `{
+        moderationInfos(where: {deadline_gt: ${Math.floor(Date.now()/1000)}, askedBy: "${botaddress}"}) {
+            id
+        }
+    }`;
+    console.log(query);
+    try{
+        return (await request(
+            'https://api.thegraph.com/subgraphs/name/shotaronowhere/kleros-moderate-goerli',
+            query
+        ));
+    } catch(e){
+        console.log(e)
+        return undefined
+    }
+}
+
+export{getQuestionId, existsQuestionId, getAllowance, getQuestionsNotFinalized}

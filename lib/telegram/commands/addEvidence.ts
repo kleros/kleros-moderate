@@ -3,6 +3,7 @@ import {Wallet} from "@ethersproject/wallet";
 import {ipfsPublish, ipfsPublishBuffer} from "../../ipfs-publish";
 import { setAllowance, getAllowance, getActiveEvidenceGroupId } from "../../db";
 import fetch from 'node-fetch';
+import { getQuestionsNotFinalized } from "../../graph";
 import { groupSettings } from "../../../types";
 import langJson from "../assets/lang.json";
 const _contract = require('../../abi/Realitio_v2_1_ArbitratorWithAppeals.json')
@@ -165,11 +166,14 @@ const callback = async (db: any, settings: groupSettings, bot: any, botID: numbe
         bot.sendMessage(msg.chat.id, `/addevidence ${langJson[settings.lang].errorReply}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}:{})
         return;
     }
-
+    if (!botAddress)
+        botAddress = await (await new Wallet(process.env.PRIVATE_KEY)).address.toLowerCase();
     const match = msg.text.match(regexpFull);
 
     //TODO Evidence IDs and button callback UX
     if (!match || match.length < 2){
+        const questions = await getQuestionsNotFinalized(botAddress)
+        bot.sendMessage(msg.chat.id, `Did you mean `+ JSON.stringify(questions));
         bot.sendMessage(msg.chat.id, `/addevidence ${langJson[settings.lang].addevidence.error1} ${langJson[settings.lang].addevidence.id}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}:{})
         //const errorMsg = await errorMessage(db, lang, bot, msg);
         //await bot.sendMessage(msg.chat.id, errorMsg, {parse_mode: "Markdown", disable_web_page_preview: true});

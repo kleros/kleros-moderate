@@ -7,6 +7,7 @@ import * as report from "../../lib/telegram/commands/report";
 import * as welcome from "../../lib/telegram/commands/welcome";
 import * as toggleWelcome from "../../lib/telegram/commands/toggleWelcome";
 import * as greeting from "../../lib/telegram/commands/greeting";
+import * as help from "../../lib/telegram/commands/help";
 import * as socialConsensus from "../../lib/telegram/commands/socialConsensus";
 import * as addEvidence from "../../lib/telegram/commands/addEvidence";
 import * as leaveFed from "../../lib/telegram/commands/leavefed";
@@ -53,10 +54,12 @@ bot.on("my_chat_member", async function(myChatMember: any) {
         const settings = validate(myChatMember.chat);
 
         if(myChatMember.chat.type === "channel"){
-            try{
-                bot.sendMessage(myChatMember.chat.id, `The channel id is <code>${myChatMember.chat.id}</code>`, {parse_mode: "HTML"});
-            } catch(e) {
-                console.log(e)
+            if( myChatMember.new_chat_member.status === "administrator"){
+                try{
+                    bot.sendMessage(myChatMember.chat.id, `The channel id is <code>${myChatMember.chat.id}</code>`, {parse_mode: "HTML"});
+                } catch(e) {
+                    console.log('channel id msg error'+e);
+                }
             }
             return;
         } else if (myChatMember.chat.type === "supergroup")
@@ -75,36 +78,33 @@ bot.on("my_chat_member", async function(myChatMember: any) {
 });
 
 bot.on("new_chat_members", async function (chatMemberUpdated: TelegramBot.ChatMemberUpdated) {
-    if(!hasStarted(chatMemberUpdated.chat.id)||throttled(chatMemberUpdated.from.id) )
+    if(!hasStarted(chatMemberUpdated.chat.id)||throttled(chatMemberUpdated.from.id)||chatMemberUpdated.chat.type !== "supergroup")
         return;
     const settings = validate(chatMemberUpdated.chat);
-    if (chatMemberUpdated.chat.type !== "supergroup")
-        return;
     if (settings.greeting_mode)
-        await greeting.callback(bot, settings, chatMemberUpdated);        
+        greeting.callback(bot, settings, chatMemberUpdated);        
 });
 
 // Handle callback queries
 bot.on('callback_query', async function onCallbackQuery(callbackQuery: TelegramBot.CallbackQuery) {
-    if(!hasStarted(callbackQuery.message.chat.id)||throttled(callbackQuery.from.id))
+    const calldata = callbackQuery.data.split('|');
+    if (calldata.length < 2)
+        return
+    if((!hasStarted(callbackQuery.message.chat.id) && callbackQuery.message.chat.type == "supergroup")||throttled(callbackQuery.from.id))
         return;
     const settings = validate(callbackQuery.message.chat);
-    const rawCalldata = callbackQuery.data;
-    const calldata = rawCalldata.split('|');
-    try{
-        if (Number(calldata[0]) === 0){ // set language
-            if (callbackQuery.from.id !== Number(calldata[1]))
-                return;
-            bot.deleteMessage(callbackQuery.message.chat.id, String(callbackQuery.message.message_id))
-            setLanguage.setLanguageConfirm(db, bot, settings, callbackQuery.data, callbackQuery.message);
-        } else if (Number(calldata[0]) === 1){ // add evidence
-            if (callbackQuery.from.id !== Number(calldata[1]))
-                return;
-            // handle addevidence callback
-        } else
-            await socialConsensus.callback(db, settings, bot, callbackQuery, batchedSend);
-    } catch(e){
-        console.log("Callback Query Error" + e);
+    if (Number(calldata[0]) === 0){ // set language
+        if (callbackQuery.from.id !== Number(calldata[1]))
+            return;
+        setLanguage.setLanguageConfirm(db, bot, settings, calldata[2], callbackQuery.message);
+    } else if (Number(calldata[0]) === 1){ // add evidence
+        if (callbackQuery.from.id !== Number(calldata[1]))
+            return;
+        // handle addevidence callback
+    } else if (Number(calldata[0]) === 2){ // report confirmations
+        socialConsensus.callback(db, settings, bot, callbackQuery, batchedSend);
+    } else if (Number(calldata[0]) === 3){ // report confirmations
+        help.respond(settings, bot, calldata[1], callbackQuery);
     }
   });
 
@@ -115,6 +115,7 @@ const commands: {regexp: RegExp, callback: any}[] = [
     report,
     toggleWelcome,
     start,
+    help,
     leaveFed,
     joinFed,
     setChannel,
@@ -129,10 +130,18 @@ commands.forEach((command) => {
     bot.onText(
         command.regexp,
         async (msg: any, match: string[]) => {  
-            if(throttled(msg.from.id) || msg.chat.type !== "supergroup")
+            if(throttled(msg.from.id))
                 return
             const groupSettings = validate(msg.chat);
-            if (command === start){
+            if(msg.chat.type === "private"){
+                if (msg.text === '/start help'){
+                    help.callback(db, groupSettings, bot, botId, msg);
+                    return
+                } else if (msg.text != '/start' && msg.text != '/help')
+                    return
+            } else if(msg.chat.type !== "supergroup")
+                return
+            if (command === start || command === help){
                 if (hasStarted(msg.chat.id)){
                     try{
                         bot.sendMessage(msg.chat.id, "Susie is already moderating this community.", msg.chat.is_forum? {message_thread_id: msg.message_thread_id} : {})
@@ -152,7 +161,7 @@ commands.forEach((command) => {
                 console.log(e)
             }
 
-            if (adminOnlyCommands.indexOf(command)!==-1){
+            if (msg.chat.type !== "private" && adminOnlyCommands.indexOf(command)!==-1){
                 var status = myCache.get("status"+msg.chat.id+msg.from.id)
                 if (!status){
                     try{
@@ -171,8 +180,10 @@ commands.forEach((command) => {
 
             // todo success bool return val, to not always delete settings
             command.callback(db, groupSettings, bot, botId, msg, match,batchedSend);
-            if (command === setLanguage || command === setRulesCommand || command === setChannel || command === toggleWelcome || command === start)
+            if (command === setLanguage || command === setRulesCommand || command === setChannel || command === toggleWelcome)
                 myCache.del(msg.chat.id)
+            if (command === start)
+                myCache.del("started"+msg.chat.id)
         }
     )
 })

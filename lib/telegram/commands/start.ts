@@ -11,6 +11,28 @@ const regexp = /\/start/
 const callback = async (db: any, settings: groupSettings, bot: any, botID: string, msg: any) => {
     // admin check
     try{
+        if (msg.chat.type === "private"){
+            const opts = {
+                parse_mode: 'Markdown',
+                reply_markup: {
+                    inline_keyboard: [
+                    [
+                        {
+                            text: 'Add me to your group!',
+                            url: `https://t.me/KlerosModeratorBot?startgroup=botstart`
+                        }
+                    ]
+                    ]
+                }
+            }
+            bot.sendMessage(msg.chat.id, `Hi! My name is Susie.
+            
+I am a [Kleros Moderate](https://kleros.io/moderate) community manager at your service. Hit /help to find out more about how to use me to my full potential.
+
+Join my news channel @KlerosModerateNews to get information on all the latest updates.`, opts)
+            return;
+        }
+
         const botUser = await bot.getChatMember(msg.chat.id, botID)
         if(botUser.status !== "administrator" || !botUser.can_restrict_members){
             bot.sendVideo(msg.chat.id, 'https://ipfs.kleros.io/ipfs/QmbnEeVzBjcAnnDKGYJrRo1Lx2FFnG62hYfqx4fLTqYKC7/guide.mp4', msg.chat.is_forum? {message_thread_id: msg.message_thread_id, caption: "Please give Susie full admin rights.\n\nThen try to /start community moderation again."} : {caption: "Please give Susie full admin rights.\n\nThen try to /start community moderation again."});
@@ -28,7 +50,11 @@ const callback = async (db: any, settings: groupSettings, bot: any, botID: strin
             await topicMode(db,bot,settings,String(msg.chat.id));
         }
         setRules(db, 'telegram', String(msg.chat.id), langJson[settings.lang].defaultRules, Math.floor(Date.now()/1000));
-        bot.sendMessage(msg.chat.id, `Hi! I'm a Kleros Moderator. I help communities crowdsource moderation. If you need help, just DM me : )\n\n${langJson[settings.lang].defaultRulesMsg1}(${langJson[settings.lang].defaultRules}).`, msg.chat.is_forum? {parse_mode: "Markdown", message_thread_id: msg.message_thread_id}: {parse_mode: "Markdown"})
+        bot.sendMessage(msg.chat.id, `Hi! My community moderation tools are at your service.
+        
+[DM](https://t.me/KlerosModeratorBot?start=help) me to find out more about how to use me to my full potential : )
+
+${langJson[settings.lang].defaultRulesMsg1}(${langJson[settings.lang].defaultRules}).`, msg.chat.is_forum? {parse_mode: "Markdown", message_thread_id: msg.message_thread_id}: {parse_mode: "Markdown"})
         return;
     } catch (e){
         try{

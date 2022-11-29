@@ -46,22 +46,24 @@ const callback = async (db: any, settings: groupSettings, bot: TelegramBot, call
         }
         const optsFinal = msg.chat.is_forum? {
           chat_id: msg.chat.id,
-          message_id: msg.message_id,
-          text: "User Reported."
+          message_id: msg.message_id
         } : {
           chat_id: msg.chat.id,
           message_id: msg.message_id,
-          message_thread_id: msg.message_thread_id,
-          text: "User Reported."
+          message_thread_id: msg.message_thread_id
         }
-    if (newConfirmations > 1){
-      bot.editMessageReplyMarkup({ inline_keyboard: []}, optsFinal)
-      bot.editMessageText("User Reported.")
-      const user = (await bot.getChatMember(String(msg.chat.id), String(calldata[1]))).user;
-      const fromUsername = user.username || user.first_name || `no-username-set`;
-      await reportMsg(settings, db, bot, msg, fromUsername, String(calldata[1]), msg.entities[1].url, String(calldata[2]), msg.entities[3].url, calldata[3],batchedSend);
-    } else{
-      bot.editMessageReplyMarkup(markdown, opts)
+    try{
+      if (newConfirmations > 1){
+        bot.editMessageReplyMarkup({ inline_keyboard: []}, optsFinal)
+        bot.editMessageText("User Reported.",optsFinal)
+        const user = (await bot.getChatMember(String(msg.chat.id), String(calldata[1]))).user;
+        const fromUsername = user.username || user.first_name || `no-username-set`;
+        await reportMsg(settings, db, bot, msg, fromUsername, String(calldata[1]), msg.entities[1].url, String(calldata[2]), msg.entities[3].url, calldata[3],batchedSend);
+      } else{
+        bot.editMessageReplyMarkup(markdown, opts)
+      }
+    } catch(e){
+      console.log('social consensus error'+e);
     }
 }
 

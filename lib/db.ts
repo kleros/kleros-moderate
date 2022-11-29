@@ -233,7 +233,7 @@ const getGroupSettings = (db: any, platform: string, groupId: string): groupSett
         return {
             lang: result?.lang,
             rules: undefined,
-            channelID: result?.channelID,
+            channelID: result?.channel_id,
             thread_id_rules: result?.thread_id_rules,
             thread_id_notifications: result?.thread_id_notifications,
             thread_id_welcome: result?.thread_id_welcome,
@@ -299,10 +299,10 @@ const getRecordCount = (db: any, platform: string, groupId: string) => {
 
 const getAllowance = (db: any, platform: string, groupId: string, userId: string): {report_allowance: number, evidence_allowance: number, timestamp_refresh: number,  question_id_last: string, timestamp_last_question: number} | undefined => {
     try{
-        const stmt = db.prepare('SELECT report_allowance, evidence_allowance, timestamp_refresh, question_id_last, timestamp_last_question FROM allowance WHERE user_id = ? AND group_id = ? AND platform = ?');
+        const stmt = db.prepare('SELECT report_allowance, evidence_allowance, timestamp_refresh FROM allowance WHERE user_id = ? AND group_id = ? AND platform = ?');
         return stmt.all(userId, groupId, platform);
-    } catch{
-        console.log("db error: getAllowance");
+    } catch(e){
+        console.log("db error: getAllowance "+e);
     }
 }
 
@@ -328,13 +328,13 @@ const setAllowance = async(
         try{
             const stmt = db.prepare(
                 `INSERT INTO allowance (platform, group_id, user_id, report_allowance, evidence_allowance, timestamp_refresh) 
-                VALUES ($platform, $group_id, $user_id, $report_allowance, $evidence_allowance, $timestamp_refresh) 
+                VALUES (?, ?, ?, ?, ?, ?) 
                 ON CONFLICT(platform, group_id, user_id) DO UPDATE SET 
-                report_allowance=$report_allowance, evidence_allowance = $evidence_allowance, timestamp_refresh = $timestamp_refresh;`
+                report_allowance=?, evidence_allowance = ?, timestamp_refresh = ?;`
             );
-            const info = stmt.run(platform, groupId, userId, reportAllowance, evidenceAllowance, timeRefresh);
-        } catch {
-            console.log("db error: setAllowance");
+            const info = stmt.run(platform, groupId, userId, reportAllowance, evidenceAllowance, timeRefresh,reportAllowance, evidenceAllowance, timeRefresh);
+        } catch(e) {
+            console.log("db error: setAllowance"+e);
         }
 }
 
@@ -411,7 +411,6 @@ const addReport = (
                     platform, 
                     group_id, 
                     user_id, 
-                    username,
                     msg_id, 
                     timestamp, 
                     evidenceIndex) 
