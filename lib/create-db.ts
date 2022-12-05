@@ -45,8 +45,29 @@ const Database = require('better-sqlite3');
         report_allowance INTEGER, 
         evidence_allowance INTEGER, 
         timestamp_refresh INTEGER,
+        timestamp_parole INTEGER,
         PRIMARY KEY (platform, group_id, user_id))`
     );
+
+    /**
+     * `question_id` is the id of the question in reality.eth
+     * `platform` can be `telegram`, `reddit`, etc.
+     * `group_id` is the id of the group on the platform (eg. group on telegram, subreddit on reddit, etc.).
+     * `user_id` is the id of the banned user in `platform`.
+     * `chat_id` is the id of the banned user in `platform`.
+     * `active` indicates whether the user is currently banned.
+     * `finalized` indicates if the question has finalized.
+     */
+     await db.exec(
+        `CREATE TABLE banHistory (
+            platform TEXT, 
+            group_id TEXT, 
+            user_id TEXT, 
+            ban_level INTEGER, 
+            count_current_level_optimistic_bans INTEGER,
+            timestamp_ban INTEGER,
+            PRIMARY KEY (platform, group_id, user_id))`
+        );
 
     /**
      * `platform` can be `telegram`, `reddit`, etc.
@@ -78,9 +99,17 @@ const Database = require('better-sqlite3');
             platform TEXT, 
             group_id TEXT, 
             user_id TEXT, 
+            username TEXT, 
             msg_id TEXT, 
             timestamp INTEGER, 
-            evidenceIndex INTEGER
+            evidenceIndex INTEGER,
+            msgBackup TEXT,
+            active_timestamp INTEGER,
+            active BIT,
+            banLevel BIT,
+            finalized BIT,
+            timestamp_finalized INTEGER, 
+            disputed BIT
             )`
         );
 
@@ -99,6 +128,23 @@ const Database = require('better-sqlite3');
             owner_user_id TEXT, 
             group_id TEXT[], 
             PRIMARY KEY (platform, owner_user_id))`
+        );
+
+    /**
+     * `question_id` is the id of the question in reality.eth
+     * `platform` can be `telegram`, `reddit`, etc.
+     * `group_id` is the id of the group on the platform (eg. group on telegram, subreddit on reddit, etc.).
+     * `user_id` is the id of the banned user in `platform`.
+     * `chat_id` is the id of the banned user in `platform`.
+     * `active` indicates whether the user is currently banned.
+     * `finalized` indicates if the question has finalized.
+     */
+     await db.exec(
+        `CREATE TABLE cron (
+            bot_index INTEGER,
+            last_block INTEGER,
+            last_timestamp INTEGER,
+            PRIMARY KEY (bot_index))`
         );
 
     db.close();

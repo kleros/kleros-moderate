@@ -42,25 +42,11 @@ const callback = async (db:any, settings: groupSettings, bot: any, botId: number
             return;
         }
         const reportedQuestionId = getQuestionId(db, 'telegram', String(msg.chat.id), reportedUserID, String(msg.reply_to_message.message_id));
-
         if (reportedQuestionId){
             bot.sendMessage(msg.chat.id, `${langJson[settings.lang].report.reported}(https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${reportedQuestionId})`, {parse_mode: 'Markdown'});
             return;
         }
 
-        if (match[1] != langJson[settings.lang].socialConsensus.confirm) {
-            const reports = getConcurrentReports(db, 'telegram', String(msg.chat.id), reportedUserID, msg.reply_to_message.date);
-            if(reports.length > 0){
-                var reportInfo = `${langJson[settings.lang].report.info1} *${escape(fromUsername)} (ID :${reportedUserID})* ${langJson[settings.lang].report.info2} \n\n`;
-                (reports).forEach((report) => {
-                    const privateMsgLink = 'https://t.me/c/' + report.group_id.substring(4) + '/' + report.msg_id;
-                    reportInfo += ` - [${langJson[settings.lang].addEvidence.Message} ${new Date(report.timestamp*1000).toISOString()}](${privateMsgLink}): [${langJson[settings.lang].getReports.reportMessage3}](https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${report.question_id})\n`;
-                });
-                reportInfo += `\n${langJson[settings.lang].report.sure} \'/report ${langJson[settings.lang].socialConsensus.confirm}\'`
-                bot.sendMessage(msg.chat.id, reportInfo, msg.chat.is_forum? {message_thread_id: msg.message_thread_id, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'});
-                return;
-            }
-        } 
 
 
         const rules = getRule(db, 'telegram', String(msg.chat.id), msg.reply_to_message.date);
@@ -76,7 +62,7 @@ const callback = async (db:any, settings: groupSettings, bot: any, botId: number
         // TODO report
         
         const reportAllowance = getAllowance(db, 'telegram', String(msg.chat.id), String(msg.from.id));
-        if (!reportAllowance ){
+        if (!reportAllowance){
             setAllowance(db, 'telegram', String(msg.chat.id), String(msg.from.id), 2, 15, currentTimeMs);
         } else if (currentTimeMs < reportAllowance.timestamp_refresh + 28800 && reportAllowance.report_allowance == 0 ){
             bot.sendMessage(msg.chat.id, langJson[settings.lang].report.noallowance, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {});
@@ -138,12 +124,9 @@ const reportMsg = async (settings: groupSettings, db: any, bot: any, msg: any, f
 
         const msgLink = 'https://t.me/c/' + String(msg.chat.id).substring(4) + '/' + msgId;
 
-        var evidenceIndex = myCache.get("evidence"+msg.chat.id) + 1;
-        if (!evidenceIndex){
-            evidenceIndex = getRecordCount(db, 'telegram', String(msg.chat.id))+1;
-        }
-        evidenceIndexMap.set(msg.chat.id, evidenceIndex);
-
+        const cachedEvidenceIndex = myCache.get("evidence"+msg.chat.id);
+        const evidenceIndex = cachedEvidenceIndex? cachedEvidenceIndex+1:getRecordCount(db, 'telegram', String(msg.chat.id))+1
+        myCache.set("evidence"+msg.chat.id, evidenceIndex);
 
         const {questionId, questionUrl: appealUrl} = await reportUser(
             batchedSend,
@@ -160,8 +143,9 @@ const reportMsg = async (settings: groupSettings, db: any, bot: any, msg: any, f
             msgBackup,
             reportedBy);
 
-        addReport(db, questionId, "telegram", String(msg.chat.id), reportedUserID, fromUsername , msgId, msg.reply_to_message.date,evidenceIndex);
-        bot.sendMessage(settings.channelID, `[${fromUsername}](tg://user?id=${reportedUserID})'s conduct due to this [message](${msgLink}) ([backup](${msgBackup})) is reported for breaking the [rules](${rules}).\n\nDid *${fromUsername}* break the rules? The [question](${appealUrl}) can be answered with a minimum bond of 5 DAI.\n\nTo save a record, reply to messages you want saved with the command below,\n/addevidence ${evidenceIndex}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'});
+        addReport(db, questionId, 'telegram', String(msg.chat.id), reportedUserID, fromUsername , msgId, msg.reply_to_message.date,evidenceIndex, msgBackup);
+
+        bot.sendMessage(settings.channelID, `[${fromUsername}](tg://user?id=${reportedUserID})'s conduct due to this [message](${msgLink}) ([backup](${msgBackup})) is reported for breaking the [rules](${rules}).\n\nDid *${fromUsername}* break the rules? The [question](${appealUrl}) can be answered with a minimum bond of 5 DAI. Need help getting DAI on Gnosis Chain for your answer? [DM](https://t.me/KlerosModeratorBot?start=helpgnosis) me for help : )\n\nTo save a record, reply to messages you want saved with \`/addevidence ${evidenceIndex}\``, msg.chat.is_forum? {message_thread_id: msg.message_thread_id, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'});
         return questionId;
     } catch (e) {
         console.log(e);

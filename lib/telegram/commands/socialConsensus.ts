@@ -8,7 +8,7 @@ import {Wallet} from "@ethersproject/wallet";
 
 var botAddress: string;
 /*
- * /getrules
+ * social consensus callback
  */
 
 const callback = async (db: any, settings: groupSettings, bot: TelegramBot, callbackQuery: TelegramBot.CallbackQuery, batchedSend: any) => {
@@ -58,7 +58,7 @@ const callback = async (db: any, settings: groupSettings, bot: TelegramBot, call
         bot.editMessageText("User Reported.",optsFinal)
         const user = (await bot.getChatMember(String(msg.chat.id), String(calldata[1]))).user;
         const fromUsername = user.username || user.first_name || `no-username-set`;
-        await reportMsg(settings, db, bot, msg, fromUsername, String(calldata[1]), msg.entities[1].url, String(calldata[2]), msg.entities[3].url, calldata[3],batchedSend);
+        reportMsg(settings, db, bot, msg, fromUsername, String(calldata[1]), msg.entities[1].url, String(calldata[2]), msg.entities[3].url, calldata[3],batchedSend);
       } else{
         bot.editMessageReplyMarkup(markdown, opts)
       }

@@ -10,3 +10,13 @@ interface groupSettings {
     thread_id_welcome: string;
     greeting_mode: boolean;
   }
+
+  interface groupSettingsUnderspecified {
+    lang: string | undefined;
+    rules: string | undefined;
+    channelID: string | undefined;
+    thread_id_rules: string | undefined;
+    thread_id_notifications: string | undefined;
+    thread_id_welcome: string | undefined;
+    greeting_mode: boolean | undefined;
+  }

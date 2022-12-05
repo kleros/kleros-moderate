@@ -50,11 +50,11 @@ Join my news channel @KlerosModerateNews to get information on all the latest up
             await topicMode(db,bot,settings,String(msg.chat.id));
         }
         setRules(db, 'telegram', String(msg.chat.id), langJson[settings.lang].defaultRules, Math.floor(Date.now()/1000));
-        bot.sendMessage(msg.chat.id, `Hi! My community moderation tools are at your service.
+        bot.sendMessage(msg.chat.id, `Hi! My community moderation tools are at your service. [DM](https://t.me/KlerosModeratorBot?start=help) me to find out more about how to use me to my full potential : )
         
-[DM](https://t.me/KlerosModeratorBot?start=help) me to find out more about how to use me to my full potential : )
-
-${langJson[settings.lang].defaultRulesMsg1}(${langJson[settings.lang].defaultRules}).`, msg.chat.is_forum? {parse_mode: "Markdown", message_thread_id: msg.message_thread_id}: {parse_mode: "Markdown"})
+- Use /setrules to change the default [rules](${langJson[settings.lang].defaultRules}).
+- User reports are made by replying to a message with /report
+- Penalties progress from 1 day to 1 week, and 1 year bans for each violation.`, msg.chat.is_forum? {parse_mode: "Markdown", message_thread_id: msg.message_thread_id}: {parse_mode: "Markdown"})
         return;
     } catch (e){
         try{

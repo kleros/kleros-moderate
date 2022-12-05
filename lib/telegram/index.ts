@@ -3,6 +3,7 @@ import * as TelegramBot from "node-telegram-bot-api";
 import * as getAccount from "../../lib/telegram/commands/getAccount";
 import * as setRulesCommand from "../../lib/telegram/commands/setRules";
 import * as getRules from "../../lib/telegram/commands/getRules";
+import * as addEvidenceHelp from "../../lib/telegram/commands/addEvidenceHelp";
 import * as report from "../../lib/telegram/commands/report";
 import * as welcome from "../../lib/telegram/commands/welcome";
 import * as toggleWelcome from "../../lib/telegram/commands/toggleWelcome";
@@ -15,10 +16,11 @@ import * as joinFed from "../../lib/telegram/commands/joinfed";
 import * as start from "../../lib/telegram/commands/start";
 import * as setLanguage from "../../lib/telegram/commands/setLanguage";
 import * as setChannel from "../../lib/telegram/commands/setChannel";
+import * as getChannel from "../../lib/telegram/commands/getChannel";
 import * as getReports from "../../lib/telegram/commands/getReports";
 import langJson from "./assets/lang.json";
 import {groupSettings, groupSettingsUnderspecified} from "../../types";
-import {openDb, getGroupSettings, getRule, eraseThreadID} from "../db";
+import {openDb, getGroupSettings, getRule, getDisputedReportsUserInfo, eraseThreadID} from "../db";
 
 const Web3 = require('web3')
 const _batchedSend = require('web3-batched-send')
@@ -27,7 +29,7 @@ const batchedSend = _batchedSend(
     web3, 
     process.env.TRANSACTION_BATCHER_CONTRACT_ADDRESS,
     process.env.PRIVATE_KEY,
-    20000 // The debounce timeout period in milliseconds in which transactions are batched.
+    10000 // The debounce timeout period in milliseconds in which transactions are batched.
   )
   const defaultSettings: groupSettings = {
     lang: 'en',
@@ -39,13 +41,17 @@ const batchedSend = _batchedSend(
     thread_id_notifications: ''
 }
 const ModeratorBot = require('node-telegram-bot-api');
-const bot: any = new ModeratorBot(process.env.BOT_TOKEN, {polling: true, testEnvironment: false});
+const bot: any = new ModeratorBot(process.env.BOT_TOKEN, {polling: true, testEnvironment: true});
 //bot.
 var botId: number; 
 const db = openDb();
 const NodeCache = require( "node-cache" );
 const myCache = new NodeCache( { stdTTL: 900, checkperiod: 1200 } );
 // Throttling
+
+const delay = (delayInms) => {
+    return new Promise(resolve => setTimeout(resolve, delayInms));
+  }
 
 bot.on("my_chat_member", async function(myChatMember: any) {
     try{
@@ -54,6 +60,7 @@ bot.on("my_chat_member", async function(myChatMember: any) {
         const settings = validate(myChatMember.chat);
 
         if(myChatMember.chat.type === "channel"){
+            await delay(2000);
             if( myChatMember.new_chat_member.status === "administrator"){
                 try{
                     bot.sendMessage(myChatMember.chat.id, `The channel id is <code>${myChatMember.chat.id}</code>`, {parse_mode: "HTML"});
@@ -68,7 +75,7 @@ bot.on("my_chat_member", async function(myChatMember: any) {
             return
         else
             try{
-                bot.sendVideo(myChatMember.chat.id, 'https://ipfs.kleros.io/ipfs/QmbnEeVzBjcAnnDKGYJrRo1Lx2FFnG62hYfqx4fLTqYKC7/guide.mp4', {caption: "Group is not a supergroup. Please promote me to an admin."});
+                bot.sendVideo(myChatMember.chat.id, 'https://ipfs.kleros.io/ipfs/QmbnEeVzBjcAnnDKGYJrRo1Lx2FFnG62hYfqx4fLTqYKC7/guide.mp4', {caption: "Hi! I'm Susie, a moderation and group management bot. Please promote me to an admin then try to /start me to unlock my full potential."});
             } catch(e){
                 console.log(e)
             }
@@ -105,6 +112,25 @@ bot.on('callback_query', async function onCallbackQuery(callbackQuery: TelegramB
         socialConsensus.callback(db, settings, bot, callbackQuery, batchedSend);
     } else if (Number(calldata[0]) === 3){ // report confirmations
         help.respond(settings, bot, calldata[1], callbackQuery);
+    } else if (Number(calldata[0]) === 4){
+        const reports = getDisputedReportsUserInfo(db, 'telegram', calldata[1], calldata[2]);
+        var reportMessage: string = `To add evidence, reply to the message you want saved in the original chat with the evidence index.\n\n`
+        reports.forEach( (report) => {
+            const MsgLink = 'https://t.me/c/' + calldata[1].substring(4) + '/' + report.msg_id;
+            reportMessage += `- [Message](${MsgLink}) ([${langJson[settings.lang].socialConsensus.consensus5}](${report.msgBackup})) [${langJson[settings.lang].getReports.reportMessage3}](https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${report.question_id}), \`/addevidence ${report.evidenceIndex}\` <explanation and context>\n`;
+        });
+        const optsResponse = {
+            chat_id: callbackQuery.message.chat.id,
+            message_id: callbackQuery.message.message_id,
+            parse_mode: 'Markdown',
+            disable_web_page_preview: true
+        };
+        try{
+            bot.editMessageReplyMarkup({inline_keyboard: [[]]}, optsResponse)
+            bot.editMessageText(reportMessage , optsResponse);
+        } catch (e){
+            console.log(e)
+        }
     }
   });
 
@@ -116,6 +142,7 @@ const commands: {regexp: RegExp, callback: any}[] = [
     toggleWelcome,
     start,
     help,
+    getChannel,
     leaveFed,
     joinFed,
     setChannel,
@@ -137,11 +164,20 @@ commands.forEach((command) => {
                 if (msg.text === '/start help'){
                     help.callback(db, groupSettings, bot, botId, msg);
                     return
-                } else if (msg.text != '/start' && msg.text != '/help')
+                } else if(msg.text === '/start helpgnosis'){
+                    help.helpgnosis(db, groupSettings, bot, botId, msg);
                     return
-            } else if(msg.chat.type !== "supergroup")
+                } else if(msg.text === '/start helpnotifications'){
+                    help.helpnotifications(db, groupSettings, bot, botId, msg);
+                    return
+                } else if (msg.text.substring(0,22) === '/start addevidencehelp'){
+                    addEvidenceHelp.callback(db, groupSettings, bot, botId, msg);
+                    return
+                } else if (msg.text !== '/start' && msg.text != '/help' && msg.text !== '/start botstart')
+                    return
+            } else if(msg.chat.type !== "supergroup" && !(msg.chat.type === "group" && msg.text === '/help'))
                 return
-            if (command === start || command === help){
+            if (command === start){
                 if (hasStarted(msg.chat.id)){
                     try{
                         bot.sendMessage(msg.chat.id, "Susie is already moderating this community.", msg.chat.is_forum? {message_thread_id: msg.message_thread_id} : {})
@@ -150,7 +186,7 @@ commands.forEach((command) => {
                         console.log(e)
                     }
                 }
-            } else if(!hasStarted(msg.chat.id)){
+            } else if(!hasStarted(msg.chat.id) && command !== help){
                 return;
             }
 
@@ -173,7 +209,11 @@ commands.forEach((command) => {
                     }
                 }
                 if (!(status === 'creator' || status === 'administrator')) {
-                    bot.sendMessage(msg.chat.id, langJson[groupSettings.lang].errorAdminOnly, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})
+                    try{
+                        bot.sendMessage(msg.chat.id, langJson[groupSettings.lang].errorAdminOnly, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})
+                    } catch(e){
+                        console.log(e)
+                    }
                     return;
                 }
             }

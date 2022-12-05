@@ -9,7 +9,7 @@ import {
   import { BigInt, log, Address, JSONValueKind, ByteArray } from "@graphprotocol/graph-ts"
 
   export function handleAppealPossible(event: AppealPossibleEvent): void {
-    const dispute = ModerationDispute.load(event.params._disputeID.toHexString())
+    let dispute = ModerationDispute.load(event.params._disputeID.toHexString())
     if (!dispute){
       log.error("Disput not found {}.", [event.params._disputeID.toHexString()])
       return;
@@ -22,7 +22,7 @@ import {
 }
 
 export function handleAppealDecision(event: AppealDecisionEvent): void {
-  const dispute = ModerationDispute.load(event.params._disputeID.toHexString())
+  let dispute = ModerationDispute.load(event.params._disputeID.toHexString())
   if (!dispute){
     log.error("Disput not found {}.", [event.params._disputeID.toHexString()])
     return;

@@ -14,7 +14,7 @@ const callback = async (db: any, settings: groupSettings, bot: TelegramBot, botI
     try {
         const newmatch = msg.text.match(regexpFull);
         if (!newmatch || newmatch.length < 2){
-            bot.sendMessage(msg.chat.id, `/setchannel must be followed by a channel id`);
+            bot.sendMessage(msg.chat.id, `/setchannel must be followed by a channel id. [DM](https://t.me/KlerosModeratorBot?start=helpnotifications) me if you need more help : )`, {parse_mode: "Markdown"});
             return; 
         }
         try{

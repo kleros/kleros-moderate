@@ -94,7 +94,7 @@ const setChannelID = (db: any, platform: string, groupId: string, channel_id: st
 
 const getDisputedReportsInfo = (db:any, platform: string, groupId: string) => {
     try{
-        const stmt = db.prepare('SELECT * FROM reports WHERE finalized = 0 AND group_id = ? AND platform = ? AND bond_paid > 0');
+        const stmt = db.prepare('SELECT * FROM reports WHERE finalized = 0 AND group_id = ? AND platform = ? AND active_timestamp > 0');
         return stmt.all(groupId, platform);
     } catch(err){
         console.log("db error: getDisputedReports");
@@ -204,6 +204,17 @@ const getInviteURLChannel = (db: any, platform: string, groupId: string) => {
     }
 }
 
+
+const existsQuestionId = (db: any, question_id: string): boolean => {
+    try{
+        const stmt = db.prepare('SELECT * FROM reports WHERE question_id = ?');
+        return stmt.get(question_id)?.length > 0;
+    } catch(err){
+        console.log("db error: getGreetingMode");
+        console.log(err);
+    }
+}
+
 const getGreetingMode = (db: any, platform: string, groupId: string): boolean => {
     try{
         const stmt = db.prepare('SELECT greeting_mode FROM groups WHERE platform = ? AND group_id = ?');
@@ -267,7 +278,7 @@ const getConcurrentReports = (db: any, platform: string, groupId: string, userId
 
 const getDisputedReportsUserInfo = (db:any, platform: string, groupId: string, userId: string) => {
     try{
-        const stmt = db.prepare('SELECT * FROM reports WHERE user_id = ? AND group_id = ? AND platform = ?');
+        const stmt = db.prepare('SELECT question_id, active, active_timestamp,msgBackup, msg_id, evidenceIndex, timestamp FROM reports WHERE user_id = ? AND group_id = ? AND platform = ? AND finalized = 0');
         return stmt.all(userId, groupId, platform);
     } catch(err){
         console.log("db error: getDisputedReportsUserInfo");
@@ -281,6 +292,29 @@ const getQuestionId = (db: any, platform: string, groupId: string, userId: strin
         return stmt.get(platform, groupId, userId, msgId)?.question_id || '';
     } catch{
         console.log("db error: getQuestionId");
+    }
+}
+
+const getCron = (db: any): {last_timestamp: number, last_block: number} => {
+    try{
+        const stmt = db.prepare(`SELECT last_block, last_timestamp FROM cron WHERE bot_index = 0`);
+        return stmt.get();
+    } catch{
+        console.log("db error: getCron");
+    }
+}
+
+const setCron = (db: any, last_block: number, last_timestamp: number) => {
+    try{
+        const stmt = db.prepare(
+            `INSERT INTO cron (bot_index, last_block, last_timestamp) 
+            VALUES (0, ?, ?) 
+            ON CONFLICT(bot_index) DO UPDATE SET 
+            last_block=?, last_timestamp=?;`);
+        const info = stmt.run(last_block, last_timestamp,last_block, last_timestamp);
+    } catch(err) {
+        console.log("db error: setCron");
+        console.log(err);
     }
 }
 
@@ -300,23 +334,54 @@ const getRecordCount = (db: any, platform: string, groupId: string) => {
 const getAllowance = (db: any, platform: string, groupId: string, userId: string): {report_allowance: number, evidence_allowance: number, timestamp_refresh: number,  question_id_last: string, timestamp_last_question: number} | undefined => {
     try{
         const stmt = db.prepare('SELECT report_allowance, evidence_allowance, timestamp_refresh FROM allowance WHERE user_id = ? AND group_id = ? AND platform = ?');
-        return stmt.all(userId, groupId, platform);
+        return stmt.get(userId, groupId, platform);
     } catch(e){
         console.log("db error: getAllowance "+e);
+    }
+}
+
+const setReport = (db: any, questionId: string, active: boolean, finalized: boolean, activeTimestamp: number) => {
+    try{
+        const stmt = db.prepare(
+            'UPDATE reports SET active = ?, finalized = ?, active_timestamp = ? WHERE question_id = ?',
+            );
+        const info = stmt.run(Number(active), Number(finalized), activeTimestamp, questionId);
+    } catch(err) {
+        console.log("db error: setReport");
+        console.log(err);
+    }
+}
+
+const getBanHistory = (db: any, platform: string, groupId: string, userId: string): {ban_level: number, timestamp_ban: number, count_current_level_optimistic_bans: number} | undefined => {
+    try{
+        const stmt = db.prepare('SELECT ban_level, timestamp_ban, count_current_level_optimistic_bans FROM banHistory WHERE user_id = ? AND group_id = ? AND platform = ?');
+        return stmt.get(userId, groupId, platform);
+    } catch(e){
+        console.log("db error: getBanHistory "+e);
     }
 }
 
 const getActiveEvidenceGroupId = (db: any, platform: string, groupId: string, evidenceIndex: number) => {
     try{
         const stmt = db.prepare( `SELECT question_id FROM reports WHERE platform = ? AND group_id = ? AND evidenceIndex = ? AND finalized = 0`);
-        return stmt.get(platform, groupId, evidenceIndex);
+        return stmt.get(platform, groupId, evidenceIndex)?.question_id;
     } catch(err) {
         console.log("db error: getActiveEvidenceGroupId");
         console.log(err);
     }
 }
 
-const setAllowance = async(
+const getUsersWithQuestionsNotFinalized = (db: any, platform: string, groupId: string) => {
+    try{
+        const stmt = db.prepare( `SELECT DISTINCT user_id, username FROM reports WHERE platform = ? AND group_id = ? AND finalized = 0`);
+        return stmt.all(platform, groupId);
+    } catch(err) {
+        console.log("db error: getActiveEvidenceGroupId");
+        console.log(err);
+    }
+}
+
+const setAllowance = (
     db: any,
     platform: string, 
     groupId: string, 
@@ -335,6 +400,28 @@ const setAllowance = async(
             const info = stmt.run(platform, groupId, userId, reportAllowance, evidenceAllowance, timeRefresh,reportAllowance, evidenceAllowance, timeRefresh);
         } catch(e) {
             console.log("db error: setAllowance"+e);
+        }
+}
+
+const setBanHistory = (
+    db: any,
+    platform: string, 
+    groupId: string, 
+    userId: string, 
+    ban_level: number, 
+    timestamp_ban: number,
+    count_current_level_optimistic_bans: number
+    ) => {
+        try{
+            const stmt = db.prepare(
+                `INSERT INTO banHistory (platform, group_id, user_id, ban_level, timestamp_ban, count_current_level_optimistic_bans) 
+                VALUES (?, ?, ?, ?, ?, ?) 
+                ON CONFLICT(platform, group_id, user_id) DO UPDATE SET 
+                ban_level=?, timestamp_ban = ?, count_current_level_optimistic_bans=?;`
+            );
+            const info = stmt.run(platform, groupId, userId, ban_level, timestamp_ban,count_current_level_optimistic_bans,ban_level, timestamp_ban,count_current_level_optimistic_bans);
+        } catch(e) {
+            console.log("db error: setBanHistory"+e);
         }
 }
 
@@ -364,6 +451,16 @@ const getLang = (db:any, platform: string, groupId: string): string => {
         return stmt.get(platform, groupId)?.lang;
     } catch(err){
         console.log("db error: getLang");
+        console.log(err);
+    }
+}
+
+const getReportMessageTimestampAndActive = (db:any, question_id: string):  {timestamp: number, active: number} | undefined => {
+    try{
+        const stmt = db.prepare('SELECT timestamp, active FROM reports WHERE question_id = ?');
+        return stmt.get(question_id);
+    } catch(err){
+        console.log("db error: getReportMessageTimestamp");
         console.log(err);
     }
 }
@@ -402,7 +499,8 @@ const addReport = (
     username: string, 
     msgId: string,
     msgTimestamp: number,
-    evidenceIndex: number
+    evidenceIndex: number,
+    msgBackup: string
     ) => {
         try{
             const stmt = db.prepare(
@@ -411,9 +509,14 @@ const addReport = (
                     platform, 
                     group_id, 
                     user_id, 
+                    username,
                     msg_id, 
                     timestamp, 
-                    evidenceIndex) 
+                    evidenceIndex,
+                    finalized,
+                    active,
+                    active_timestamp,
+                    msgBackup) 
                     VALUES (
                         ?, 
                         ?, 
@@ -422,6 +525,10 @@ const addReport = (
                         ?,
                         ?, 
                         ?, 
+                        ?,
+                        0,
+                        0,
+                        0,
                         ?);`);
             const info = stmt.run(
                 questionId,
@@ -431,7 +538,8 @@ const addReport = (
                 username,
                 msgId,
                 msgTimestamp,
-                evidenceIndex);
+                evidenceIndex,
+                msgBackup);
         } catch(e) {
             console.log("db error: addReport."+e);
         }
@@ -440,6 +548,7 @@ const addReport = (
 
 export {
     getInviteURL,
+    existsQuestionId,
     setInviteURL,
     getInviteURLChannel,
     setInviteURLChannel,
@@ -448,11 +557,16 @@ export {
     setThreadIDWelcome,
     setAllowance,
     getAllowance,
+    setReport,
     addReport,
+    getUsersWithQuestionsNotFinalized,
     getQuestionId,
     getConcurrentReports,
     getActiveEvidenceGroupId,
     setChannelID,
+    setBanHistory,
+    getBanHistory,
+    getReportMessageTimestampAndActive,
     getDisputedReportsUserInfo,
     getChannelID,
     getDisputedReportsInfo,
@@ -464,6 +578,8 @@ export {
     setGreetingMode,
     getRecordCount,
     setLang,
+    getCron,
+    setCron,
     getLang,
     setRules,
     setThreadID,

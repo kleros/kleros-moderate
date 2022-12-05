@@ -16,7 +16,7 @@ type ModerationInfo @entity(immutable: true){
     rulesUrl: String!
     message: String!
     messageBackup: String!
-    reportedBy: User!
+    reportedBy: UserHistory!
     askedBy: Bytes!
     deadline: BigInt
     timeout: BigInt!
@@ -33,6 +33,7 @@ type RealityCheck @entity{
     blocknumberLastUpdated: BigInt
     timestampLastUpdated: BigInt
     moderationInfo: ModerationInfo! @derivedFrom(field: "reality")
+    dispute: String
 }
 
 type UserHistory @entity{
@@ -59,12 +60,13 @@ type User @entity(immutable: true){
 type Janny @entity{
     id: ID!
     group: Group!
+    botAddress: Bytes
     blocknumberLastUpdatedSheriff: BigInt
     blocknumberLastUpdatedDeputySheriff: BigInt
     timestampLastUpdatedSheriff: BigInt
     timestampLastUpdatedDeputySheriff: BigInt
-    sheriff: User
-    deputySheriff: User
+    sheriff: UserHistory
+    deputySheriff: UserHistory
 }
 
 type Group @entity(immutable: true){
