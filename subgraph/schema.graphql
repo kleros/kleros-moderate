@@ -1,91 +1,79 @@
-type Question @entity {
+type ModerationDispute @entity{
     id: ID!
-    timeout: BigInt!
-    finalize_ts: BigInt
-    bond: BigInt
-    user: User!
-    rulesUrl: String
-    message: String
-    messageBackup: String
-    askedBy: Bytes
-    answer: Bytes
-    arbitrationRequested: Boolean
-    appeals: BigInt
-    ruling: BigInt
-    disputeId: BigInt
+    timestampLastUpdated: BigInt!
+    timestampLastRound: BigInt
+    timestampLastAppeal: BigInt
+    timestampLastAppealPossible: BigInt
+    rulingFunded: BigInt
+    currentRuling: BigInt
+    finalRuling: BigInt
+    moderationInfo: ModerationInfo!
 }
 
-type User @entity{
+type ModerationInfo @entity(immutable: true){
+    id: ID!
+    moderationType: BigInt!
+    rulesUrl: String!
+    message: String!
+    messageBackup: String!
+    reportedBy: UserHistory!
+    askedBy: Bytes!
+    deadline: BigInt
+    timeout: BigInt!
+    UserHistory: UserHistory!
+    dispute: ModerationDispute @derivedFrom(field: "moderationInfo")
+    reality: RealityCheck
+}
+
+type RealityCheck @entity{
+    id: ID!
+    currentAnswer: Bytes
+    deadline: BigInt!
+    timeServed: BigInt
+    blocknumberLastUpdated: BigInt
+    timestampLastUpdated: BigInt
+    moderationInfo: ModerationInfo! @derivedFrom(field: "reality")
+    dispute: String
+}
+
+type UserHistory @entity{
+    id: ID!
+    user: User!
+    group: Group!
+    timestampLastUpdated: BigInt!
+    timestampParole: BigInt!
+    countBrokeRulesOptimisticAndArbitrated: Int!
+    countBrokeRulesArbitrated: Int!
+    countReportsMade: Int!
+    countReportsMadeAndResponded: Int!
+    timestampLastReport: BigInt!
+    moderation: [ModerationInfo!]! @derivedFrom(field: "UserHistory")
+}
+
+type User @entity(immutable: true){
     id: ID!
     username: String
-    userID: String
-    group: Group!
-    questions: [Question!]! @derivedFrom(field: "user")
+    userID: String!
+    history: [UserHistory!]! @derivedFrom(field: "user")
 }
 
-type Group @entity{
+type Janny @entity{
+    id: ID!
+    group: Group!
+    botAddress: Bytes
+    blocknumberLastUpdatedSheriff: BigInt
+    blocknumberLastUpdatedDeputySheriff: BigInt
+    timestampLastUpdatedSheriff: BigInt
+    timestampLastUpdatedDeputySheriff: BigInt
+    sheriff: UserHistory
+    deputySheriff: UserHistory
+}
+
+type Group @entity(immutable: true){
     id: ID!
     name: String
     platform: String!
     groupID: String!
-    users: [User!]! @derivedFrom(field: "group")
-}
-
-type Contribution @entity {
-  id: ID!
-  _localDisputeID: BigInt! # uint256
-  _round: BigInt! # uint256
-  ruling: BigInt! # uint256
-  _contributor: Bytes! # address
-  _amount: BigInt! # uint256
-}
-
-type Dispute @entity {
-  id: ID!
-  _arbitrator: Bytes! # address
-  _disputeID: BigInt! # uint256
-  _metaEvidenceID: BigInt! # uint256
-  _evidenceGroupID: BigInt! # uint256
-}
-
-type DisputeIDToQuestionID @entity {
-  id: ID!
-  _questionID: String! # bytes32
-}
-
-type Evidence @entity {
-  id: ID!
-  _arbitrator: Bytes! # address
-  _evidenceGroupID: BigInt! # uint256
-  _party: Bytes! # address
-  _evidence: String! # string
-}
-
-type MetaEvidence @entity {
-  id: ID!
-  _metaEvidenceID: BigInt! # uint256
-  _evidence: String! # string
-}
-
-type Ruling @entity {
-  id: ID!
-  _arbitrator: Bytes! # address
-  _disputeID: BigInt! # uint256
-  _ruling: BigInt! # uint256
-}
-
-type RulingFunded @entity {
-  id: ID!
-  _localDisputeID: BigInt! # uint256
-  _round: BigInt! # uint256
-  _ruling: BigInt! # uint256
-}
-
-type Withdrawal @entity {
-  id: ID!
-  _localDisputeID: BigInt! # uint256
-  _round: BigInt! # uint256
-  _ruling: BigInt! # uint256
-  _contributor: Bytes! # address
-  _reward: BigInt! # uint256
+    botAddress: Bytes!
+    UserHistory: [UserHistory!]! @derivedFrom(field: "group")
 }

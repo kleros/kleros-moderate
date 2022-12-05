@@ -4,100 +4,78 @@ schema:
 dataSources:
   - kind: ethereum
     name: RealityETHV30
-    network: xdai #rinkeby #xdai 
+    network: goerli #goerli #xdai 
     source:
-      address: "0xE78996A233895bE74a66F451f1019cA9734205cc" # "0xdf33060f476f8cff7511f806c72719394da1ad64" #<-- rinkeby, xdai "0xE78996A233895bE74a66F451f1019cA9734205cc"
+      address: "0x6F80C5cBCF9FbC2dA2F0675E56A5900BB70Df72f" # "0x6F80C5cBCF9FbC2dA2F0675E56A5900BB70Df72f" #<-- goerli, xdai "0xE78996A233895bE74a66F451f1019cA9734205cc"
       abi: RealityETHV30
-      startBlock: 23143918 # 11138020 # <--- rinkeby, xdai 23143918
+      startBlock: 7913496  #7913496  # <--- goerli, xdai 23143918
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
       language: wasm/assemblyscript
       entities:
-        - LogAnswerReveal
-        - LogCancelArbitration
-        - LogClaim
-        - LogFinalize
-        - LogFundAnswerBounty
-        - LogMinimumBond
         - LogNewAnswer
         - LogNewQuestion
-        - LogNewTemplate
         - LogNotifyOfArbitrationRequest
-        - LogReopenQuestion
-        - LogSetQuestionFee
-        - LogWithdraw
+        - RealityETHV30
       abis:
         - name: RealityETHV30
           file: ./abis/RealityETHV30.json
       eventHandlers:
-        - event: LogAnswerReveal(indexed bytes32,indexed address,indexed
-            bytes32,bytes32,uint256,uint256)
-          handler: handleLogAnswerReveal
-        - event: LogCancelArbitration(indexed bytes32)
-          handler: handleLogCancelArbitration
-        - event: LogClaim(indexed bytes32,indexed address,uint256)
-          handler: handleLogClaim
-        - event: LogFinalize(indexed bytes32,indexed bytes32)
-          handler: handleLogFinalize
-        - event: LogFundAnswerBounty(indexed bytes32,uint256,uint256,indexed address)
-          handler: handleLogFundAnswerBounty
-        - event: LogMinimumBond(indexed bytes32,uint256)
-          handler: handleLogMinimumBond
         - event: LogNewAnswer(bytes32,indexed bytes32,bytes32,indexed address,uint256,uint256,bool)
           handler: handleLogNewAnswer
         - event: LogNewQuestion(indexed bytes32,indexed address,uint256,string,indexed
             bytes32,address,uint32,uint32,uint256,uint256)
           handler: handleLogNewQuestion
-        - event: LogNewTemplate(indexed uint256,indexed address,string)
-          handler: handleLogNewTemplate
         - event: LogNotifyOfArbitrationRequest(indexed bytes32,indexed address)
           handler: handleLogNotifyOfArbitrationRequest
-        - event: LogReopenQuestion(indexed bytes32,indexed bytes32)
-          handler: handleLogReopenQuestion
-        - event: LogSetQuestionFee(address,uint256)
-          handler: handleLogSetQuestionFee
-        - event: LogWithdraw(indexed address,uint256)
-          handler: handleLogWithdraw
       file: ./src/reality-ethv-30.ts
   - kind: ethereum
     name: Realitio_v2_1_ArbitratorWithAppeals
-    network: xdai
+    network: goerli #xdai
     source:
-      address: "0x36a4e90568ce270aB671F55547C5EAe428B6c03A"
+      address: "0xAa5681047a16F163391377Fd9f78e84355Cc9696" #goerli "0xAa5681047a16F163391377Fd9f78e84355Cc9696" #xdai 0x2a2bAB2C2D4eB5007b0389720b287D4D19dc4001# xdai me  "0x36a4e90568ce270aB671F55547C5EAe428B6c03A"
       abi: Realitio_v2_1_ArbitratorWithAppeals
-      startBlock: 23143918 # 11138020 rinkeby, xdai 23143918
+      startBlock: 8034496  #7913496  #goerli, xdai 23143918
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
       language: wasm/assemblyscript
       entities:
-        - Contribution
-        - Dispute
         - DisputeIDToQuestionID
-        - Evidence
-        - MetaEvidence
         - Ruling
         - RulingFunded
-        - Withdrawal
       abis:
         - name: Realitio_v2_1_ArbitratorWithAppeals
           file: ./abis/Realitio_v2_1_ArbitratorWithAppeals.json
       eventHandlers:
-        - event: Contribution(indexed uint256,indexed uint256,uint256,indexed address,uint256)
-          handler: handleContribution
-        - event: Dispute(indexed address,indexed uint256,uint256,uint256)
-          handler: handleDispute
         - event: DisputeIDToQuestionID(indexed uint256,bytes32)
           handler: handleDisputeIDToQuestionID
-        - event: Evidence(indexed address,indexed uint256,indexed address,string)
-          handler: handleEvidence
-        - event: MetaEvidence(indexed uint256,string)
-          handler: handleMetaEvidence
-        - event: Ruling(indexed address,indexed uint256,uint256)
-          handler: handleRuling
         - event: RulingFunded(indexed uint256,indexed uint256,indexed uint256)
           handler: handleRulingFunded
-        - event: Withdrawal(indexed uint256,indexed uint256,uint256,indexed address,uint256)
-          handler: handleWithdrawal
+        - event: Ruling(indexed address,indexed uint256,uint256)
+          handler: handleRuling
       file: ./src/Realitio_v2_1_ArbitratorWithAppeals.ts
+  - kind: ethereum
+    name: KlerosLiquid
+    network: goerli #xdai
+    source:
+      address: "0x1128eD55ab2d796fa92D2F8E1f336d745354a77A" # goerli 0x209469C921db9d5Bd77084370e80B63d5cdD63C1
+      abi: KlerosLiquid
+      startBlock: 7913496  #7913496  #goerli, xdai 23143918
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.6
+      language: wasm/assemblyscript
+      entities:
+        - AppealPossible
+        - AppealDecision
+      abis:
+        - name: KlerosLiquid
+          file: ./abis/KlerosLiquid.json
+      eventHandlers:
+        - event: AppealPossible(indexed uint256,indexed address)
+          handler: handleAppealPossible
+        - event: AppealDecision(indexed uint256,indexed address)
+          handler: handleAppealDecision
+      file: ./src/KlerosLiquid.ts

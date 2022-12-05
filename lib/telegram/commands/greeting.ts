@@ -1,33 +1,29 @@
 import * as TelegramBot from "node-telegram-bot-api";
-import {getRule, setRules} from "../../db";
 import langJson from "../assets/lang.json";
+import {groupSettings} from "../../../types";
 
-/*
- * /getrules
- */
+const NodeCache = require( "node-cache" );
+const myCache = new NodeCache( { stdTTL: 900, checkperiod: 1200 } );
+var myBot;
 
+myCache.on("expired",function(key,value){
+    myBot.deleteMessage(key, value.msg1);
+    myBot.deleteMessage(key, value.msg2);
+    });
 
-let greetingMap : Map<number, [number, number]> = new Map();
-
-const callback = async (db: any, lang: string, bot: TelegramBot, msg: TelegramBot.Message) => {
-
-    var rules = await getRule(db, 'telegram', String(msg.chat.id), Math.floor(Date.now()/1000));
-    
-    if (!rules){
-        rules = langJson[lang].defaultRules;
-        await setRules(db, 'telegram', String(msg.chat.id), rules, Math.floor(Date.now()/1000));
+const callback = async (bot: any, settings: groupSettings, msg: any) => {
+    myBot = bot
+    try{
+        if(msg.chat.is_forum){
+            bot.sendMessage(msg.chat.id, `Welcome [${msg.from.first_name}](tg://user?id=${msg.from.id}) ${langJson[settings.lang].greeting2}(${settings.rules}). ${langJson[settings.lang].greeting3}`, {message_thread_id: settings.thread_id_welcome, parse_mode: "Markdown"});
+        } else {
+            const msg1: TelegramBot.Message = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].greeting1}[Kleros Moderate](https://kleros.io/moderate/).`, {parse_mode: "Markdown"});
+            const msg2: TelegramBot.Message = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].greeting2}(${settings.rules}). ${langJson[settings.lang].greeting3}`, {parse_mode: "Markdown"});
+            myCache.set(msg.chat.id, {"msg1": msg1.message_id, "msg2": msg2.message_id});
+        }
+    } catch(e){
+        console.log(e)
     }
-
-    const previousMsgId = greetingMap?.get(msg.chat.id);
-    if (previousMsgId){
-        bot.deleteMessage(msg.chat.id, String(previousMsgId[0]));
-        bot.deleteMessage(msg.chat.id, String(previousMsgId[1]));
-    }
-
-    const msg1: TelegramBot.Message = await bot.sendMessage(msg.chat.id, `${langJson[lang].greeting1}[Kleros Moderate](https://kleros.io/moderate/).`, {parse_mode: "Markdown"});
-    const msg2: TelegramBot.Message = await bot.sendMessage(msg.chat.id, `${langJson[lang].greeting2}(${rules}). ${langJson[lang].greeting3}`, {parse_mode: "Markdown"});
-
-    greetingMap.set(msg.chat.id, [msg1.message_id, msg2.message_id]);
 }
 
 export {callback};

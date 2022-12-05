@@ -1,18 +1,15 @@
 import * as TelegramBot from "node-telegram-bot-api";
 import {getRule} from "../../db";
 import langJson from "../assets/lang.json";
+import { groupSettings } from "../../../types";
 
 /*
- * /getrules
+ * /rules
  */
-const regexp = /\/getrules/
+const regexp = /\/rules/
 
-const callback = async (db: any, lang: string, bot: TelegramBot, msg: TelegramBot.Message) => {
-    const rules = await getRule(db, 'telegram', String(msg.chat.id), Math.floor(Date.now()/1000));
-    if (rules)
-        await bot.sendMessage(msg.chat.id, `${langJson[lang].rules}(${rules}).`,{parse_mode: "Markdown"});        
-    else
-        await bot.sendMessage(msg.chat.id, langJson[lang].noRules);        
+const callback = async (db: any, settings: groupSettings, bot: any, botId: number, msg: any) => {
+    bot.sendMessage(msg.chat.id, `${langJson[settings.lang].rules}(${settings.rules}).`,msg.chat.is_forum? {parse_mode: "Markdown", message_thread_id: msg.message_thread_id}:{parse_mode: "Markdown"});        
 }
 
 export {regexp, callback};
