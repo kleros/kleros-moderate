@@ -19,6 +19,7 @@
     "node-cache": "^5.1.2",
     "node-fetch": "2",
     "node-telegram-bot-api": "^0.60.0",
+    "p-queue": "^6.6.2",
     "pm2": "^5.2.0",
     "sqlite": "^4.0.23",
     "sqlite3": "^5.0.2",

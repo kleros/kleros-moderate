@@ -8,10 +8,12 @@ import * as report from "../../lib/telegram/commands/report";
 import * as welcome from "../../lib/telegram/commands/welcome";
 import * as toggleWelcome from "../../lib/telegram/commands/toggleWelcome";
 import * as greeting from "../../lib/telegram/commands/greeting";
+import * as toggleCaptcha from "../../lib/telegram/commands/toggleCaptcha";
 import * as help from "../../lib/telegram/commands/help";
 import * as socialConsensus from "../../lib/telegram/commands/socialConsensus";
 import * as addEvidence from "../../lib/telegram/commands/addEvidence";
 import * as leaveFed from "../../lib/telegram/commands/leavefed";
+import * as newFed from "../../lib/telegram/commands/newfed";
 import * as joinFed from "../../lib/telegram/commands/joinfed";
 import * as start from "../../lib/telegram/commands/start";
 import * as setLanguage from "../../lib/telegram/commands/setLanguage";
@@ -20,7 +22,7 @@ import * as getChannel from "../../lib/telegram/commands/getChannel";
 import * as getReports from "../../lib/telegram/commands/getReports";
 import langJson from "./assets/lang.json";
 import {groupSettings, groupSettingsUnderspecified} from "../../types";
-import {openDb, getGroupSettings, getRule, getDisputedReportsUserInfo, eraseThreadID} from "../db";
+import {openDb, getGroupSettings, getRule, getReportsUserInfo,getFederatedBanHistoryBase, getFederatedFollowingBanHistoryBase, getLocalBanHistoryBase, eraseThreadID} from "../db";
 
 const Web3 = require('web3')
 const _batchedSend = require('web3-batched-send')
@@ -36,9 +38,13 @@ const batchedSend = _batchedSend(
     rules: langJson['en'].defaultRules,
     channelID: '',
     greeting_mode: false,
+    captcha: false,
+    admin_reportable: false,
     thread_id_rules: '',
     thread_id_welcome: '',
-    thread_id_notifications: ''
+    thread_id_notifications: '',
+    federation_id: '',
+    federation_id_following: ''
 }
 const ModeratorBot = require('node-telegram-bot-api');
 const bot: any = new ModeratorBot(process.env.BOT_TOKEN, {polling: true, testEnvironment: true});
@@ -86,9 +92,20 @@ bot.on("my_chat_member", async function(myChatMember: any) {
 
 bot.on("new_chat_members", async function (chatMemberUpdated: TelegramBot.ChatMemberUpdated) {
     if(!hasStarted(chatMemberUpdated.chat.id)||throttled(chatMemberUpdated.from.id)||chatMemberUpdated.chat.type !== "supergroup")
-        return;
+        return;    
     const settings = validate(chatMemberUpdated.chat);
-    if (settings.greeting_mode)
+    let calculateHistory = []
+    if (settings.federation_id)
+        calculateHistory = getFederatedBanHistoryBase(db, 'telegram', String(chatMemberUpdated.from.id),String(chatMemberUpdated.chat.id),false)
+    else if (settings.federation_id_following)
+        calculateHistory = getFederatedFollowingBanHistoryBase(db, 'telegram', String(chatMemberUpdated.from.id),String(chatMemberUpdated.chat.id),settings.federation_id_following,false)
+    else 
+        calculateHistory = getLocalBanHistoryBase(db, 'telegram', String(chatMemberUpdated.from.id),String(chatMemberUpdated.chat.id),false)
+
+    if (calculateHistory)
+        return
+
+    if(settings.captcha || settings.greeting_mode)
         greeting.callback(bot, settings, chatMemberUpdated);        
 });
 
@@ -113,12 +130,14 @@ bot.on('callback_query', async function onCallbackQuery(callbackQuery: TelegramB
     } else if (Number(calldata[0]) === 3){ // report confirmations
         help.respond(settings, bot, calldata[1], callbackQuery);
     } else if (Number(calldata[0]) === 4){
-        const reports = getDisputedReportsUserInfo(db, 'telegram', calldata[1], calldata[2]);
+        const reports = getReportsUserInfo(db, 'telegram', calldata[1], calldata[2]);
         var reportMessage: string = `To add evidence, reply to the message you want saved in the original chat with the evidence index.\n\n`
         reports.forEach( (report) => {
             const MsgLink = 'https://t.me/c/' + calldata[1].substring(4) + '/' + report.msg_id;
-            reportMessage += `- [Message](${MsgLink}) ([${langJson[settings.lang].socialConsensus.consensus5}](${report.msgBackup})) [${langJson[settings.lang].getReports.reportMessage3}](https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${report.question_id}), \`/addevidence ${report.evidenceIndex}\` <explanation and context>\n`;
+            reportMessage += `- [Message](${MsgLink}) ([${langJson[settings.lang].socialConsensus.consensus5}](${report.msgBackup})) [${langJson[settings.lang].getReports.reportMessage3}](https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${report.question_id}), \`/addevidence ${report.evidenceIndex}\` <context (optional)>\n`;
         });
+
+        reportMessage +='\n eg. /addevidence 1 This message breaks the rules because xyz.'
         const optsResponse = {
             chat_id: callbackQuery.message.chat.id,
             message_id: callbackQuery.message.message_id,
@@ -131,6 +150,12 @@ bot.on('callback_query', async function onCallbackQuery(callbackQuery: TelegramB
         } catch (e){
             console.log(e)
         }
+    } else if (Number(calldata[0]) === 5){
+        if (callbackQuery.from.id !== Number(calldata[1]))
+            return;
+        const options = {can_send_messages: true, can_send_media_messages: true, can_send_polls: true, can_send_other_messages: true, can_add_web_page_previews: false, can_change_info: false, can_pin_messages: false};
+        bot.restrictChatMember(callbackQuery.message.chat.id, callbackQuery.from.id, options);
+        bot.deleteMessage(callbackQuery.message.chat.id, callbackQuery.message.message_id)
     }
   });
 
@@ -141,7 +166,9 @@ const commands: {regexp: RegExp, callback: any}[] = [
     report,
     toggleWelcome,
     start,
+    toggleCaptcha,
     help,
+    newFed,
     getChannel,
     leaveFed,
     joinFed,
@@ -172,6 +199,12 @@ commands.forEach((command) => {
                     return
                 } else if (msg.text.substring(0,22) === '/start addevidencehelp'){
                     addEvidenceHelp.callback(db, groupSettings, bot, botId, msg);
+                    return
+                } else if (msg.text.substring(0,16) === '/start getreport'){
+                    getReports.callback(db, groupSettings, bot, botId, msg);
+                    return
+                } else if (msg.text === '/start newfed' || msg.text.substring(0,7) === '/newfed'){
+                    newFed.callback(db, groupSettings, bot, String(botId), msg, match);
                     return
                 } else if (msg.text !== '/start' && msg.text != '/help' && msg.text !== '/start botstart')
                     return
@@ -220,7 +253,7 @@ commands.forEach((command) => {
 
             // todo success bool return val, to not always delete settings
             command.callback(db, groupSettings, bot, botId, msg, match,batchedSend);
-            if (command === setLanguage || command === setRulesCommand || command === setChannel || command === toggleWelcome)
+            if (command === setLanguage || command === setRulesCommand || command === setChannel || command === toggleWelcome || command === toggleCaptcha)
                 myCache.del(msg.chat.id)
             if (command === start)
                 myCache.del("started"+msg.chat.id)
@@ -254,7 +287,9 @@ const hasStarted = (chatid: number): boolean=> {
 
 const validate = (chat: any): groupSettings=> {
     if (!hasStarted(chat.id)){
-        return defaultSettings;
+        let settings = defaultSettings;
+        settings.channelID = String(chat.id)
+        return settings;
     }
     var groupSettings : groupSettingsUnderspecified = myCache.get(chat.id)
     if (!groupSettings){
@@ -268,28 +303,39 @@ const validate = (chat: any): groupSettings=> {
         rules: groupSettings?.rules ?? defaultSettings.rules,
         channelID: groupSettings?.channelID ?? String(chat.id),
         greeting_mode: groupSettings?.greeting_mode ?? defaultSettings.greeting_mode,
+        admin_reportable: groupSettings?.admin_reportable ?? defaultSettings.admin_reportable,
+        captcha: groupSettings?.captcha ?? defaultSettings.captcha,
         thread_id_rules: groupSettings?.thread_id_rules ?? defaultSettings.thread_id_rules,
         thread_id_welcome: groupSettings?.thread_id_welcome ?? defaultSettings.thread_id_rules,
-        thread_id_notifications: groupSettings?.thread_id_notifications ?? defaultSettings.thread_id_notifications
+        thread_id_notifications: groupSettings?.thread_id_notifications ?? defaultSettings.thread_id_notifications,
+        federation_id: groupSettings?.federation_id ?? defaultSettings.federation_id,
+        federation_id_following: groupSettings?.federation_id_following ?? defaultSettings.federation_id_following
     }
+    checkMigration(fullSettings, chat)
+
     console.log(fullSettings);
     return fullSettings
 }
-/*
+
 const checkMigration = async (groupSettings: groupSettings, chat: any): Promise<groupSettings> => {
-    await bot.sendMessage(chat.id, "Started topic mode", {messsage_thread_id: groupSettings.thread_id_notifications})
     if (chat.is_forum && !groupSettings.thread_id_notifications){ // turn topics on
         try{
-            const threads = await start.topicMode(db, bot, groupSettings, String(chat.id));
+            const threads = await start.topicMode(db, bot, groupSettings, chat);
+            bot.sendMessage(chat.id, "Started topic mode", {messsage_thread_id: groupSettings.thread_id_notifications})
             groupSettings.thread_id_rules = threads[0]
             groupSettings.thread_id_notifications = threads[1]
             groupSettings.channelID = String(chat.id)
             myCache.set(chat.id, groupSettings)
         } catch(e){
+            try{
+                bot.sendMessage(chat.id, "Susie cannot manage groups in topic mode with out permission to manage topics. Please ask an admin to enable this permission to allow Susie to continue help moderating your community.", {messsage_thread_id: groupSettings.thread_id_notifications})
+            } catch(e){
+                console.log(e)
+            }
             console.log(e)
         }
     }
     return groupSettings
-}*/
+}
 
 console.log('Telegram bot ready...');

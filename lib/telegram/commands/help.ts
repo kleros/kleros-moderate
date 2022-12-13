@@ -13,6 +13,8 @@ const helpgnosis = (db: any, settings: groupSettings, bot: any, botId: number, m
 
 Susie uses [xDAI](https://docs.gnosischain.com/about/tokens/xdai), a stable coin, on [Gnosis Chain](https://www.gnosis.io/). Don't know what that means? It means Susie uses a cheap and fast decentralized tool to coordinate moderation fairly and transparently.
 
+What's crypto? I heard about that on the news, I don't want anything to do with crypto. No problem, you can ask for help in the @KlerosModerateGuildOfJustice for help from freelance moderators.
+
 Don't have any xDAI on Gnosis Chain? No problem, there's a (cheap, fast) [bridge](https://bridge.connext.network/?receivingChainId=100&receivingAssetId=0x0000000000000000000000000000000000000000) for that. 
 
 Don't have any cryptocurrency? No problem, there's a convinient [fiat on-ramp](https://www.mtpelerin.com/buy-xdai) (credit card or bank transfer) to buy DAI on Gnosis Chain.
@@ -60,7 +62,7 @@ const callback = (db: any, settings: groupSettings, bot: any, botId: number, msg
                 [
                     {
                         text: 'Get Help (DM)',
-                        url: `tg://user?id=${botId}&start=help`
+                        url: `https://t.me/${process.env.BOT_USERNAME}?start=help`
                     }
                 ]
                 ]
@@ -72,8 +74,7 @@ const callback = (db: any, settings: groupSettings, bot: any, botId: number, msg
                 [
                     {
                         text: 'Get Help (DM)',
-                        url: `https://t.me/KlerosModeratorBot?start=help`
-                        //url: `tg://user?id=${botId}&start=help`
+                        url: `https://t.me/${process.env.BOT_USERNAME}?start=help`
                     }
                 ]
                 ]
@@ -279,6 +280,8 @@ No more! With federations, Susie can enforce a ban on a user in all federate gro
 Susie uses [xDAI](https://docs.gnosischain.com/about/tokens/xdai), a stable coin, on [Gnosis Chain](https://www.gnosis.io/). Don't know what that means? It means Susie uses a cheap and fast public ledger to coordinate moderation fairly and transparently.
 
 Don't have any xDAI on Gnosis Chain? No problem, there's a (cheap, fast) [bridge](https://bridge.connext.network/?receivingChainId=100&receivingAssetId=0x0000000000000000000000000000000000000000) for that. 
+
+What's crypto? I heard about that on the news, I don't want anything to do with crypto. No problem, you can ask for help in the @KlerosModerateGuildOfJustice for help from freelance moderators.
 
 Don't have any cryptocurrency? No problem, there's a convinient [fiat on-ramp](https://www.mtpelerin.com/buy-xdai) (credit card or bank transfer) to buy DAI on Gnosis Chain.
 
