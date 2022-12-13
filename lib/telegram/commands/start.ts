@@ -19,7 +19,7 @@ const callback = async (db: any, settings: groupSettings, bot: any, botID: strin
                     [
                         {
                             text: 'Add me to your group!',
-                            url: `https://t.me/KlerosModeratorBot?startgroup=botstart`
+                            url: `https://t.me/${process.env.BOT_USERNAME}?startgroup=botstart`
                         }
                     ]
                     ]
@@ -40,17 +40,18 @@ Join my news channel @KlerosModerateNews to get information on all the latest up
         }
         if (msg.chat.is_forum){
             if(!botUser.can_manage_topics){
-                bot.sendVideo(msg.chat.id, 'https://ipfs.kleros.io/ipfs/QmbnEeVzBjcAnnDKGYJrRo1Lx2FFnG62hYfqx4fLTqYKC7/guide.mp4', {message_thread_id: msg.message_thread_id, caption: "Must have can manage topics"});
+                bot.sendVideo(msg.chat.id, 'https://ipfs.kleros.io/ipfs/QmbnEeVzBjcAnnDKGYJrRo1Lx2FFnG62hYfqx4fLTqYKC7/guide.mp4', {message_thread_id: msg.message_thread_id, caption: "Susie needs permissions to manage topics to effectively moderate your community.\n\nThen try to /start community moderation again."});
                 return;
             }
             const thread_ids = getThreadIDNotifications(db, 'telegram', String(msg.chat.id));
             if (thread_ids){
                 bot.sendMessage(msg.chat.id, "Already started.", {message_thread_id: msg.message_thread_id});
             }
-            await topicMode(db,bot,settings,String(msg.chat.id));
+            console.log(msg);
+            await topicMode(db,bot,settings,msg.chat);
         }
         setRules(db, 'telegram', String(msg.chat.id), langJson[settings.lang].defaultRules, Math.floor(Date.now()/1000));
-        bot.sendMessage(msg.chat.id, `Hi! My community moderation tools are at your service. [DM](https://t.me/KlerosModeratorBot?start=help) me to find out more about how to use me to my full potential : )
+        bot.sendMessage(msg.chat.id, `Hi! My community moderation tools are at your service. [DM](https://t.me/${process.env.BOT_USERNAME}?start=help) me to find out more about how to use me to my full potential : )
         
 - Use /setrules to change the default [rules](${langJson[settings.lang].defaultRules}).
 - User reports are made by replying to a message with /report
@@ -69,17 +70,16 @@ Join my news channel @KlerosModerateNews to get information on all the latest up
     }
 }
 
-const topicMode = async (db:any, bot: any, settings: groupSettings, chat_id: string): Promise<[string,string]> => {
+const topicMode = async (db:any, bot: any, settings: groupSettings, chat: TelegramBot.Chat): Promise<[string,string]> => {
         // tg bugging, won't display icon_color if set
-        const topicRules = await bot.createForumTopic(chat_id, 'Rules', {icon_custom_emoji_id: '4929691942553387009'});
-        const topicModeration = await bot.createForumTopic(chat_id, 'Moderation', {icon_custom_emoji_id: '4929336692923432961'});
+        const topicRules = await bot.createForumTopic(chat.id, 'Rules', {icon_custom_emoji_id: '4929691942553387009'});
+        const topicModeration = await bot.createForumTopic(chat.id, 'Moderation Notifications', {icon_custom_emoji_id: '4929336692923432961'});
 
-        bot.sendMessage(settings.channelID, `Please refer to the moderation topic for notifications, and the rules topic for rules. `);
-        bot.sendMessage(chat_id, `${langJson[settings.lang].defaultRulesMsg1alt}. ${langJson[settings.lang].defaultRulesMsg2}.`, {parse_mode: "Markdown", message_thread_id: topicRules.message_thread_id});
-        //bot.sendMessage(chat_id, `${langJson[settings.lang].greeting2}(${settings.rules}). ${langJson[settings.lang].greeting3}`, {parse_mode: "Markdown", message_thread_id: topicRules.message_thread_id});
-        bot.sendMessage(chat_id, `${langJson[settings.lang].greeting1}[Kleros Moderate](https://kleros.io/moderate/).`, {parse_mode: "Markdown", message_thread_id: topicModeration.message_thread_id});
-        bot.closeForumTopic(chat_id, topicRules.message_thread_id)
-        setThreadID(db,'telegram',chat_id,String(topicRules.message_thread_id), String(topicModeration.message_thread_id))
+        bot.sendMessage(chat.id, `Please follow the community [rules](${settings.rules}). Misbehavior can be reported with /report.`, {parse_mode: "Markdown", message_thread_id: topicRules.message_thread_id});
+            //bot.sendMessage(chat_id, `${langJson[settings.lang].greeting2}(${settings.rules}). ${langJson[settings.lang].greeting3}`, {parse_mode: "Markdown", message_thread_id: topicRules.message_thread_id});
+        bot.sendMessage(chat.id, `${langJson[settings.lang].greeting1}[Kleros Moderate](https://kleros.io/moderate/).`, {parse_mode: "Markdown", message_thread_id: topicModeration.message_thread_id});
+        bot.closeForumTopic(chat.id, topicRules.message_thread_id)
+        setThreadID(db,'telegram',String(chat.id),String(topicRules.message_thread_id), String(topicModeration.message_thread_id))
         return [topicRules.message_thread_id, topicModeration.message_thread_id]
 }
 

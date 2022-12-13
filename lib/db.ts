@@ -21,28 +21,56 @@ const setLang = (db: any, platform: string, groupId: string, lang: string) => {
     }
 }
 
-const joinFederation = (db: any, platform: string, groupId: string, owner_user_id: string) => {
+const joinFederation = (db: any, platform: string, groupId: string, federation_id: string) => {
     try{
         const stmt = db.prepare(
-            `INSERT INTO groups (platform, group_id, owner_user_id) 
+            `INSERT INTO groups (platform, group_id, federation_id) 
             VALUES (?, ?, ?) 
             ON CONFLICT(platform, group_id) DO UPDATE SET 
-            owner_user_id=?;`);
-        const info = stmt.run(platform, groupId, owner_user_id, owner_user_id);
+            federation_id=?;`);
+        const info = stmt.run(platform, groupId, federation_id, federation_id);
     } catch(err) {
         console.log("db error: joinFederation");
         console.log(err);
     }
 }
 
-const leaveFederation = (db: any, platform: string, groupId: string, owner_user_id: string) => {
+const setFederation = (db: any, platform: string, name: string, federation_id: string) => {
     try{
         const stmt = db.prepare(
-            `INSERT INTO groups (platform, group_id, owner_user_id) 
+            `INSERT INTO federations (platform, federation_id, name) 
+            VALUES (?, ?, ?) 
+            ON CONFLICT(platform, federation_id) DO UPDATE SET 
+            name=?;`);
+        const info = stmt.run(platform, federation_id, name, name);
+    } catch(err) {
+        console.log("db error: joinFederation");
+        console.log(err);
+    }
+}
+
+const followFederation = (db: any, platform: string, groupId: string, federation_id_following: string) => {
+    try{
+        const stmt = db.prepare(
+            `INSERT INTO groups (platform, group_id, federation_id_following) 
             VALUES (?, ?, ?) 
             ON CONFLICT(platform, group_id) DO UPDATE SET 
-            owner_user_id=?;`);
-        const info = stmt.run(platform, groupId, owner_user_id, owner_user_id);
+            federation_id_following=?;`);
+        const info = stmt.run(platform, groupId, federation_id_following, federation_id_following);
+    } catch(err) {
+        console.log("db error: joinFederation");
+        console.log(err);
+    }
+}
+
+const leaveFederation = (db: any, platform: string, groupId: string, federation_id: string) => {
+    try{
+        const stmt = db.prepare(
+            `INSERT INTO groups (platform, group_id, federation_id) 
+            VALUES (?, ?, ?) 
+            ON CONFLICT(platform, group_id) DO UPDATE SET 
+            federation_id=?;`);
+        const info = stmt.run(platform, groupId, federation_id, federation_id);
     } catch(err) {
         console.log("db error: leaveFederation");
         console.log(err);
@@ -92,9 +120,9 @@ const setChannelID = (db: any, platform: string, groupId: string, channel_id: st
     }
 }
 
-const getDisputedReportsInfo = (db:any, platform: string, groupId: string) => {
+const getActiveReportsInfo = (db:any, platform: string, groupId: string) => {
     try{
-        const stmt = db.prepare('SELECT * FROM reports WHERE finalized = 0 AND group_id = ? AND platform = ? AND active_timestamp > 0');
+        const stmt = db.prepare('SELECT * FROM reports WHERE group_id = ? AND platform = ? AND answered IS NOT NULL');
         return stmt.all(groupId, platform);
     } catch(err){
         console.log("db error: getDisputedReports");
@@ -102,11 +130,11 @@ const getDisputedReportsInfo = (db:any, platform: string, groupId: string) => {
     }
 }
 
-const getFederationGroups = (db: any, platform: string, owner_user_id: string) => {
+const getFederationGroups = (db: any, platform: string, federation_id: string) => {
     try{
         const stmt = db.prepare(
-            `SELECT group_id FROM groups WHERE platform=? AND owner_user_id=?;`);
-        const info = stmt.run(platform, platform, owner_user_id);
+            `SELECT group_id FROM groups WHERE platform=? AND federation_id=?;`);
+        const info = stmt.run(platform, platform, federation_id);
     } catch(err) {
         console.log("db error: setLang");
         console.log(err);
@@ -122,8 +150,33 @@ const setGreetingMode = (db: any, platform: string, groupId: string, greeting_mo
             greeting_mode = ?;`);
         const info = stmt.run(platform, groupId, greeting_mode, greeting_mode);
     } catch(err) {
-        console.log("db error: set setGreetingMode");
-        console.log(err);
+        console.log("db error: set setGreetingMode "+err);
+    }
+}
+
+const setCaptchaMode = (db: any, platform: string, groupId: string, captcha_mode: number) => {
+    try{
+        const stmt = db.prepare(
+            `INSERT INTO groups (platform, group_id, captcha) 
+            VALUES (?, ?, ?) 
+            ON CONFLICT (platform, group_id) DO UPDATE SET 
+            captcha = ?;`);
+        const info = stmt.run(platform, groupId, captcha_mode, captcha_mode);
+    } catch(err) {
+        console.log("db error: setCaptchaMode "+ err);
+    }
+}
+
+const setAdminReportableMode = (db: any, platform: string, groupId: string, admin_reportable_mode: number) => {
+    try{
+        const stmt = db.prepare(
+            `INSERT INTO groups (platform, group_id, admins_reportable) 
+            VALUES (?, ?, ?) 
+            ON CONFLICT (platform, group_id) DO UPDATE SET 
+            admins_reportable = ?;`);
+        const info = stmt.run(platform, groupId, admin_reportable_mode, admin_reportable_mode);
+    } catch(err) {
+        console.log("db error: setAdminReportableMode "+err);
     }
 }
 
@@ -207,10 +260,20 @@ const getInviteURLChannel = (db: any, platform: string, groupId: string) => {
 
 const existsQuestionId = (db: any, question_id: string): boolean => {
     try{
-        const stmt = db.prepare('SELECT * FROM reports WHERE question_id = ?');
+        const stmt = db.prepare('SELECT question_id FROM reports WHERE question_id = ?');
         return stmt.get(question_id)?.length > 0;
     } catch(err){
-        console.log("db error: getGreetingMode");
+        console.log("db error: existsQuestionId");
+        console.log(err);
+    }
+}
+
+const getFederationName = (db: any, platform: string, federation_id: string): string | undefined => {
+    try{
+        const stmt = db.prepare('SELECT name FROM federations WHERE platform = ? AND federation_id = ?');
+        return stmt.get(platform, federation_id)?.name;
+    } catch(err){
+        console.log("db error: getFederationName");
         console.log(err);
     }
 }
@@ -249,6 +312,10 @@ const getGroupSettings = (db: any, platform: string, groupId: string): groupSett
             thread_id_notifications: result?.thread_id_notifications,
             thread_id_welcome: result?.thread_id_welcome,
             greeting_mode: result?.greeting_mode,
+            captcha: result?.captcha,
+            admin_reportable: result?.admin_reportable,
+            federation_id: result?.federation_id,
+            federation_id_following: result?.federation_id_following,
         }
     } catch(err){
         console.log("db error: getGroupSettings");
@@ -266,22 +333,12 @@ const getThreadIDRules = (db: any, platform: string, groupId: string) => {
     }
 }
 
-const getConcurrentReports = (db: any, platform: string, groupId: string, userId: string, timestamp: number) => {
+const getReportsUserInfo = (db:any, platform: string, groupId: string, userId: string) => {
     try{
-        const stmt = db.prepare('SELECT question_id, msg_id, group_id, timestamp FROM reports WHERE timestamp BETWEEN ? AND ? AND user_id = ? AND group_id = ? AND platform = ?');
-        return stmt.all(timestamp - 3600, timestamp + 3600, userId, groupId, platform);
-    } catch(err){
-        console.log("db error: getConcurrentReports");
-        console.log(err);
-    }
-}
-
-const getDisputedReportsUserInfo = (db:any, platform: string, groupId: string, userId: string) => {
-    try{
-        const stmt = db.prepare('SELECT question_id, active, active_timestamp,msgBackup, msg_id, evidenceIndex, timestamp FROM reports WHERE user_id = ? AND group_id = ? AND platform = ? AND finalized = 0');
+        const stmt = db.prepare('SELECT question_id, active,msgBackup, msg_id, evidenceIndex, timestamp_msg, finalized FROM reports WHERE user_id = ? AND group_id = ? AND platform = ?');
         return stmt.all(userId, groupId, platform);
     } catch(err){
-        console.log("db error: getDisputedReportsUserInfo");
+        console.log("db error: getReportsUserInfo");
         console.log(err);
     }
 }
@@ -340,40 +397,252 @@ const getAllowance = (db: any, platform: string, groupId: string, userId: string
     }
 }
 
-const setReport = (db: any, questionId: string, active: boolean, finalized: boolean, activeTimestamp: number) => {
+const setReport = (db: any, questionId: string, active: boolean, answered: boolean, finalized: boolean, disputed: boolean, timestamp_active: number, timestamp_finalized: number) => {
     try{
         const stmt = db.prepare(
-            'UPDATE reports SET active = ?, finalized = ?, active_timestamp = ? WHERE question_id = ?',
+            `UPDATE reports SET active = ?, answered = ?, finalized = ?, disputed = ?, timestamp_active = ?, timestamp_finalized = ?
+            WHERE question_id = ?`
             );
-        const info = stmt.run(Number(active), Number(finalized), activeTimestamp, questionId);
+        const info = stmt.run(Number(active), Number(answered),Number(finalized), Number(disputed), timestamp_active, timestamp_finalized, questionId);
     } catch(err) {
         console.log("db error: setReport");
         console.log(err);
     }
 }
 
-const getBanHistory = (db: any, platform: string, groupId: string, userId: string): {ban_level: number, timestamp_ban: number, count_current_level_optimistic_bans: number} | undefined => {
+const getActiveEvidenceGroupId = (db: any, platform: string, groupId: string, evidenceIndex: number) => {
     try{
-        const stmt = db.prepare('SELECT ban_level, timestamp_ban, count_current_level_optimistic_bans FROM banHistory WHERE user_id = ? AND group_id = ? AND platform = ?');
-        return stmt.get(userId, groupId, platform);
-    } catch(e){
-        console.log("db error: getBanHistory "+e);
+        const stmt = db.prepare( `SELECT question_id FROM reports WHERE platform = ? AND group_id = ? AND evidenceIndex = ? AND finalized IS NULL`);
+        return stmt.get(platform, groupId, evidenceIndex)?.question_id;
+    } catch(err) {
+        console.log("db error: getActiveEvidenceGroupId" + err);
     }
 }
 
-const getActiveEvidenceGroupId = (db: any, platform: string, groupId: string, evidenceIndex: number) => {
+const isInFederation = (db: any, platform: string, federationId: string) => {
     try{
-        const stmt = db.prepare( `SELECT question_id FROM reports WHERE platform = ? AND group_id = ? AND evidenceIndex = ? AND finalized = 0`);
-        return stmt.get(platform, groupId, evidenceIndex)?.question_id;
-    } catch(err) {
-        console.log("db error: getActiveEvidenceGroupId");
-        console.log(err);
+        const stmt = db.prepare( `
+            SELECT group_id
+            FROM groups
+            WHERE federation_id = ? AND platform = ?
+        `);
+        return stmt.get(federationId, platform)?.length > 0
+    } catch (err){
+        console.log("db error: getGroupsInFederation" + err);
     }
 }
+
+const getGroupsInFederation = (db: any, platform: string, federationId: string) => {
+    try{
+        const stmt = db.prepare( `
+            SELECT group_id
+            FROM groups
+            WHERE federation_id = ? AND platform = ?
+        `);
+        return stmt.all(federationId, platform)
+    } catch (err){
+        console.log("db error: getGroupsInFederation" + err);
+    }
+}
+
+const getGroupsInAndFollowingFederation = (db: any, platform: string, federationId: string) => {
+    try{
+        const stmt = db.prepare( `
+            SELECT group_ids
+            FROM groups
+            WHERE platform = ? AND (federation_id = ? OR federation_id_following = ?)
+        `);
+        return stmt.all(platform, federationId, federationId)
+    } catch (err){
+        console.log("db error: getGroupsInAndFollowingFederation" + err);
+    }
+}
+
+const getLocalBanHistory = (db: any, platform: string, userId: string, group_id: string, finalized: boolean) => {
+    const base = getLocalBanHistoryBase(db, platform, userId, group_id, finalized)
+    if (!base)
+        return [];
+
+    // sqlit3 couldn't do recursive agregate queries
+    // report ban depth is capped at 3 or 4 levels (1 day, 1 week, permaban)
+    // just going a few inductive steps, could be more efficient in a full query
+    const banLevel1 = getLocalBanHistoryInduction(db,platform,userId,group_id,base.timestamp, finalized)
+    if(!banLevel1)
+        return [base]
+    const banLevel2 = getLocalBanHistoryInduction(db,platform,userId,group_id,banLevel1.timestamp, finalized)
+    if(!banLevel2)
+        return [base, banLevel1]
+
+    return [base, banLevel1, banLevel2]
+}
+
+const getLocalBanHistoryBase = (db: any, platform: string, userId: string, group_id: string, finalized: boolean) => {
+    try{
+        const stmt = db.prepare(`
+        SELECT question_id, timestamp_report, timestamp_active as timestamp
+        FROM reports
+        WHERE platform = ? AND user_id = ? ${finalized? 'AND finalized = 1': ''} AND active = 1 AND group_id = ?
+        ORDER BY timestamp_report ASC`)
+        return stmt.get(platform, userId, group_id);
+    } catch (err){
+        console.log("db error: getLocalBanHistoryBase" + err);
+    }
+}
+
+const getLocalBanHistoryInduction = (db: any, platform: string, userId: string, group_id: string, timestamp_last: number, finalized: boolean) => {
+    try{
+        const stmt = db.prepare(`
+        SELECT question_id, timestamp_report, timestamp_active as timestamp
+        FROM reports
+        WHERE platform = ? AND user_id = ? ${finalized? 'AND finalized = 1': ''} AND active = 1 AND group_id = ? AND timestamp_msg > ?
+        ORDER BY timestamp_report ASC`)
+        return stmt.get(platform, userId, group_id,timestamp_last);
+    } catch (err){
+        console.log("db error: getLocalBanHistoryInduction" + err);
+    }
+}
+
+const getFederatedBanHistory = (db: any, platform: string, userId: string, federation_id: string, finalized: boolean) => {
+    const base = getFederatedBanHistoryBase(db, platform, userId, federation_id, finalized)
+    if (!base)
+        return [];
+
+    // sqlit3 couldn't do recursive agregate queries
+    // report ban depth is capped at 3 or 4 levels (1 day, 1 week, permaban)
+    // just going a few inductive steps, could be more efficient in a full query
+    const banLevel1 = getFederatedBanHistoryInduction(db,platform,userId,federation_id,base.timestamp, finalized)
+    if(!banLevel1)
+        return [base]
+    const banLevel2 = getFederatedBanHistoryInduction(db,platform,userId,federation_id,banLevel1.timestamp, finalized)
+    if(!banLevel2)
+        return [base, banLevel1]
+
+        return [base, banLevel1, banLevel2]
+    }
+
+const getFederatedBanHistoryBase = (db: any, platform: string, userId: string, federation_id: string, finalized: boolean) => {
+    try{
+        const stmt = db.prepare(`
+        SELECT question_id, timestamp_report, timestamp_active as timestamp
+        FROM reports
+        WHERE platform = ? AND user_id = ? AND ${finalized? 'AND finalized = 1': ''} AND active = 1 AND group_id IN (
+            SELECT group_id
+            FROM groups
+            WHERE federation_id = ? AND platform = ?
+        )
+        order by timestamp_report asc;`);
+        return stmt.get(platform, userId, federation_id, platform);
+    } catch (err){
+        console.log("db error: getFederatedBanHistoryBase" + err);
+    }
+}
+
+const getFederatedBanHistoryInduction = (db: any, platform: string, userId: string, federation_id: string, timestamp_last: number, finalized: boolean) => {
+    try{
+        const stmt = db.prepare(`
+        SELECT question_id, timestamp_report, timestamp_active as timestamp
+        FROM reports
+        WHERE platform = ? AND user_id = ? ${finalized? 'AND finalized = 1': ''} AND active = 1 AND timestamp_msg > ? AND group_id IN (
+            SELECT group_id
+            FROM groups
+            WHERE federation_id = ? AND platform = ?
+        )
+        order by timestamp_report asc;`);
+        return stmt.get(platform, userId,timestamp_last,federation_id,platform);
+    } catch (err){
+        console.log("db error: getFederatedBanHistoryInduction" + err);
+    }
+}
+
+const getFederatedFollowingBanHistory = (db: any, platform: string, userId: string, group_id: string, federation_id: string, finalized: boolean) => {
+    const base = getFederatedFollowingBanHistoryBase(db, platform, userId, group_id, federation_id, finalized)
+    if (!base)
+        return [];
+
+    // sqlit3 couldn't do recursive agregate queries
+    // report ban depth is capped at 3 or 4 levels (1 day, 1 week, permaban)
+    // just going a few inductive steps, could be more efficient in a full query
+    const banLevel1 = getFederatedFollowingBanHistoryInduction(db,platform,userId,group_id, federation_id,base.timestamp, finalized)
+    if(!banLevel1)
+        return [base]
+    const banLevel2 = getFederatedFollowingBanHistoryInduction(db,platform,userId,group_id,federation_id,banLevel1.timestamp, finalized)
+    if(!banLevel2)
+        return [base, banLevel1]
+
+    return [base, banLevel1, banLevel2]
+    }
+
+const getFederatedFollowingBanHistoryBase = (db: any, platform: string, userId: string, group_id: string, federation_id: string, finalized: boolean) => {
+    try{
+        const stmt = db.prepare(`
+        SELECT question_id, timestamp_report, timestamp_active as timestamp
+        FROM reports
+        WHERE platform = ? AND user_id = ? ${finalized? 'AND finalized = 1': ''} AND active = 1 AND (group_id = ? OR group_id IN (
+            SELECT group_id
+            FROM groups
+            WHERE federation_id = ? AND platform = ?
+        ))
+        order by timestamp_report asc;`);
+        return stmt.get(platform, userId, group_id, federation_id, platform);
+    } catch (err){
+        console.log("db error: getFederatedBanHistoryBase" + err);
+    }
+}
+
+const getFederatedFollowingBanHistoryInduction = (db: any, platform: string, userId: string,  group_id: string, federation_id: string, timestamp_last: number, finalized: boolean) => {
+    try{
+        const stmt = db.prepare(`
+        SELECT question_id, timestamp_report, timestamp_active as timestamp
+        FROM reports
+        WHERE platform = ? AND user_id = ? ${finalized? 'AND finalized = 1': ''} AND active = 1 AND timestamp_msg > ? AND  (group_id = ? OR group_id IN (
+            SELECT group_id
+            FROM groups
+            WHERE federation_id = ? AND platform = ?
+        ))
+        order by timestamp_report asc;`);
+        return stmt.get(platform, userId,group_id, timestamp_last,federation_id,platform);
+    } catch (err){
+        console.log("db error: getFederatedBanHistoryInduction" + err);
+    }
+}
+/* RECURSIVE ATTEMPT
+const getFederatedBanHistory = (db: any, platform: string, userId: string, federationId: string) => {
+    try{
+        const stmt = db.prepare(`
+        WITH calculatedBanHistory AS (
+            SELECT question_id, MIN(timestamp_report) AS timestamp
+            FROM reports
+            WHERE user_id = ? AND finalized = 1 AND active = 1 AND group_id IN (
+                SELECT group_id
+                FROM groups
+                WHERE federation_id = ? AND platform = ?
+            )
+            GROUP BY question_id
+
+            UNION ALL
+
+            SELECT question_id, MIN(timestamp_report)
+            FROM reports
+            WHERE user_id = ? AND finalized = 1 AND active = 1 AND timestamp_msg > timestamp AND group_id IN (
+                SELECT group_id
+                FROM groups
+                WHERE federation_id = ? AND platform = ?
+            )
+            GROUP BY question_id
+        )
+        SELECT * FROM calculatedBanHistory
+        `);
+        return stmt.all(userId, federationId, platform,userId, federationId, platform);
+    } catch (err){
+        console.log("db error: getFederatedBanLevel" + err);
+    }
+}
+*/
+
 
 const getUsersWithQuestionsNotFinalized = (db: any, platform: string, groupId: string) => {
     try{
-        const stmt = db.prepare( `SELECT DISTINCT user_id, username FROM reports WHERE platform = ? AND group_id = ? AND finalized = 0`);
+        const stmt = db.prepare( `SELECT DISTINCT user_id, username FROM reports WHERE platform = ? AND group_id = ? AND finalized IS NULL`);
         return stmt.all(platform, groupId);
     } catch(err) {
         console.log("db error: getActiveEvidenceGroupId");
@@ -400,28 +669,6 @@ const setAllowance = (
             const info = stmt.run(platform, groupId, userId, reportAllowance, evidenceAllowance, timeRefresh,reportAllowance, evidenceAllowance, timeRefresh);
         } catch(e) {
             console.log("db error: setAllowance"+e);
-        }
-}
-
-const setBanHistory = (
-    db: any,
-    platform: string, 
-    groupId: string, 
-    userId: string, 
-    ban_level: number, 
-    timestamp_ban: number,
-    count_current_level_optimistic_bans: number
-    ) => {
-        try{
-            const stmt = db.prepare(
-                `INSERT INTO banHistory (platform, group_id, user_id, ban_level, timestamp_ban, count_current_level_optimistic_bans) 
-                VALUES (?, ?, ?, ?, ?, ?) 
-                ON CONFLICT(platform, group_id, user_id) DO UPDATE SET 
-                ban_level=?, timestamp_ban = ?, count_current_level_optimistic_bans=?;`
-            );
-            const info = stmt.run(platform, groupId, userId, ban_level, timestamp_ban,count_current_level_optimistic_bans,ban_level, timestamp_ban,count_current_level_optimistic_bans);
-        } catch(e) {
-            console.log("db error: setBanHistory"+e);
         }
 }
 
@@ -455,12 +702,22 @@ const getLang = (db:any, platform: string, groupId: string): string => {
     }
 }
 
-const getReportMessageTimestampAndActive = (db:any, question_id: string):  {timestamp: number, active: number} | undefined => {
+const getReportMessageTimestampAndActive = (db:any, question_id: string):  {timestamp_report: number, active: number, timestamp_msg: number} | undefined => {
     try{
-        const stmt = db.prepare('SELECT timestamp, active FROM reports WHERE question_id = ?');
+        const stmt = db.prepare('SELECT timestamp_msg, active, timestamp_report FROM reports WHERE question_id = ?');
         return stmt.get(question_id);
     } catch(err){
         console.log("db error: getReportMessageTimestamp");
+        console.log(err);
+    }
+}
+
+const getTimestampFinalized = (db:any, question_id: string):  number | undefined => {
+    try{
+        const stmt = db.prepare('SELECT timestamp_finalized FROM reports WHERE question_id = ?');
+        return stmt.get(question_id)?.timestamp_finalized;
+    } catch(err){
+        console.log("db error: getTimestampFinalized");
         console.log(err);
     }
 }
@@ -490,6 +747,7 @@ const getRule = (db:any, platform: string, groupId: string, timestamp: number): 
     }
 }
 
+
 const addReport = (
     db: any,
     questionId: string, 
@@ -498,7 +756,7 @@ const addReport = (
     userId: string, 
     username: string, 
     msgId: string,
-    msgTimestamp: number,
+    timestampMsg: number,
     evidenceIndex: number,
     msgBackup: string
     ) => {
@@ -511,11 +769,9 @@ const addReport = (
                     user_id, 
                     username,
                     msg_id, 
-                    timestamp, 
+                    timestamp_msg, 
+                    timestamp_report,
                     evidenceIndex,
-                    finalized,
-                    active,
-                    active_timestamp,
                     msgBackup) 
                     VALUES (
                         ?, 
@@ -523,12 +779,10 @@ const addReport = (
                         ?, 
                         ?, 
                         ?,
+                        ?,
                         ?, 
                         ?, 
                         ?,
-                        0,
-                        0,
-                        0,
                         ?);`);
             const info = stmt.run(
                 questionId,
@@ -537,7 +791,8 @@ const addReport = (
                 userId,
                 username,
                 msgId,
-                msgTimestamp,
+                timestampMsg,
+                Math.floor(Date.now()/1000),
                 evidenceIndex,
                 msgBackup);
         } catch(e) {
@@ -558,23 +813,34 @@ export {
     setAllowance,
     getAllowance,
     setReport,
+    setFederation,
+    getFederatedBanHistoryBase,
+    getFederatedFollowingBanHistoryBase,
+    getLocalBanHistoryBase,
+    followFederation,
     addReport,
     getUsersWithQuestionsNotFinalized,
     getQuestionId,
-    getConcurrentReports,
     getActiveEvidenceGroupId,
     setChannelID,
-    setBanHistory,
-    getBanHistory,
     getReportMessageTimestampAndActive,
-    getDisputedReportsUserInfo,
+    getReportsUserInfo,
+    setAdminReportableMode,
+    setCaptchaMode,
+    getTimestampFinalized,
     getChannelID,
-    getDisputedReportsInfo,
+    getActiveReportsInfo,
     leaveFederation,
     joinFederation,
+    getFederatedFollowingBanHistory,
+    isInFederation,
+    getLocalBanHistory,
+    getFederatedBanHistory,
+    getGroupsInAndFollowingFederation,
     getFederationGroups,
     getGreetingMode,
     eraseThreadID,
+    getFederationName,
     setGreetingMode,
     getRecordCount,
     setLang,

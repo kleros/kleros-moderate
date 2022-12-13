@@ -1,7 +1,7 @@
 import * as TelegramBot from "node-telegram-bot-api";
 import {Wallet} from "@ethersproject/wallet";
 import { BigNumber} from "@ethersproject/bignumber";
-import {ipfsPublish, ipfsPublishBuffer} from "../../utils/ipfs-publish-estuary";
+import {ipfsPublish, ipfsPublishBuffer} from "../../utils/ipfs-publish";
 import { setAllowance, getAllowance, getActiveEvidenceGroupId , existsQuestionId} from "../../db";
 import fetch from 'node-fetch';
 import { getQuestionsNotFinalized } from "../../graph";
@@ -105,11 +105,14 @@ ${langJson[lang].addevidence.Message} (${langJson[lang].addevidence.Poll}): \n  
 const uploadTextEvidence = async (lang: string, msg: TelegramBot.Message): Promise<string> => {
     const enc = new TextEncoder();
     const match = msg.text.match(regexpFull);
-    var remainderMatch = match[1].split(' ')
-    remainderMatch.shift();
-    const reason = remainderMatch.join(' ')
-    console.log(reason)
-    const textReason = reason.length > 0? `Evidence Submitted with explanation: ${reason}` : ''
+    var textReason = ''
+    if (match){
+        var remainderMatch = match[1].split(' ')
+        remainderMatch.shift();
+        const reason = remainderMatch.join(' ')
+        console.log(reason)
+        textReason = reason.length > 0? `Evidence Submitted with explanation: ${reason}` : ''
+    }
     const author = (msg.reply_to_message.from.username || msg.reply_to_message.from.first_name) + ' ID:'+msg.reply_to_message.from.id ;
     const fileName = `${langJson[lang].addevidence.Message}.txt`;
     const chatHistory = `${langJson[lang].addevidence.Chat}: ${msg.chat.title} (${String(msg.chat.id)})
@@ -191,7 +194,7 @@ const callback = async (db: any, settings: groupSettings, bot: any, botID: numbe
             [
                 {
                     text: 'DM me for help',
-                    url: `https://t.me/KlerosModeratorBot?start=addevidencehelp${msg.chat.id}`
+                    url: `https://t.me/${process.env.BOT_USERNAME}?start=addevidencehelp${msg.chat.id}`
                 }
             ]
             ]
@@ -203,7 +206,7 @@ const callback = async (db: any, settings: groupSettings, bot: any, botID: numbe
             [
                 {
                     text: 'DM me for help',
-                    url: `https://t.me/KlerosModeratorBot?start=addevidencehelp${msg.chat.id}`
+                    url: `https://t.me/${process.env.BOT_USERNAME}?start=addevidencehelp${msg.chat.id}`
                 }
             ]
             ]

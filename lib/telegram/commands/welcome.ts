@@ -1,6 +1,6 @@
 import * as TelegramBot from "node-telegram-bot-api";
 import langJson from "../assets/lang.json";
-import { groupSettings } from "./types";
+import {groupSettings} from "../../../types";
 
 /*
  * Welcome Message
