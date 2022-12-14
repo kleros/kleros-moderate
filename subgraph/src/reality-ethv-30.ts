@@ -18,15 +18,41 @@ export function handleLogNotifyOfArbitrationRequest(event: LogNotifyOfArbitratio
     log.error('user history not found. {}',[moderationInfo.UserHistory])
     return
   }
-  if(RealityETHV30.bind(event.address).getBestAnswer(event.params.question_id) === new Bytes(1)){
-    userHistory.countBrokeRulesOptimisticAndArbitrated--
-    userHistory.timestampLastUpdated = event.block.timestamp
-    if(userHistory.countBrokeRulesOptimisticAndArbitrated === 0)
-        userHistory.timestampParole.minus(BigInt.fromU32(86400))
-    if(userHistory.countBrokeRulesOptimisticAndArbitrated === 1)
-        userHistory.timestampParole.minus(BigInt.fromU32(604800))
 
+  let group = Group.load(userHistory.group)
+  if (!group){
+    log.error('group not found. {}',[userHistory.group])
+    return
+  }
+
+  let reportedByUserHistory = UserHistory.load(moderationInfo.reportedBy+group.groupID)
+  if (!reportedByUserHistory){
+    log.error('reportedByUserHistory not found. {}',[moderationInfo.reportedBy+group.groupID])
+    return
+  }
+  const yes = Bytes.fromHexString('0x0000000000000000000000000000000000000000000000000000000000000001')
+
+  if(RealityETHV30.bind(event.address).getBestAnswer(event.params.question_id).equals(yes)){
+    reportedByUserHistory.countReportsMadeAndRespondedYes--
+    userHistory.countBrokeRulesOptimistic--
+    userHistory.timestampLastUpdated = event.block.timestamp
     userHistory.save()
+    const oldStatus = reportedByUserHistory.status
+    if(reportedByUserHistory.countReportsMade >= 10 && 3*reportedByUserHistory.countReportsMadeAndRespondedYes > 2*reportedByUserHistory.countReportsMade){
+      reportedByUserHistory.status = "GoodSamaritan"
+    } else if(reportedByUserHistory.countReportsMade >= 3 && 3*reportedByUserHistory.countReportsMadeAndRespondedYes > reportedByUserHistory.countReportsMade){
+      reportedByUserHistory.status = "NeighborhoodWatch"
+    } else if(reportedByUserHistory.countReportsMade >= 10 && 3*reportedByUserHistory.countReportsMadeAndRespondedYes < reportedByUserHistory.countReportsMade){
+      reportedByUserHistory.status = "BoyWhoCriedWolf"
+    } else {
+      reportedByUserHistory.status = "CommunityMember"
+    }
+
+    if (oldStatus != reportedByUserHistory.status){
+      reportedByUserHistory.timestampStatusUpdated = event.block.timestamp
+    }
+
+    reportedByUserHistory.save()
   }
 }
 
@@ -53,36 +79,25 @@ export function handleLogNewAnswer(event: LogNewAnswer): void {
     return;
   }
 
-  let reportedByUserHistory = UserHistory.load(moderationInfo.reportedBy)
+  let reportedByUserHistory = UserHistory.load(moderationInfo.reportedBy+group.groupID)
   if (!reportedByUserHistory){
     log.error('reportedByUserHistory missing {}',[moderationInfo.reportedBy]);
     return;
   }
-
 
   const currentAnswer = realityCheck.currentAnswer
   const yes = Bytes.fromHexString('0x0000000000000000000000000000000000000000000000000000000000000001')
 
   if(currentAnswer && currentAnswer.equals(yes)){
     if (event.params.answer.notEqual(yes)){
-      reportedByUserHistory.countReportsMadeAndResponded--
-      realityCheck.timeServed = event.block.timestamp.minus(realityCheck.deadline.minus(moderationInfo.timeout));
-      userHistory.countBrokeRulesOptimisticAndArbitrated--
+      reportedByUserHistory.countReportsMadeAndRespondedYes--
+      userHistory.countBrokeRulesOptimistic--
       userHistory.timestampLastUpdated = event.block.timestamp
-      if(userHistory.countBrokeRulesOptimisticAndArbitrated === 0)
-        userHistory.timestampParole.minus(BigInt.fromU32(86400))
-      if(userHistory.countBrokeRulesOptimisticAndArbitrated === 1)
-        userHistory.timestampParole.minus(BigInt.fromU32(604800))
     }
   } else if (event.params.answer.equals(yes)){
-    reportedByUserHistory.countReportsMadeAndResponded++
-    realityCheck.timeServed = BigInt.fromU32(0)
-    userHistory.countBrokeRulesOptimisticAndArbitrated++
+    reportedByUserHistory.countReportsMadeAndRespondedYes++
+    userHistory.countBrokeRulesOptimistic++
     userHistory.timestampLastUpdated = event.block.timestamp
-    if(userHistory.countBrokeRulesOptimisticAndArbitrated === 1)
-      userHistory.timestampParole = event.block.timestamp.plus(BigInt.fromU32(86400))
-    if(userHistory.countBrokeRulesOptimisticAndArbitrated === 2)
-      userHistory.timestampParole = event.block.timestamp.ge(userHistory.timestampParole) ? event.block.timestamp.plus(BigInt.fromU32(604800)) : userHistory.timestampParole.plus(BigInt.fromU32(604800))
   }
   
   realityCheck.currentAnswer = event.params.answer
@@ -92,9 +107,29 @@ export function handleLogNewAnswer(event: LogNewAnswer): void {
   realityCheck.save()
   userHistory.save()
 
+  const oldStatus = reportedByUserHistory.status
+  if(reportedByUserHistory.countReportsMade >= 10 && 3*reportedByUserHistory.countReportsMadeAndRespondedYes > 2*reportedByUserHistory.countReportsMade){
+    reportedByUserHistory.status = "GoodSamaritan"
+  } else if(reportedByUserHistory.countReportsMade >= 3 && 3*reportedByUserHistory.countReportsMadeAndRespondedYes > reportedByUserHistory.countReportsMade){
+    reportedByUserHistory.status = "NeighborhoodWatch"
+  } else if(reportedByUserHistory.countReportsMade >= 10 && 3*reportedByUserHistory.countReportsMadeAndRespondedYes < reportedByUserHistory.countReportsMade){
+    reportedByUserHistory.status = "BoyWhoCriedWolf"
+  } else {
+    reportedByUserHistory.status = "CommunityMember"
+  }
+/*
+  if (reportedByUserHistory.countReportsMadeAndRespondedYes > 3){
+  log.warning('reportedByUserHistory.status {}, {}, {}', [oldStatus])
+  reportedByUserHistory.timestampStatusUpdated = event.block.timestamp
+  }*/
+
+  if (oldStatus != reportedByUserHistory.status){
+    reportedByUserHistory.timestampStatusUpdated = event.block.timestamp
+  }
+
   reportedByUserHistory.save()
 
-  if(reportedByUserHistory.countReportsMadeAndResponded > 0){
+  if(reportedByUserHistory.countReportsMadeAndRespondedYes > 0){
     let janny = Janny.load(userHistory.group)
     if(!janny){
       janny = new Janny(userHistory.group)
@@ -105,13 +140,17 @@ export function handleLogNewAnswer(event: LogNewAnswer): void {
     let sheriffOld = janny.sheriff
     let deputySheriffOld = janny.deputySheriff
   
+    if((sheriffOld == reportedByUserHistory.id)||(deputySheriffOld == reportedByUserHistory.id)){
+      return
+    }
+
     if (!sheriffOld){//event.transaction.from.toHexString() + params[2] + params[1]+params[5])
-      janny.sheriff = moderationInfo.reportedBy
+      janny.sheriff = reportedByUserHistory.id
       janny.blocknumberLastUpdatedSheriff = event.block.number
       janny.timestampLastUpdatedSheriff = event.block.timestamp
       janny.save()
     } else if (!deputySheriffOld){
-      janny.deputySheriff = moderationInfo.reportedBy
+      janny.deputySheriff = reportedByUserHistory.id
       janny.timestampLastUpdatedDeputySheriff = event.block.timestamp
       janny.blocknumberLastUpdatedDeputySheriff = event.block.number
       janny.save()
@@ -122,7 +161,8 @@ export function handleLogNewAnswer(event: LogNewAnswer): void {
         log.error('sheriff missing {}',[non_null_sheriff]);
         return;
       }
-      if(sheriff.countReportsMadeAndResponded < reportedByUserHistory.countReportsMadeAndResponded){
+
+      if(sheriff.countReportsMadeAndRespondedYes < reportedByUserHistory.countReportsMadeAndRespondedYes){
         janny.sheriff = reportedByUserHistory.id
         janny.blocknumberLastUpdatedSheriff = event.block.number
         janny.timestampLastUpdatedSheriff = event.block.timestamp
@@ -134,7 +174,7 @@ export function handleLogNewAnswer(event: LogNewAnswer): void {
           log.error('deputy sheriff missing {}',[non_null_deputySheriff]);
           return;
         }
-        if(deputySheriff.countReportsMadeAndResponded < reportedByUserHistory.countReportsMadeAndResponded){
+        if(deputySheriff.countReportsMadeAndRespondedYes < reportedByUserHistory.countReportsMadeAndRespondedYes){
           janny.deputySheriff = reportedByUserHistory.id
           janny.blocknumberLastUpdatedDeputySheriff = event.block.number
           janny.timestampLastUpdatedDeputySheriff = event.block.timestamp
@@ -155,7 +195,7 @@ export function handleLogNewQuestion(event: LogNewQuestion): void {
     return;
 
   let group = Group.load(event.transaction.from.toHexString() + params[2] + params[5]);
-  if (group === null) {
+  if (!group) {
     group = new Group(event.transaction.from.toHexString() + params[2] + params[5]);
     group.groupID = params[5];
     group.platform = params[2];
@@ -171,29 +211,33 @@ export function handleLogNewQuestion(event: LogNewQuestion): void {
     user.userID = params[1];
     user.username = params[0];
     user.save();
+  } else {
+    user.username = params[0];
+    user.save();
   }
 
   let moderationInfo = new ModerationInfo(event.params.question_id.toHexString());
   moderationInfo.moderationType = event.params.template_id;
-  moderationInfo.reportedBy = event.transaction.from.toHexString()+params[2] + params[9]  +params[5]  
-  if (!UserHistory.load(moderationInfo.reportedBy)){
-    let reportedByUser = new UserHistory(event.transaction.from.toHexString() + params[2] + params[9]+params[5])
-    reportedByUser.countBrokeRulesArbitrated = 0
-    reportedByUser.countBrokeRulesOptimisticAndArbitrated = 0
-    reportedByUser.countReportsMade = 0
-    reportedByUser.countReportsMadeAndResponded = 0
-    reportedByUser.timestampLastReport = BigInt.fromU32(0)
-    reportedByUser.timestampLastUpdated = BigInt.fromU32(0)
-    reportedByUser.timestampParole = BigInt.fromU32(0)
-    reportedByUser.user = event.transaction.from.toHexString() + params[2] + params[9]
-    reportedByUser.group = group.id
-    reportedByUser.save()
-    if(!User.load(reportedByUser.user)){
-      let userReportedBy = new User(reportedByUser.user)
-      userReportedBy.userID = params[9]
-      userReportedBy.username = params[0]
-      userReportedBy.save()
-    }
+  moderationInfo.reportedBy = event.transaction.from.toHexString()+params[2] + params[9] 
+  let userReportedBy = User.load(moderationInfo.reportedBy);
+  if (!userReportedBy) {
+    userReportedBy = new User(moderationInfo.reportedBy);
+    userReportedBy.userID = params[9];
+    userReportedBy.save();
+  }
+  let reportedByUserHistory = UserHistory.load(moderationInfo.reportedBy+params[5])
+  if (!reportedByUserHistory){
+    reportedByUserHistory = new UserHistory(moderationInfo.reportedBy+params[5])
+    reportedByUserHistory.status = "CommunityMember"
+    reportedByUserHistory.user = moderationInfo.reportedBy
+    reportedByUserHistory.group = group.id
+    reportedByUserHistory.countReportsMade = 0
+    reportedByUserHistory.countBrokeRulesOptimistic = 0
+    reportedByUserHistory.countBrokeRulesArbitrated = 0
+    reportedByUserHistory.timestampLastUpdated = BigInt.fromU32(0)
+    reportedByUserHistory.countReportsMadeAndRespondedYes = 0
+    reportedByUserHistory.timestampStatusUpdated = BigInt.fromU32(0)
+    reportedByUserHistory.countReportsMadeAndDisputedYes = 0
   }
   moderationInfo.deadline = event.params.opening_ts.plus(event.params.timeout);
   moderationInfo.timeout = event.params.timeout;
@@ -206,13 +250,15 @@ export function handleLogNewQuestion(event: LogNewQuestion): void {
   let reportedUser = UserHistory.load(event.transaction.from.toHexString() + params[2] + params[1]+params[5])
   if (!reportedUser){
     reportedUser = new UserHistory(event.transaction.from.toHexString() + params[2] + params[1]+params[5])
+    reportedUser.status = "CommunityMember"
     reportedUser.countBrokeRulesArbitrated = 0
-    reportedUser.countBrokeRulesOptimisticAndArbitrated = 0
+    reportedUser.countBrokeRulesOptimistic = 0
     reportedUser.countReportsMade = 0
-    reportedUser.countReportsMadeAndResponded = 0
+    reportedUser.countReportsMadeAndRespondedYes = 0
+    reportedUser.countReportsMadeAndDisputedYes = 0
+    reportedUser.timestampStatusUpdated = BigInt.fromU32(0)
     reportedUser.timestampLastReport = BigInt.fromU32(0)
     reportedUser.timestampLastUpdated = BigInt.fromU32(0)
-    reportedUser.timestampParole = BigInt.fromU32(0)
     reportedUser.user = event.transaction.from.toHexString() + params[2] + params[1]
     reportedUser.group = group.id
     reportedUser.save()
@@ -222,18 +268,7 @@ export function handleLogNewQuestion(event: LogNewQuestion): void {
 
   moderationInfo.save();    
   
-  let reportedByUserHistory = UserHistory.load(moderationInfo.reportedBy+params[5])
-  if (!reportedByUserHistory){
-    reportedByUserHistory = new UserHistory(moderationInfo.reportedBy+params[5])
-    reportedByUserHistory.user = moderationInfo.reportedBy
-    reportedByUserHistory.group = group.id
-    reportedByUserHistory.countReportsMade = 0
-    reportedByUserHistory.countBrokeRulesOptimisticAndArbitrated = 0
-    reportedByUserHistory.countBrokeRulesArbitrated = 0
-    reportedByUserHistory.timestampParole = BigInt.fromU32(0)
-    reportedByUserHistory.timestampLastUpdated = BigInt.fromU32(0)
-    reportedByUserHistory.countReportsMadeAndResponded = 0
-  }
+
   reportedByUserHistory.countReportsMade++
   reportedByUserHistory.timestampLastReport = event.block.timestamp
   reportedByUserHistory.save()

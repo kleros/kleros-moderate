@@ -15,15 +15,15 @@ const callback = async (db: any, settings: groupSettings, bot: any, botId: strin
                 message_thread_id: msg.message_thread_id,
                 parse_mode: 'Markdown'}:{parse_mode: 'Markdown'});
         } else{
-            const name = getFederationName(db, 'telegram',match[1].substring(0,65))
+            const name = getFederationName(db, 'telegram',String(Number(match[1])))
             if (!name)
                 bot.sendMessage(settings.channelID, `Federation not found. The federation id of any group can be found by sending \`/fedinfo\` in a group.`,msg.chat.is_forum? {
                     message_thread_id: msg.message_thread_id,
                     parse_mode: 'Markdown'}:{parse_mode: 'Markdown'});
-            if (msg.from.id === match[1])
-                joinFederation(db, 'telegram', String(msg.chat.id), match[1].substring(0,65))
+            else if (msg.from.id === match[1])
+                joinFederation(db, 'telegram', String(msg.chat.id), match[1])
             else
-                followFederation(db, 'telegram', String(msg.chat.id), match[1].substring(0,65))
+                followFederation(db, 'telegram', String(msg.chat.id), match[1])
         }
     } catch(e){
     console.log(e)

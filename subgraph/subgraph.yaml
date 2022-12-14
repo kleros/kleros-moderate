@@ -34,9 +34,9 @@ dataSources:
     name: Realitio_v2_1_ArbitratorWithAppeals
     network: goerli #xdai
     source:
-      address: "0xAa5681047a16F163391377Fd9f78e84355Cc9696" #goerli "0xAa5681047a16F163391377Fd9f78e84355Cc9696" #xdai 0x2a2bAB2C2D4eB5007b0389720b287D4D19dc4001# xdai me  "0x36a4e90568ce270aB671F55547C5EAe428B6c03A"
+      address: "0xAa5681047a16F163391377Fd9f78e84355Cc9696" #goerli "0xAa5681047a16F163391377Fd9f78e84355Cc9696" #xdai 0x17BBc6405e3Cbc452A993E5C23e460980BBeC83F
       abi: Realitio_v2_1_ArbitratorWithAppeals
-      startBlock: 8034496  #7913496  #goerli, xdai 23143918
+      startBlock: 8034496   #8034496  #goerli, xdai 23143918
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -60,9 +60,9 @@ dataSources:
     name: KlerosLiquid
     network: goerli #xdai
     source:
-      address: "0x1128eD55ab2d796fa92D2F8E1f336d745354a77A" # goerli 0x209469C921db9d5Bd77084370e80B63d5cdD63C1
+      address: "0x1128eD55ab2d796fa92D2F8E1f336d745354a77A" # "0x1128eD55ab2d796fa92D2F8E1f336d745354a77A" # goerli # gnosis 0x9C1dA9A04925bDfDedf0f6421bC7EEa8305F9002
       abi: KlerosLiquid
-      startBlock: 7913496  #7913496  #goerli, xdai 23143918
+      startBlock: 8034496  #goerli, 8034496 xdai 23143918
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6

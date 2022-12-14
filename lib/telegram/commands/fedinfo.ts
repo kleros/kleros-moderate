@@ -37,7 +37,7 @@ const callback = async (db: any, settings: groupSettings, bot: any, botId: strin
                     ]
                 }
             }
-            bot.sendMessage(msg.chat.id, `DM me for to create your federation : )`, opts);        
+            bot.sendMessage(msg.chat.id, `DM me for help with your federation : )`, opts);        
             return;
         }
         const name = getFederationName(db, 'telegram',msg.from.id);

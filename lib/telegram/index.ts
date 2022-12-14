@@ -3,10 +3,12 @@ import * as TelegramBot from "node-telegram-bot-api";
 import * as getAccount from "../../lib/telegram/commands/getAccount";
 import * as setRulesCommand from "../../lib/telegram/commands/setRules";
 import * as getRules from "../../lib/telegram/commands/getRules";
+import * as getLeaderboard from "../../lib/telegram/commands/getLeaderboard";
 import * as addEvidenceHelp from "../../lib/telegram/commands/addEvidenceHelp";
 import * as report from "../../lib/telegram/commands/report";
 import * as welcome from "../../lib/telegram/commands/welcome";
 import * as toggleWelcome from "../../lib/telegram/commands/toggleWelcome";
+import * as toggleAdminReportable from "../../lib/telegram/commands/toggleAdminReportable";
 import * as greeting from "../../lib/telegram/commands/greeting";
 import * as toggleCaptcha from "../../lib/telegram/commands/toggleCaptcha";
 import * as help from "../../lib/telegram/commands/help";
@@ -55,6 +57,12 @@ const NodeCache = require( "node-cache" );
 const myCache = new NodeCache( { stdTTL: 900, checkperiod: 1200 } );
 // Throttling
 
+const myCacheGarbageCollection = new NodeCache( { stdTTL: 90, checkperiod: 120 } );
+
+myCacheGarbageCollection.on("expired",function(key,value){
+    bot.deleteMessage(value, key);
+    });
+
 const delay = (delayInms) => {
     return new Promise(resolve => setTimeout(resolve, delayInms));
   }
@@ -81,7 +89,8 @@ bot.on("my_chat_member", async function(myChatMember: any) {
             return
         else
             try{
-                bot.sendVideo(myChatMember.chat.id, 'https://ipfs.kleros.io/ipfs/QmbnEeVzBjcAnnDKGYJrRo1Lx2FFnG62hYfqx4fLTqYKC7/guide.mp4', {caption: "Hi! I'm Susie, a moderation and group management bot. Please promote me to an admin then try to /start me to unlock my full potential."});
+                const video = myChatMember.chat.is_forum? 'QmSdP3SDoHCdW739xLDBKM3gnLeeZug77RgwgxBJSchvYV/guide_topics.mp4' : 'QmbnEeVzBjcAnnDKGYJrRo1Lx2FFnG62hYfqx4fLTqYKC7/guide.mp4'
+                bot.sendVideo(myChatMember.chat.id, `https://ipfs.kleros.io/ipfs/${video}`, {caption: "Hi! I'm Susie, a moderation and group management bot. Please promote me to an admin then try to /start me to unlock my full potential."});
             } catch(e){
                 console.log(e)
             }
@@ -170,6 +179,7 @@ const commands: {regexp: RegExp, callback: any}[] = [
     help,
     newFed,
     getChannel,
+    toggleAdminReportable,
     leaveFed,
     joinFed,
     setChannel,
@@ -178,7 +188,7 @@ const commands: {regexp: RegExp, callback: any}[] = [
     setLanguage,
 ];
 
-const adminOnlyCommands = [joinFed, leaveFed, setLanguage, setChannel, toggleWelcome, start, setRulesCommand ]
+const adminOnlyCommands = [joinFed, leaveFed, newFed, toggleCaptcha, setLanguage, setChannel, toggleWelcome, toggleAdminReportable, start, setRulesCommand ]
 
 commands.forEach((command) => {
     bot.onText(
@@ -213,7 +223,8 @@ commands.forEach((command) => {
             if (command === start){
                 if (hasStarted(msg.chat.id)){
                     try{
-                        bot.sendMessage(msg.chat.id, "Susie is already moderating this community.", msg.chat.is_forum? {message_thread_id: msg.message_thread_id} : {})
+                        const resp = await bot.sendMessage(msg.chat.id, "Susie is already moderating this community.", msg.chat.is_forum? {message_thread_id: msg.message_thread_id} : {})
+                        myCacheGarbageCollection.set(resp.message_id, msg.chat.id)
                         return
                     } catch(e){
                         console.log(e)
@@ -243,7 +254,8 @@ commands.forEach((command) => {
                 }
                 if (!(status === 'creator' || status === 'administrator')) {
                     try{
-                        bot.sendMessage(msg.chat.id, langJson[groupSettings.lang].errorAdminOnly, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})
+                        const resp = await bot.sendMessage(msg.chat.id, langJson[groupSettings.lang].errorAdminOnly, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})
+                        myCacheGarbageCollection.set(resp.message_id, msg.chat.id)
                     } catch(e){
                         console.log(e)
                     }
@@ -253,7 +265,7 @@ commands.forEach((command) => {
 
             // todo success bool return val, to not always delete settings
             command.callback(db, groupSettings, bot, botId, msg, match,batchedSend);
-            if (command === setLanguage || command === setRulesCommand || command === setChannel || command === toggleWelcome || command === toggleCaptcha)
+            if (command === setLanguage || command === setRulesCommand || command === setChannel || command === toggleWelcome || command === toggleCaptcha || command === toggleAdminReportable)
                 myCache.del(msg.chat.id)
             if (command === start)
                 myCache.del("started"+msg.chat.id)

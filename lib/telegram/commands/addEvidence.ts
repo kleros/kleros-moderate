@@ -15,8 +15,16 @@ const contract = new web3.eth.Contract(
     process.env.REALITIO_ARBITRATOR
   )
 var botAddress: string;
+const NodeCache = require( "node-cache" );
+const myCache = new NodeCache( { stdTTL: 90, checkperiod: 120 } );
+var myBot;
+
+myCache.on("expired",function(key,value){
+    myBot.deleteMessage(value, key);
+    });
 
 const processCommand = async (bot: any, settings: groupSettings, msg: any, questionId: number|string, batchedSend: any ): Promise<string> => {
+    myBot = bot
     const evidencePath = await upload(bot, settings.lang, msg);
     const evidenceJsonPath = await uploadEvidenceJson(settings.lang, msg, evidencePath);
     try{
@@ -178,7 +186,8 @@ const regexpFullReason = /\/addevidence (.+) (.+)/
 const callback = async (db: any, settings: groupSettings, bot: any, botID: number, msg: any, matchh: string[], batchedSend: any) => {
     if (!msg.reply_to_message) {
         try{
-            bot.sendMessage(msg.chat.id, `/addevidence ${langJson[settings.lang].errorReply}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}:{})
+            const resp = bot.sendMessage(msg.chat.id, `/addevidence ${langJson[settings.lang].errorReply}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}:{})
+            myCache.set(resp.message_id, msg.chat.id)
         } catch (e){
             console.log(e)
         }
@@ -215,7 +224,8 @@ const callback = async (db: any, settings: groupSettings, bot: any, botID: numbe
     //TODO Evidence IDs and button callback UX
     if (!match || match.length < 2){
         try{
-            bot.sendMessage(msg.chat.id, `You did not specify an evidence group.`, opts)            
+            const msgresponse = await bot.sendMessage(msg.chat.id, `You did not specify an evidence group.`, opts)            
+            myCache.set(msgresponse.message_id, msg.chat.id)
         } catch(e){
             console.log(e)
         }
@@ -230,7 +240,8 @@ const callback = async (db: any, settings: groupSettings, bot: any, botID: numbe
     const evidenceID = getActiveEvidenceGroupId(db, 'telegram', String(msg.chat.id), Number(remainderMatch[0]));
     if (!evidenceID){
         try{
-            bot.sendMessage(msg.chat.id, langJson[settings.lang].addevidence.errorId, opts)
+            const resp = await bot.sendMessage(msg.chat.id, langJson[settings.lang].addevidence.errorId, opts)
+            myCache.set(resp.message_id, msg.chat.id)
         } catch(e){
             console.log(e)
         }
@@ -243,7 +254,8 @@ const callback = async (db: any, settings: groupSettings, bot: any, botID: numbe
         setAllowance(db, 'telegram', String(msg.chat.id), String(msg.from.id), 3, 14, Math.ceil( new Date().getTime() / 1000));
     } else if ((Math.ceil( new Date().getTime() / 1000) < reportAllowance.timestamp_refresh + 5760) && reportAllowance.evidence_allowance == 0 ){
         try{
-            bot.sendMessage(msg.chat.id, langJson[settings.lang].errorAllowance);
+            const resp = await bot.sendMessage(msg.chat.id, langJson[settings.lang].errorAllowance);
+            myCache.set(resp.message_id, msg.chat.id)
         } catch (e){
             console.log(e)
         }

@@ -38,6 +38,31 @@ const getAllowance = async (botAddress: string, platform: string, groupId: strin
     }
 }
 
+const getLeaderboard = async (group_id: string) => {
+    const query = `{
+        userHistories(first: 10, orderBy: countReportsMadeAndRespondedYes, orderDirection: desc, where:{group_:{botAddress: "${process.env.BOT_ACCOUNT}", groupID: "${group_id}", platform: "Telegram"}}) {
+            status
+            countReportsMadeAndRespondedYes
+            user{
+                userID
+            }
+        }
+      }`;
+    try{
+        return (await request(
+            'https://api.thegraph.com/subgraphs/name/shotaronowhere/kleros-moderate-goerli',
+            query
+        ))?.userHistories;
+    } catch(e){
+        console.log(e)
+        return undefined
+    }
+}
+
+/*
+
+*/
+
 const existsQuestionId = async (question_id: string): Promise<boolean | undefined> => {
     const query = `{
         moderationInfos(where: {id: "${question_id}"}){
@@ -73,4 +98,4 @@ const getQuestionsNotFinalized = async (botaddress: string): Promise<boolean | u
     }
 }
 
-export{getQuestionId, existsQuestionId, getAllowance, getQuestionsNotFinalized}
+export{getQuestionId, getLeaderboard, existsQuestionId, getAllowance, getQuestionsNotFinalized}

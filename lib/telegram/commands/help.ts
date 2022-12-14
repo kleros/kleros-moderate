@@ -13,7 +13,7 @@ const helpgnosis = (db: any, settings: groupSettings, bot: any, botId: number, m
 
 Susie uses [xDAI](https://docs.gnosischain.com/about/tokens/xdai), a stable coin, on [Gnosis Chain](https://www.gnosis.io/). Don't know what that means? It means Susie uses a cheap and fast decentralized tool to coordinate moderation fairly and transparently.
 
-What's crypto? I heard about that on the news, I don't want anything to do with crypto. No problem, you can ask for help in the @KlerosModerateGuildOfJustice for help from freelance moderators.
+What's crypto? I heard about that on the news, I don't want anything to do with crypto. No problem, you can ask for help from freelance moderators in @KlerosModerateGuildOfJustice.
 
 Don't have any xDAI on Gnosis Chain? No problem, there's a (cheap, fast) [bridge](https://bridge.connext.network/?receivingChainId=100&receivingAssetId=0x0000000000000000000000000000000000000000) for that. 
 
@@ -42,10 +42,11 @@ How to enable notification channels:
 4. Use that channel ID to set notifications with /setchannel in the original group
 
 *User commands*:
-- /getchannel: Returns current notification channel
+- /notifications: Returns current notification channel
 *Admin commands*:
-- /setchannel <channelID>: Sets the rules to the the url`
+- /setchannel <channelID>: Sets the notification channel to the specified channel id`
                         ,{parse_mode: 'Markdown', disable_web_page_preview: true})
+    bot.sendVideo(msg.chat.id, `https://ipfs.kleros.io/ipfs/QmaWKFxR8TNzWW1xDuzXe4XFE5wCFJVuFP6AKCQ3LRAQqB/Screen%20Recording%202022-12-13%20at%209.19.17%20PM(1).mp4`);
     } catch(e){
         console.log(e)
     }
@@ -133,10 +134,10 @@ const respond = (settings: groupSettings, bot: any, helpType: string, callbackQu
                             text: '⚖️ Court',
                             callback_data: `3|court`
                         }, {
-                            text: '🧑‍⚖️ Find a Lawyer',
+                            text: '🧑‍⚖️ Lawyer',
                             callback_data: `3|lawyer`
                         }, {
-                            text: '✨ Open Source',
+                            text: '✨ Open',
                             callback_data: `3|open`
                         }
                     ],[
@@ -147,7 +148,7 @@ const respond = (settings: groupSettings, bot: any, helpType: string, callbackQu
                             text: '🌐 Federation',
                             callback_data: `3|federation`
                         }, {
-                            text: '⛓️ Gnosis Chain',
+                            text: '⛓️ Gnosis',
                             callback_data: `3|web2.5`
                         }
                     ]
@@ -164,7 +165,7 @@ Welcome your members with a greeting informing them of the group rules
 - /welcome : Toggles on/off welcomes messages.
 - /captcha : Toggles on/off rules captcha.
 
-When a new person joins, or after 5 minutes, the previous welcome messages will get deleted, but the captchas will remain for up to 5 minutes.
+When a new person joins, or after 5 minutes, the previous welcome messages will get deleted\n\nCaptchas remain for up to 5 minutes. If a user forgets to respond within 5 minutes, they should rejoin the group to prompt a new captcha.
                 `,optsResponse)
                 break;
             }
@@ -201,7 +202,7 @@ Topics allow large (>200 member) groups to focus discussion in dedicated **topic
 To prevent important messages from deletion, pre-emptively, messages can be saved as evidence.
 
 *User commands*:
-- /addevidence <by reply> <evidencegroup>: Reply to a message to add it as evidence`
+- /addevidence <by reply> <evidencegroup>\n\nReply to a message to add it as evidence`
                 ,optsResponse)
                 break;
             }
@@ -230,7 +231,7 @@ Answers to reports can be disputed, creating a case in the Kleros court. Refer t
             case 'rules': {
                 bot.editMessageText(`⚖️ *Rules* ⚖️
 
-The [Kleros Moderate Community Guidelines](https://ipfs.kleros.io/ipfs/QmYYcNfEYLtxPM8fof4wf9Tqj7gBGMDMmNnBqZKR1zSczX/Kleros%20Moderate%20Community%20Guidelines%20v1.pdf) apply as the default rules. Crafting precise policies can be challenging, if you are certain in setting a new policy, you can set new rules with /setrules
+The Kleros Moderate Community Guidelines apply as the [default rules]((https://ipfs.kleros.io/ipfs/QmYYcNfEYLtxPM8fof4wf9Tqj7gBGMDMmNnBqZKR1zSczX/Kleros%20Moderate%20Community%20Guidelines%20v1.pdf)). Crafting precise policies can be challenging, if you are certain in setting a new policy, you can set new rules with /setrules
 
 *User commands*:
 - /rules: Returns current rules
@@ -253,9 +254,9 @@ How to enable notification channels:
 4. Use that channel ID to set notifications with /setchannel in the original group
 
 *User commands*:
-- /getchannel: Returns current notification channel
+- /notifications: Returns current notification channel
 *Admin commands*:
-- /setchannel <channelID>: Sets the rules to the the url`
+- /setchannel <channelID>: Sets the notification channel to the specified channel id`
                 ,optsResponse)
                 break;
             }
@@ -281,7 +282,7 @@ Susie uses [xDAI](https://docs.gnosischain.com/about/tokens/xdai), a stable coin
 
 Don't have any xDAI on Gnosis Chain? No problem, there's a (cheap, fast) [bridge](https://bridge.connext.network/?receivingChainId=100&receivingAssetId=0x0000000000000000000000000000000000000000) for that. 
 
-What's crypto? I heard about that on the news, I don't want anything to do with crypto. No problem, you can ask for help in the @KlerosModerateGuildOfJustice for help from freelance moderators.
+What's crypto? I heard about that on the news, I don't want anything to do with crypto. No problem, you can ask for help from freelance moderators in @KlerosModerateGuildOfJustice.
 
 Don't have any cryptocurrency? No problem, there's a convinient [fiat on-ramp](https://www.mtpelerin.com/buy-xdai) (credit card or bank transfer) to buy DAI on Gnosis Chain.
 
@@ -317,12 +318,10 @@ If you would like to offer your services as a lawyer or solicit services, please
                 bot.editMessageText(`✨ *Open Source* ✨
 
 Susie is [open source](https://github.com/kleros/kleros-moderate). Feel free to make an issue, feature request, bug report, comments, suggests, PRs, forks, etc : )
-
-Susie is hosted. You can self-host the Susie, a raspberry pi or an old laptop are sufficient to keep your own instance of Susie online. To learn more about self-hosting, see this [guide](https://github.com/kleros/kleros-moderate/self-hosting.md) *soon*.
-
 `
                 ,optsResponse)
                 break;
+                //Susie is hosted. You can self-host Susie. A raspberry pi or an old laptop are sufficient to keep your own instance of Susie online. To learn more about self-hosting, guide *coming soon*.
             }
             default: {
                 break;
@@ -340,10 +339,10 @@ I have lots of handy features, such as crowd-sourced user reporting.
 Helpful commands:
     - /start: Starts me. You've probably already used this.
     - /help: Sends this message and I'll tell you more about myself.
-
-Important: I moderate groups by crowd-sourcing community input with Gnosis Chain. Make sure you or some community members get DAI on Gnosis Chain to participate actively.
     
 Select a feature to learn more. My [documentation](https://shotaro.gitbook.io/kleros-moderate/products/moderate/susie-or-kleros-moderator) is also helpful, or ask a question in @SusieSupport.`;
+
+//Important: I moderate groups by crowd-sourcing community input with Gnosis Chain. Make sure you or some community members get DAI on Gnosis Chain to participate actively.
 
 const opts = {
     parse_mode: 'Markdown',
@@ -379,10 +378,10 @@ const opts = {
                     text: '⚖️ Court',
                     callback_data: `3|court`
                 }, {
-                    text: '🧑‍⚖️ Find a Lawyer',
+                    text: '🧑‍⚖️ Lawyer',
                     callback_data: `3|lawyer`
                 }, {
-                    text: '✨ Open Source',
+                    text: '✨ Open',
                     callback_data: `3|open`
                 }
             ],
@@ -394,7 +393,7 @@ const opts = {
                     text: '🌐 Federation',
                     callback_data: `3|federation`
                 }, {
-                    text: '⛓️ Gnosis Chain',
+                    text: '⛓️ Gnosis',
                     callback_data: `3|web2.5`
                 }
             ]

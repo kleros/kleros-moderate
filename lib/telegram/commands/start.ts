@@ -25,9 +25,9 @@ const callback = async (db: any, settings: groupSettings, bot: any, botID: strin
                     ]
                 }
             }
-            bot.sendMessage(msg.chat.id, `Hi! My name is Susie.
+            bot.sendMessage(msg.chat.id, `Hi! My name is Susie, nice to meet you : )
             
-I am a [Kleros Moderate](https://kleros.io/moderate) community manager at your service. Hit /help to find out more about how to use me to my full potential.
+I am a [Kleros Moderate](https://kleros.io/moderate) community manager at your service. Use the command /help to find out more about how to use me to my full potential.
 
 Join my news channel @KlerosModerateNews to get information on all the latest updates.`, opts)
             return;
@@ -35,17 +35,20 @@ Join my news channel @KlerosModerateNews to get information on all the latest up
 
         const botUser = await bot.getChatMember(msg.chat.id, botID)
         if(botUser.status !== "administrator" || !botUser.can_restrict_members){
-            bot.sendVideo(msg.chat.id, 'https://ipfs.kleros.io/ipfs/QmbnEeVzBjcAnnDKGYJrRo1Lx2FFnG62hYfqx4fLTqYKC7/guide.mp4', msg.chat.is_forum? {message_thread_id: msg.message_thread_id, caption: "Please give Susie full admin rights.\n\nThen try to /start community moderation again."} : {caption: "Please give Susie full admin rights.\n\nThen try to /start community moderation again."});
+            const video = msg.chat.is_forum? 'QmSdP3SDoHCdW739xLDBKM3gnLeeZug77RgwgxBJSchvYV/guide_topics.mp4' : 'QmbnEeVzBjcAnnDKGYJrRo1Lx2FFnG62hYfqx4fLTqYKC7/guide.mp4'
+            bot.sendVideo(msg.chat.id, `https://ipfs.kleros.io/ipfs/${video}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id, caption: "Please give Susie full admin rights.\n\nThen try to /start community moderation again."} : {caption: "Please give Susie full admin rights.\n\nThen try to /start community moderation again."});
             return;
         }
         if (msg.chat.is_forum){
             if(!botUser.can_manage_topics){
-                bot.sendVideo(msg.chat.id, 'https://ipfs.kleros.io/ipfs/QmbnEeVzBjcAnnDKGYJrRo1Lx2FFnG62hYfqx4fLTqYKC7/guide.mp4', {message_thread_id: msg.message_thread_id, caption: "Susie needs permissions to manage topics to effectively moderate your community.\n\nThen try to /start community moderation again."});
+
+                bot.sendVideo(msg.chat.id, 'https://ipfs.kleros.io/ipfs/QmSdP3SDoHCdW739xLDBKM3gnLeeZug77RgwgxBJSchvYV/guide_topics.mp4', {message_thread_id: msg.message_thread_id, caption: "Susie needs permissions to manage topics to effectively moderate your community.\n\nThen try to /start community moderation again."});
                 return;
             }
             const thread_ids = getThreadIDNotifications(db, 'telegram', String(msg.chat.id));
             if (thread_ids){
                 bot.sendMessage(msg.chat.id, "Already started.", {message_thread_id: msg.message_thread_id});
+                return
             }
             console.log(msg);
             await topicMode(db,bot,settings,msg.chat);
@@ -55,12 +58,12 @@ Join my news channel @KlerosModerateNews to get information on all the latest up
         
 - Use /setrules to change the default [rules](${langJson[settings.lang].defaultRules}).
 - User reports are made by replying to a message with /report
-- Penalties progress from 1 day to 1 week, and 1 year bans for each violation.`, msg.chat.is_forum? {parse_mode: "Markdown", message_thread_id: msg.message_thread_id}: {parse_mode: "Markdown"})
+- Penalties progress from 1 day to 1 week, and 1 year bans for each violation.`, msg.chat.is_forum? {parse_mode: "Markdown", message_thread_id: msg.message_thread_id, disable_web_page_preview: true}: {parse_mode: "Markdown", disable_web_page_preview: true})
         return;
     } catch (e){
         try{
             if (msg.chat.is_forum){
-                bot.sendVideo(msg.chat.id, 'https://ipfs.kleros.io/ipfs/QmbnEeVzBjcAnnDKGYJrRo1Lx2FFnG62hYfqx4fLTqYKC7/guide.mp4', {message_thread_id: msg.message_thread_id, caption: "Must have can manage topics"});
+                bot.sendVideo(msg.chat.id, 'https://ipfs.kleros.io/ipfs/QmSdP3SDoHCdW739xLDBKM3gnLeeZug77RgwgxBJSchvYV/guide_topics.mp4', {message_thread_id: msg.message_thread_id, caption: "Must have can manage topics"});
             } else{
                 bot.sendVideo(msg.chat.id, 'https://ipfs.kleros.io/ipfs/QmbnEeVzBjcAnnDKGYJrRo1Lx2FFnG62hYfqx4fLTqYKC7/guide.mp4', {caption: langJson[settings.lang].errorAdminRights+"Topics must be enabled"});
             }

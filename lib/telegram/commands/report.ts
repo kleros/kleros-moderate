@@ -12,26 +12,51 @@ const regexp = /\/report\s?(.+)?/
 // cacheIndex => groupID,reported message id => [pending report message id]
 const NodeCache = require( "node-cache" );
 const myCache = new NodeCache( { stdTTL: 900, checkperiod: 1200 } );
+const myCacheGarbageCollection = new NodeCache( { stdTTL: 90, checkperiod: 120 } );
+const myCacheGarbageCollectionSlow = new NodeCache( { stdTTL: 900, checkperiod: 1200 } );
+var myBot;
 
+myCacheGarbageCollection.on("expired",function(key,value){
+    myBot.deleteMessage(value, key);
+    });
+myCacheGarbageCollectionSlow.on("expired",function(key,value){
+        myBot.deleteMessage(value, key);
+    });
 const callback = async (db:any, settings: groupSettings, bot: any, botId: number, msg: any, match: string[]) => {
     try{        
+        myBot = bot
         if (!msg.reply_to_message) {
-            bot.sendMessage(msg.chat.id, `/report ${langJson[settings.lang].errorReply}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {});
+            const resp = await bot.sendMessage(msg.chat.id, `/report ${langJson[settings.lang].errorReply}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {});
+            myCacheGarbageCollection.set(resp.message_id, msg.chat.id)
             return;
         }
 
         if (msg.reply_to_message.date < Date.now()/1000-86400*7){
-            bot.sendMessage(msg.chat.id, `Live and let live. This message is more than one week old. The future is asynchronous, but we believe moderation should not be punitive. Next time try to make the report sooner.`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {});
+            const resp = await bot.sendMessage(msg.chat.id, `Live and let live. This message is more than one week old. The future is asynchronous, but we believe moderation should not be punitive. Next time try to make the report sooner.`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {});
+            myCacheGarbageCollection.set(resp.message_id, msg.chat.id)
+            return;
         }
 
         // WHO WATCHES THE WATCHMEN??
         // can't ban bots
         if (msg.reply_to_message.from.is_bot){
+            let resp;
             if(msg.reply_to_message.from.username === "GroupAnonymousBot")
-                bot.sendMessage(msg.chat.id, `User is anonymous. Ask admins to disable anonymouse admins to moderate admin behavior.`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {});
+                resp = await bot.sendMessage(msg.chat.id, `User is anonymous. Ask admins to disable anonymouse admins to moderate admin behavior.`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {});
             else
-                bot.sendMessage(msg.chat.id, `${langJson[settings.lang].report.errorModBot}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {});
+                resp = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].report.errorModBot}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {});
+
+            myCacheGarbageCollection.set(resp.message_id, msg.chat.id)
             return
+        }
+        let report: TelegramBot.ChatMember
+        if(!settings.admin_reportable){
+            report = await bot.getChatMember(msg.chat.id,msg.reply_to_message.from.id)
+            if(report.status === "administrator" || report.status === "creator"){
+                const resp = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].report.errorAdmin}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {});
+                myCacheGarbageCollection.set(resp.message_id, msg.chat.id)
+                return
+            }
         }
 
         const fromUsername = (msg.reply_to_message.from.username || msg.reply_to_message.from.first_name || `no-username-set`);
@@ -41,12 +66,14 @@ const callback = async (db:any, settings: groupSettings, bot: any, botId: number
         const cachedReportRequestMessage = myCache.get([msg.chat.id, msg.reply_to_message.message_id].toString())
         if (cachedReportRequestMessage){ // message already reported
             const msgLinkReport = 'https://t.me/c/' + String(msg.chat.id).substring(4) + '/' + cachedReportRequestMessage;
-            bot.sendMessage(msg.chat.id, `${langJson[settings.lang].report.reported}(${msgLinkReport})`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'});
+            const resp = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].report.reported}(${msgLinkReport})`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'});
+            myCacheGarbageCollection.set(resp.message_id, msg.chat.id)
             return;
         }
         const reportedQuestionId = getQuestionId(db, 'telegram', String(msg.chat.id), reportedUserID, String(msg.reply_to_message.message_id));
         if (reportedQuestionId){
-            bot.sendMessage(msg.chat.id, `${langJson[settings.lang].report.reported}(https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${reportedQuestionId})`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'});
+            const resp = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].report.reported}(https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${reportedQuestionId})`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id, parse_mode: 'Markdown', disable_web_page_preview: true}: {parse_mode: 'Markdown', disable_web_page_preview: true});
+            myCacheGarbageCollection.set(resp.message_id, msg.chat.id)
             return;
         }
 
@@ -55,7 +82,8 @@ const callback = async (db:any, settings: groupSettings, bot: any, botId: number
         const rules = getRule(db, 'telegram', String(msg.chat.id), msg.reply_to_message.date);
 
         if (!rules){
-            bot.sendMessage(msg.chat.id, langJson[settings.lang].report.norules, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {});
+            const resp = await bot.sendMessage(msg.chat.id, langJson[settings.lang].report.norules, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {});
+            myCacheGarbageCollection.set(resp.message_id, msg.chat.id)
             return;
         }
         
@@ -65,10 +93,13 @@ const callback = async (db:any, settings: groupSettings, bot: any, botId: number
         // TODO report
         
         const reportAllowance = getAllowance(db, 'telegram', String(msg.chat.id), String(msg.from.id));
-        if (!reportAllowance){
+        if(!settings.admin_reportable && (report.status === "administrator" || report.status === "creator")){
+
+        } else if (!reportAllowance){
             setAllowance(db, 'telegram', String(msg.chat.id), String(msg.from.id), 2, 15, currentTimeMs);
         } else if (currentTimeMs < reportAllowance.timestamp_refresh + 28800 && reportAllowance.report_allowance == 0 ){
-            bot.sendMessage(msg.chat.id, langJson[settings.lang].report.noallowance, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {});
+            const resp = await bot.sendMessage(msg.chat.id, langJson[settings.lang].report.noallowance, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {});
+            myCacheGarbageCollection.set(resp.message_id, msg.chat.id)
             return;
         } else{
             const newReportAllowance = reportAllowance.report_allowance + Math.floor((currentTimeMs - reportAllowance.timestamp_refresh)/28800) - 1;
@@ -109,7 +140,8 @@ const callback = async (db:any, settings: groupSettings, bot: any, botId: number
         };
         const msgLink = `https://t.me/c/${String(msg.chat.id).substring(4)}/${msg.chat.is_forum? `${msg.message_thread_id}/`:''}${msg.reply_to_message.message_id}`;
         const reportRequestMsg: TelegramBot.Message = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].socialConsensus.consensus2} [${fromUsername}](tg://user?id=${reportedUserID}) ${langJson[settings.lang].socialConsensus.consensus3}(${rules}) ${langJson[settings.lang].socialConsensus.consensus4}(${msgLink}) ([${langJson[settings.lang].socialConsensus.consensus5}](${msgBackup}))?`, msg.chat.is_forum? optsThread: opts); 
-        myCache.set([msg.chat.id, msg.reply_to_message.message_id].toString(),`${msg.chat.is_forum? `${msg.message_thread_id}/`:''}${msg.reply_to_message.message_id}`) ; 
+        myCache.set([msg.chat.id, msg.reply_to_message.message_id].toString(),`${msg.chat.is_forum? `${msg.message_thread_id}/${reportRequestMsg.message_id}`:''}${reportRequestMsg.message_id}`) ; 
+        myCacheGarbageCollectionSlow.set(reportRequestMsg.message_id, msg.chat.id)
         return;
     } catch(e){
         console.log(e)       

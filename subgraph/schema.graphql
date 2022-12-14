@@ -1,3 +1,23 @@
+
+enum Status {
+  """
+  >2/3 answered yes, >10 reports
+  """
+  GoodSamaritan
+  """
+  >1/3 answered yes, >3 reports
+  """
+  NeighborhoodWatch
+  """
+  Neutral State
+  """
+  CommunityMember
+  """
+  >2/3 answered !yes, >10 reports
+  """
+  BoyWhoCriedWolf
+}
+
 type ModerationDispute @entity{
     id: ID!
     timestampLastUpdated: BigInt!
@@ -40,17 +60,19 @@ type UserHistory @entity{
     id: ID!
     user: User!
     group: Group!
+    status: Status!
+    timestampStatusUpdated: BigInt!
     timestampLastUpdated: BigInt!
-    timestampParole: BigInt!
-    countBrokeRulesOptimisticAndArbitrated: Int!
+    countBrokeRulesOptimistic: Int!
     countBrokeRulesArbitrated: Int!
     countReportsMade: Int!
-    countReportsMadeAndResponded: Int!
+    countReportsMadeAndRespondedYes: Int!
+    countReportsMadeAndDisputedYes: Int!
     timestampLastReport: BigInt!
     moderation: [ModerationInfo!]! @derivedFrom(field: "UserHistory")
 }
 
-type User @entity(immutable: true){
+type User @entity{
     id: ID!
     username: String
     userID: String!

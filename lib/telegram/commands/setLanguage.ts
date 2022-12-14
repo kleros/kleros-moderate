@@ -53,9 +53,11 @@ const setLanguageConfirm = async (db: any, bot: any, settings: groupSettings, la
         setLang(db, 'telegram', String(msg.chat.id),langCode);
         setRules(db, 'telegram', String(msg.chat.id), langJson[langCode].defaultRules, Math.floor(Date.now()/1000));
         bot.sendMessage(msg.chat.id, langJson[langCode].confirmationLanguage, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {});
-        const msgDefaultRules = await bot.sendMessage(msg.chat.id, `${langJson[langCode].defaultRulesMsg1}(${langJson[langCode].defaultRules}). ${langJson[langCode].defaultRulesMsg2}.`, msg.chat.is_forum? {parse_mode: "Markdown", message_thread_id: settings.thread_id_rules}: {})
-        const msgRules = await bot.forwardMessage(msg.chat.id, msg.chat.id, msgDefaultRules.message_id, {message_thread_id: settings.thread_id_rules});
-        bot.pinChatMessage(msg.chat.id, msgRules.message_id, {message_thread_id: settings.thread_id_rules})
+        if (msg.chat.is_forum){
+            const msgDefaultRules = await bot.sendMessage(msg.chat.id, `${langJson[langCode].defaultRulesMsg1}(${langJson[langCode].defaultRules}). ${langJson[langCode].defaultRulesMsg2}.`, msg.chat.is_forum? {parse_mode: "Markdown", message_thread_id: settings.thread_id_rules}: {})
+            const msgRules = await bot.forwardMessage(msg.chat.id, msg.chat.id, msgDefaultRules.message_id, {message_thread_id: settings.thread_id_rules});
+            bot.pinChatMessage(msg.chat.id, msgRules.message_id, {message_thread_id: settings.thread_id_rules})
+        }
     } catch(e){
         console.log('setLanguageConfirm error '+e);
     }
