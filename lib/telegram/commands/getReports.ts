@@ -3,12 +3,20 @@ const escape = require('markdown-escape')
 import langJson from "../assets/lang.json";
 import {getReportsUserInfo ,getActiveReportsInfo} from "../../db";
 import { groupSettings } from "../../../types";
+const NodeCache = require( "node-cache" );
+const myCache = new NodeCache( { stdTTL: 90, checkperiod: 120 } );
+var myBot;
+
+myCache.on("expired",function(key,value){
+    myBot.deleteMessage(value, key);
+    });
 /*
- * /getaccount
+ * /getreports
  */
 const regexp = /\/getreports/
 
 const callback = async (db: any, settings: groupSettings, bot: any, botid: number, msg: any) => {
+    myBot = bot
     try{
         if (msg.chat.type !== "private"){
             const opts = msg.chat.is_forum? {
@@ -37,7 +45,8 @@ const callback = async (db: any, settings: groupSettings, bot: any, botid: numbe
                     ]
                 }
             }
-            bot.sendMessage(msg.chat.id, `DM me for report info : )`, opts);        
+            const resp = await bot.sendMessage(msg.chat.id, `DM me for report info : )`, opts);       
+            myCache.set(resp.message_id, msg.chat.id) 
             return;
         }
 

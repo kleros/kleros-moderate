@@ -313,7 +313,7 @@ const getGroupSettings = (db: any, platform: string, groupId: string): groupSett
             thread_id_welcome: result?.thread_id_welcome,
             greeting_mode: result?.greeting_mode,
             captcha: result?.captcha,
-            admin_reportable: result?.admin_reportable,
+            admin_reportable: result?.admins_reportable,
             federation_id: result?.federation_id,
             federation_id_following: result?.federation_id_following,
         }

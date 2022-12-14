@@ -5,7 +5,7 @@ import {
     Evidence as EvidenceEvent
   } from "../generated/Realitio_v2_1_ArbitratorWithAppeals/Realitio_v2_1_ArbitratorWithAppeals"
 import {
-    ModerationDispute, ModerationInfo, RealityCheck, UserHistory, 
+    ModerationDispute, ModerationInfo, RealityCheck, UserHistory, Group
   } from "../generated/schema"
   import { log, Bytes, BigInt } from "@graphprotocol/graph-ts"
   
@@ -52,17 +52,43 @@ import {
       return;
     }
 
-    if (event.params._ruling.equals(BigInt.fromU32(1))){
-      userHistory.countBrokeRulesOptimisticAndArbitrated++
+    let group = Group.load(userHistory.group)
+    if (!group){
+      log.error('group not found. {}',[userHistory.group])
+      return
+    }
+  
+    let reportedByUserHistory = UserHistory.load(modinfo.reportedBy+group.groupID)
+    if (!reportedByUserHistory){
+      log.error('reportedByUserHistory not found. {}',[modinfo.reportedBy+group.groupID])
+      return
+    }
+
+    if (event.params._ruling.equals(BigInt.fromU32(2))){ // kleros 2 is yes
       userHistory.countBrokeRulesArbitrated++
       userHistory.timestampLastUpdated = event.block.timestamp
-      if(userHistory.countBrokeRulesOptimisticAndArbitrated === 1)
-        userHistory.timestampParole = event.block.timestamp.plus(BigInt.fromU32(86400))
-      if(userHistory.countBrokeRulesOptimisticAndArbitrated === 2)
-        userHistory.timestampParole = event.block.timestamp.ge(userHistory.timestampParole) ? event.block.timestamp.plus(BigInt.fromU32(604800)) : userHistory.timestampParole.plus(BigInt.fromU32(604800))
-    }
+
+      reportedByUserHistory.countReportsMadeAndDisputedYes = 1
+      const oldStatus = reportedByUserHistory.status
+      if(reportedByUserHistory.countReportsMade >= 10 && 3*reportedByUserHistory.countReportsMadeAndRespondedYes > 2*reportedByUserHistory.countReportsMade){
+        reportedByUserHistory.status = "GoodSamaritan"
+      } else if(reportedByUserHistory.countReportsMade >= 3 && 3*reportedByUserHistory.countReportsMadeAndRespondedYes > reportedByUserHistory.countReportsMade){
+        reportedByUserHistory.status = "NeighborhoodWatch"
+      } else if(reportedByUserHistory.countReportsMade >= 10 && 3*reportedByUserHistory.countReportsMadeAndRespondedYes < reportedByUserHistory.countReportsMade){
+        reportedByUserHistory.status = "BoyWhoCriedWolf"
+      } else {
+        reportedByUserHistory.status = "CommunityMember"
+      }
+
+
+      if (oldStatus != reportedByUserHistory.status){
+        reportedByUserHistory.timestampStatusUpdated = event.block.timestamp
+      }
+      reportedByUserHistory.save()
+
+    } 
     userHistory.save()
-  }
+}
 
   export function handleRulingFunded(event: RulingFundedEvent): void {
     let moderationInfo = ModerationInfo.load(event.params._localDisputeID.toHexString());

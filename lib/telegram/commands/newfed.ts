@@ -2,6 +2,13 @@ import * as TelegramBot from "node-telegram-bot-api";
 import { groupSettings } from "../../../types";
 import {setFederation,getFederationName} from "../../db";
 import langJson from "../assets/lang.json";
+const NodeCache = require( "node-cache" );
+const myCache = new NodeCache( { stdTTL: 90, checkperiod: 120 } );
+var myBot;
+
+myCache.on("expired",function(key,value){
+    myBot.deleteMessage(value, key);
+    });
 
 /*
  * /joinfed
@@ -10,6 +17,7 @@ const regexp = /\/newfed\s?(.+)?/
 
 const callback = async (db: any, settings: groupSettings, bot: any, botId: string, msg: any, match: string[]) => {
     try{
+        myBot = bot
         if (msg.chat.type !== "private"){
             const opts = msg.chat.is_forum? {
                 message_thread_id: msg.message_thread_id,
@@ -18,7 +26,7 @@ const callback = async (db: any, settings: groupSettings, bot: any, botId: strin
                     inline_keyboard: [
                     [
                         {
-                            text: 'Get Help (DM)',
+                            text: 'Create your federation',
                             url: `https://t.me/${process.env.BOT_USERNAME}?start=newfed`
                         }
                     ]
@@ -30,14 +38,15 @@ const callback = async (db: any, settings: groupSettings, bot: any, botId: strin
                     inline_keyboard: [
                     [
                         {
-                            text: 'Get Help (DM)',
+                            text: 'Create your federation',
                             url: `https://t.me/${process.env.BOT_USERNAME}?start=newfed`
                         }
                     ]
                     ]
                 }
             }
-            bot.sendMessage(msg.chat.id, `DM me for to create your federation : )`, opts);        
+            const resp = await bot.sendMessage(msg.chat.id, `DM me for help with your federation : )`, opts); 
+            myCache.set(resp.message_id, msg.chat.id)       
             return;
         }
         const name = getFederationName(db, 'telegram',msg.from.id);

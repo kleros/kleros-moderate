@@ -10,11 +10,13 @@ import langJson from "../assets/lang.json";
 const regexp = /\/setchannel/
 const regexpFull = /\/setchannel (.+)/
 
-const callback = async (db: any, settings: groupSettings, bot: TelegramBot, botId: string, msg: TelegramBot.Message, match: string[], batchedSend: any) => {
+const callback = async (db: any, settings: groupSettings, bot: TelegramBot, botId: string, msg: any, match: string[], batchedSend: any) => {
     try {
+        if (msg.chat.is_fourm)
+            return
         const newmatch = msg.text.match(regexpFull);
         if (!newmatch || newmatch.length < 2){
-            bot.sendMessage(msg.chat.id, `/setchannel must be followed by a channel id. [DM](https://t.me/${process.env.BOT_USERNAME}?start=helpnotifications) me if you need more help : )`, {parse_mode: "Markdown"});
+            bot.sendMessage(msg.chat.id, `/setchannel must be followed by a channel id. [DM](https://t.me/${process.env.BOT_USERNAME}?start=helpnotifications) me if you need more help : )`, {parse_mode: "Markdown", disable_web_page_preview: true});
             return; 
         }
         try{
@@ -48,7 +50,7 @@ const callback = async (db: any, settings: groupSettings, bot: TelegramBot, botI
         const invite_url_channel = await bot.exportChatInviteLink(newmatch[1]);
         setInviteURLChannel(db, 'telegram', String(msg.chat.id), invite_url_channel);
         setChannelID(db, 'telegram', String(msg.chat.id), newmatch[1]);
-        bot.sendMessage(msg.chat.id, `Moderation announcement [channel](${invite_url_channel}).`, {parse_mode: "Markdown"});
+        bot.sendMessage(msg.chat.id, `Moderation notifications will now be sent to this [channel](${invite_url_channel}).`, {parse_mode: "Markdown"});
         bot.sendMessage(newmatch[1], `This channel will now relay moderation notifications for ${msg.chat.title}`, {parse_mode: "Markdown"});
     } catch (error) {
         console.log(error);
