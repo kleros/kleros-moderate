@@ -40,9 +40,8 @@ const queue = new PQueue({intervalCap: 25, interval: 1000,carryoverConcurrencyCo
         console.log(history.last_timestamp)
         console.log(history.last_block)
         // hardcode values for tests
-    history.last_timestamp = 1670992400
-    history.last_block = 8131483
-    const graphSyncingPeriod = 300;
+    //history.last_timestamp = 1671166007
+    //history.last_block = 8143190
     const timestampNew = currentTime
     const timestampLastUpdated = history.last_timestamp
     const reports = {};
@@ -58,7 +57,7 @@ const queue = new PQueue({intervalCap: 25, interval: 1000,carryoverConcurrencyCo
     // jannies sheriff
     // jannies deputysheriff
     const lastPageUpdated = 0;
-    const queryModeration = getQuery(lastPageUpdated, timestampLastUpdated, botaddress, timestampNew, graphSyncingPeriod)
+    const queryModeration = getQuery(lastPageUpdated, timestampLastUpdated, botaddress, timestampNew)
 
     //console.log(queryModeration);
     //console.log('graphtime');
@@ -147,7 +146,7 @@ const queue = new PQueue({intervalCap: 25, interval: 1000,carryoverConcurrencyCo
 
             bot.sendMessage(settings.channelID, `The [report](${realityURL}) is finalized.`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'});
             // finalize
-            handleTelegramUpdate(db, bot, settings, data.moderationInfo, timestampNew, data.finalRuling === "0x0000000000000000000000000000000000000000000000000000000000000001", true, false);
+            handleTelegramUpdate(db, bot, settings, data.moderationInfo, timestampNew, data.currentAnswer === "0x0000000000000000000000000000000000000000000000000000000000000001", true, false);
         } catch(e){
             console.log(e)
         }
@@ -307,23 +306,22 @@ const handleTelegramUpdate = async (db: any, bot: any, settings: groupSettings, 
         }
 
         const ban_level_current = calculateHistory.length
-        console.log(ban_level_current)
-        console.log(ban_level_history)
-        console.log(calculateHistory)
 
         if (restrict){
             // TODO federation subscriptions
             const groups = settings.federation_id? getGroupsInAndFollowingFederation(db,'telegram',settings.federation_id) : [moderationInfo.UserHistory.group.groupID]
-            console
 
-            if (ban_level_current > ban_level_history){
+            if (ban_level_current >= ban_level_history){
                 const parole = calcPenalty(ban_level_current,timestampNew)
                 if(finalize){
                     // if message reported timestamp is before the most recent finalized ban / penality, users deserve a second chance, no action taken
                     // philosophy is only escalate the penalties after the user is warned with a temporary ban. 
                     // this report changed penalties, recalculate all
-                    for (const group of groups)
-                        bot.banChatMember(group, moderationInfo.UserHistory.user.userID, parole);
+                    //console.log(moderationInfo.UserHistory.group.groupID)
+                    for (const group of groups){
+                        //console.log(group)
+                        bot.banChatMember(group, moderationInfo.UserHistory.user.userID, {until_date: parole});
+                    }
                 } else if(!finalize){
                     const options = {can_send_messages: false, can_send_media_messages: false, can_send_polls: false, can_send_other_messages: false, can_add_web_page_previews: false, can_change_info: false, can_pin_messages: false, until_date: parole};
                     for (const group of groups){
@@ -353,7 +351,7 @@ const handleTelegramUpdate = async (db: any, bot: any, settings: groupSettings, 
     }
 }
 
-const getQuery = (lastPageUpdated: number, timestampLastUpdated: number, botaddress: string, timestampNew: number, graphSyncingPeriod: number): string => {
+const getQuery = (lastPageUpdated: number, timestampLastUpdated: number, botaddress: string, timestampNew: number): string => {
     const moderationInfoContent = `        id
                 message
                 messageBackup
@@ -401,7 +399,7 @@ return `{
         realityQuestionUnansweredFinalized: moderationInfos(first: 1000, skip: ${lastPageUpdated*1000}, where: {deadline_gt: ${timestampLastUpdated}, deadline_lt: ${timestampNew}, reality: null, askedBy: "${botaddress}"}) {
             ${moderationInfoContent}
         }
-        realityQuestionAnsweredFinalized: realityChecks(first: 1000, skip: ${lastPageUpdated*1000}, where: {deadline_gt: ${timestampLastUpdated}, dispute: null, deadline_lt: ${timestampNew + graphSyncingPeriod}, moderationInfo_: {askedBy: "${botaddress}"}}) {
+        realityQuestionAnsweredFinalized: realityChecks(first: 1000, skip: ${lastPageUpdated*1000}, where: {deadline_gt: ${timestampLastUpdated}, dispute: null, deadline_lt: ${timestampNew}, moderationInfo_: {askedBy: "${botaddress}"}}) {
             id
             timestampLastUpdated
             currentAnswer
