@@ -64,7 +64,7 @@ const callback = async (db: any, settings: groupSettings, bot: any, botId: strin
             return
         } else{
             const name = match[1].substring(0,65)
-            setFederation(db, 'telegram',name, msg.from.id)
+            setFederation(db, 'telegram',name, String(msg.from.id))
             bot.sendMessage(settings.channelID, `Your new federation is called *${match[1].substring(0,65)}* with id ${msg.from.id}. You can add groups to your federation by sending \`/joinfed ${msg.from.id}\` in each group.`,msg.chat.is_forum? {
                 message_thread_id: msg.message_thread_id,
                 parse_mode: 'Markdown'}:{parse_mode: 'Markdown'});

@@ -38,7 +38,7 @@ type ModerationInfo @entity(immutable: true){
     messageBackup: String!
     reportedBy: UserHistory!
     askedBy: Bytes!
-    deadline: BigInt
+    deadline: BigInt!
     timeout: BigInt!
     UserHistory: UserHistory!
     dispute: ModerationDispute @derivedFrom(field: "moderationInfo")

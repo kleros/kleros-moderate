@@ -12,15 +12,17 @@ import {
   export function handleDisputeIDToQuestionID(
     event: DisputeIDToQuestionIDEvent
   ): void {
-    let moderationDispute = new ModerationDispute(event.params._disputeID.toHexString());
-    moderationDispute.moderationInfo = event.params._questionID.toHexString()
-    moderationDispute.timestampLastUpdated = event.block.timestamp
-    moderationDispute.save();
     let realityCheck = RealityCheck.load(event.params._questionID.toHexString())
     if (!realityCheck){
       log.error('no reality check found for dispute. {}', [event.params._questionID.toHexString()])
       return
     }
+
+    let moderationDispute = new ModerationDispute(event.params._disputeID.toHexString());
+    moderationDispute.moderationInfo = event.params._questionID.toHexString()
+    moderationDispute.timestampLastUpdated = event.block.timestamp
+    moderationDispute.save();
+
     realityCheck.dispute = event.params._disputeID.toHexString()
     realityCheck.save()
   }

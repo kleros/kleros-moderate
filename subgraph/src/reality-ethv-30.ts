@@ -13,6 +13,10 @@ export function handleLogNotifyOfArbitrationRequest(event: LogNotifyOfArbitratio
     log.error('moderation info not found. {}',[event.params.question_id.toHexString()])
     return
   }
+
+  if(moderationInfo.deadline < event.block.timestamp)
+    return;
+
   let userHistory = UserHistory.load(moderationInfo.UserHistory)
   if (!userHistory){
     log.error('user history not found. {}',[moderationInfo.UserHistory])
@@ -63,6 +67,9 @@ export function handleLogNewAnswer(event: LogNewAnswer): void {
     // answer to irrelevant question, skip
     return
   }
+
+  if(moderationInfo.deadline < event.block.timestamp)
+    return;
 
   let realityCheck = RealityCheck.load(event.params.question_id.toHexString())
   if (!realityCheck)
