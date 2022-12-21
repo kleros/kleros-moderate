@@ -12,7 +12,8 @@ const regexp = /\/addevidencehelp/
 const callback = async (queue: any, db: any, settings: groupSettings, bot: any, botId: number, msg: any) => {
     const groupId = getUsersWithQuestionsNotFinalized(db, 'telegram', msg.text.substring(22))
     if (!groupId || groupId.length === 0){
-        queue.add(() => bot.sendMessage(msg.chat.id, `There are no reports to add evidence to in your group.`));        
+        queue.add(() => bot.sendMessage(msg.chat.id, `There are no reports to add evidence to in your group.`));      
+        return  
     }
     var inline_keyboard_evidence = []
     var inline_keyboard_evidence_cursor = [];

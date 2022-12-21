@@ -14,7 +14,7 @@ myCache.on("expired",function(key,value){
 /*
  * /getreports
  */
-const regexp = /\/reportinfo/
+const regexp = /\/info/
 
 const callback = async (queue: any, db: any, settings: groupSettings, bot: any, botid: number, msg: any) => {
     if (!myBot)
@@ -108,9 +108,9 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
                 }
                 for(const report of reportsFederation) {
                     // TODO getTitle
-                    const chatname = (await queue.add(async () => {try{const val = await bot.getChat(group_id)
+                    const chatname = (await queue.add(async () => {try{const val = await bot.getChat(report.group_id)
                     return val}catch{}}))?.title
-                    const invite_url = getInviteURL(db,'telegram',group_id)
+                    const invite_url = getInviteURL(db,'telegram',report.group_id)
                     const reportAnswer = report.answered? (report.active? langJson[settings.lang].getReports.broke : langJson[settings.lang].getReports.nobreak) : 'unanswered';
                     const MsgLink = 'https://t.me/c/' + report.group_id.substring(4) + '/' + report.msg_id;
                     const msgTimehours = new Date(report.timestamp_msg*1000).toUTCString();

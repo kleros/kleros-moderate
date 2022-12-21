@@ -104,14 +104,14 @@ const setInviteURLChannel = (db: any, platform: string, groupId: string, inviteU
     }
 }
 
-const setFederationInviteURLChannel = (db: any, platform: string, groupId: string, inviteUrlChannel: string) => {
+const setFederationInviteURLChannel = (db: any, platform: string, federation_id: string, inviteUrlChannel: string) => {
     try{
         const stmt = db.prepare(
-            `INSERT INTO federations (platform, group_id, invite_url_channel) 
+            `INSERT INTO federations (platform, federation_id, invite_url_channel) 
             VALUES (?, ?, ?) 
-            ON CONFLICT (platform, group_id) DO UPDATE SET 
+            ON CONFLICT (platform, federation_id) DO UPDATE SET 
             invite_url_channel = ?;`);
-        const info = stmt.run(platform, groupId, inviteUrlChannel, inviteUrlChannel);
+        const info = stmt.run(platform, federation_id, inviteUrlChannel, inviteUrlChannel);
     } catch(err) {
         console.log("db error: setFederationInviteURLChannel, "+err);
     }
@@ -126,21 +126,21 @@ const setChannelID = (db: any, platform: string, groupId: string, channel_id: st
             channel_id = ?;`);
         const info = stmt.run(platform, groupId, channel_id, channel_id);
     } catch(err) {
-        console.log("db error: set setChannelID");
+        console.log("db error: setChannelID");
         console.log(err);
     }
 }
 
-const setFederationChannelID = (db: any, platform: string, groupId: string, channel_id: string) => {
+const setFederationChannelID = (db: any, platform: string, federation_id: string, channel_id: string) => {
     try{
         const stmt = db.prepare(
-            `INSERT INTO federations (platform, group_id, notification_channel_id) 
+            `INSERT INTO federations (platform, federation_id, notification_channel_id) 
             VALUES (?, ?, ?) 
-            ON CONFLICT (platform, group_id) DO UPDATE SET 
+            ON CONFLICT (platform, federation_id) DO UPDATE SET 
             notification_channel_id = ?;`);
-        const info = stmt.run(platform, groupId, channel_id, channel_id);
+        const info = stmt.run(platform, federation_id, channel_id, channel_id);
     } catch(err) {
-        console.log("db error: set setChannelID");
+        console.log("db error: setFederationChannelID");
         console.log(err);
     }
 }
@@ -327,10 +327,10 @@ const getInviteURLChannel = (db: any, platform: string, groupId: string) => {
     }
 }
 
-const getFederatedInviteURLChannel = (db: any, platform: string, groupId: string) => {
+const getFederatedInviteURLChannel = (db: any, platform: string, federation_id: string) => {
     try{
         const stmt = db.prepare('SELECT invite_url_channel FROM federations WHERE platform = ? AND federation_id = ?');
-        return stmt.get(platform, groupId)?.invite_url_channel || '';
+        return stmt.get(platform, federation_id)?.invite_url_channel || '';
     } catch(err){
         console.log("db error: getFederatedInviteURLChannel, "+err);
     }
@@ -507,7 +507,7 @@ const setReport = (db: any, questionId: string, active: boolean, answered: boole
 
 const getActiveEvidenceGroupId = (db: any, platform: string, groupId: string, evidenceIndex: number) => {
     try{
-        const stmt = db.prepare( `SELECT question_id FROM reports WHERE platform = ? AND group_id = ? AND evidenceIndex = ? AND finalized IS NULL`);
+        const stmt = db.prepare( `SELECT question_id FROM reports WHERE platform = ? AND group_id = ? AND evidenceIndex = ? AND NOT finalized = 1`);
         return stmt.get(platform, groupId, evidenceIndex)?.question_id;
     } catch(err) {
         console.log("db error: getActiveEvidenceGroupId" + err);
@@ -743,7 +743,7 @@ const getFederatedBanHistory = (db: any, platform: string, userId: string, feder
 
 const getUsersWithQuestionsNotFinalized = (db: any, platform: string, groupId: string) => {
     try{
-        const stmt = db.prepare( `SELECT DISTINCT user_id, username FROM reports WHERE platform = ? AND group_id = ? AND finalized IS NULL`);
+        const stmt = db.prepare( `SELECT DISTINCT user_id, username FROM reports WHERE platform = ? AND group_id = ? AND NOT finalized = 1`);
         return stmt.all(platform, groupId);
     } catch(err) {
         console.log("db error: getActiveEvidenceGroupId");

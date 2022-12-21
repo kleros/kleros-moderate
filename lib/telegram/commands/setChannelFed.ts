@@ -59,6 +59,7 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
         }
         const channelUser = await queue.add(async () => {try{const val = await bot.getChatMember(newmatch[1], String(msg.from.id))
             return val}catch{}});
+            console.log(channelUser)
         if(channelUser.status !== "administrator" && channelUser.status !== "creator"){
             const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, 'You are not an authorized admin of the channel.',msg.chat.is_forum? {message_thread_id: msg.message_thread_id, parse_mode: 'Markdown'} : {parse_mode: 'Markdown'})
             return val}catch{}});
@@ -81,8 +82,8 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
         }
         const invite_url_channel = await queue.add(async () => {try{const val = await bot.exportChatInviteLink(newmatch[1])
             return val}catch{}});
-        setFederationInviteURLChannel(db, 'telegram', String(msg.chat.id), invite_url_channel);
-        setFederationChannelID(db, 'telegram', String(msg.chat.id), newmatch[1]);
+        setFederationInviteURLChannel(db, 'telegram', String(msg.from.id), invite_url_channel);
+        setFederationChannelID(db, 'telegram', String(msg.from.id), newmatch[1]);
         queue.add(async () => {try{await bot.sendMessage(msg.chat.id, `Moderation notifications for the federation will now be sent to this [channel](${invite_url_channel}).`, {parse_mode: "Markdown"})}catch{}});
         queue.add(async () => {try{await bot.sendMessage(newmatch[1], `This channel will now relay moderation notifications for the federation *${name}*`, {parse_mode: "Markdown"})}catch{}});
     } catch (error) {

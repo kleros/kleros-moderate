@@ -1,5 +1,5 @@
 require('dotenv').config()
-import {openDb, getGroupSettings, getRule, getCron, getFederationChannel, getFederatedFollowingBanHistory, getLocalBanHistory, getFederatedBanHistory, setCron, getGroupsInAndFollowingFederation, getReportMessageTimestampAndActive, setReport} from "./db";
+import {openDb, getGroupSettings, getRule, getCron, getFederationChannel, getInviteURL, getFederatedFollowingBanHistory, getLocalBanHistory, getFederatedBanHistory, setCron, getGroupsInAndFollowingFederation, getReportMessageTimestampAndActive, setReport} from "./db";
 import request from "graphql-request";
 import {BigNumber} from "ethers";
 import TelegramBot from "node-telegram-bot-api";
@@ -40,8 +40,8 @@ const queue = new PQueue({intervalCap: 10, interval: 1000,carryoverConcurrencyCo
         console.log(history.last_timestamp)
         console.log(history.last_block)
         // hardcode values for tests
-    //history.last_timestamp = 1671604752
-    //history.last_block = 8173468
+    //history.last_timestamp = 1671607558
+    //history.last_block = 8173661
     const timestampNew = currentTime
     const timestampLastUpdated = history.last_timestamp
     const reports = {};
@@ -98,9 +98,12 @@ const queue = new PQueue({intervalCap: 10, interval: 1000,carryoverConcurrencyCo
         // settings[1] language
         try{
             queue.add(async () => {try{await bot.sendMessage(settings.channelID, `The dispute over the [question](${realityURL}) about *${data.moderationInfo.UserHistory.user.username}*'s conduct due to the [message](${msgLink}) ([backup](${data.moderationInfo.msgBackup})) has concluded it's current round. *${data.moderationInfo.UserHistory.user.username}*'s conduct ${data.currentRuling == 2? 'broke the rules': 'did not break the rules'}. If you think the decision is incorrect, you can request an [appeal](${disputeURL})`, settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown',disable_web_page_preview: true}: {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
-            queue.add(async () => {try{await bot.sendMessage(process.env.JUSTICE_LEAGUE, `The dispute over the [question](${realityURL}) about *${data.moderationInfo.UserHistory.user.username}*'s conduct due to the [message](${msgLink}) ([backup](${data.moderationInfo.msgBackup})) has concluded it's current round. *${data.moderationInfo.UserHistory.user.username}*'s conduct ${data.currentRuling == 2? 'broke the rules': 'did not break the rules'}. If you think the decision is incorrect, you can request an [appeal](${disputeURL})`, {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
+            const chatname = (await queue.add(async () => {try{const val = await bot.getChat(data.moderationInfo.UserHistory.group.groupID)
+                return val}catch{}}))?.title
+            const invite_url = getInviteURL(db,'telegram',data.moderationInfo.UserHistory.group.groupID)
+            queue.add(async () => {try{await bot.sendMessage(process.env.JUSTICE_LEAGUE, `The dispute over the [question](${realityURL}) about *${data.moderationInfo.UserHistory.user.username}*'s conduct due to the [message](${msgLink}) ([backup](${data.moderationInfo.msgBackup})) in the group [${chatname}](${invite_url}) has concluded it's current round. *${data.moderationInfo.UserHistory.user.username}*'s conduct ${data.currentRuling == 2? 'broke the rules': 'did not break the rules'}. If you think the decision is incorrect, you can request an [appeal](${disputeURL})`, {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
             if(settings.federation_id)
-                queue.add(async () => {try{await bot.sendMessage(getFederationChannel(db, 'telegram',settings.federation_id), `The dispute over the [question](${realityURL}) about *${data.moderationInfo.UserHistory.user.username}*'s conduct due to the [message](${msgLink}) ([backup](${data.moderationInfo.msgBackup})) has concluded it's current round. *${data.moderationInfo.UserHistory.user.username}*'s conduct ${data.currentRuling == 2? 'broke the rules': 'did not break the rules'}. If you think the decision is incorrect, you can request an [appeal](${disputeURL})`, {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
+                queue.add(async () => {try{await bot.sendMessage(getFederationChannel(db, 'telegram',settings.federation_id), `The dispute over the [question](${realityURL}) about *${data.moderationInfo.UserHistory.user.username}*'s conduct due to the [message](${msgLink}) ([backup](${data.moderationInfo.msgBackup})) in the group [${chatname}](${invite_url})has concluded it's current round. *${data.moderationInfo.UserHistory.user.username}*'s conduct ${data.currentRuling == 2? 'broke the rules': 'did not break the rules'}. If you think the decision is incorrect, you can request an [appeal](${disputeURL})`, {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
         } catch(e){
             console.log(e)
         }
@@ -113,9 +116,12 @@ const queue = new PQueue({intervalCap: 10, interval: 1000,carryoverConcurrencyCo
         const disputeURL = `https://resolve.kleros.io/cases/${BigNumber.from(data.id).toNumber()}`;
         try{
             queue.add(async () => {try{await bot.sendMessage(settings.channelID, `Arbitration is requested for the [question](${realityURL}) about *${data.moderationInfo.UserHistory.user.username}*'s conduct due to the [message](${data.moderationInfo.message}) ([backup](${data.moderationInfo.messageBackup})). Consequences of the report are lifted for the duration of the [dispute](${disputeURL}) (on Gnosis Chain).`, settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown',disable_web_page_preview: true}: {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
-            queue.add(async () => {try{await bot.sendMessage(process.env.JUSTICE_LEAGUE, `Arbitration is requested for the [question](${realityURL}) about *${data.moderationInfo.UserHistory.user.username}*'s conduct due to the [message](${data.moderationInfo.message}) ([backup](${data.moderationInfo.messageBackup})). Consequences of the report are lifted for the duration of the [dispute](${disputeURL}) (on Gnosis Chain).`, {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
+            const chatname = (await queue.add(async () => {try{const val = await bot.getChat(data.moderationInfo.UserHistory.group.groupID)
+                return val}catch{}}))?.title
+            const invite_url = getInviteURL(db,'telegram',data.moderationInfo.UserHistory.group.groupID)
+            queue.add(async () => {try{await bot.sendMessage(process.env.JUSTICE_LEAGUE, `[Arbitration](${disputeURL}) is requested for the [question](${realityURL}) about *${data.moderationInfo.UserHistory.user.username}*'s conduct due to the [message](${data.moderationInfo.message}) ([backup](${data.moderationInfo.messageBackup})) in the group [${chatname}](${invite_url}).`, {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
             if(settings.federation_id)
-                queue.add(async () => {try{await bot.sendMessage(getFederationChannel(db, 'telegram',settings.federation_id), `Arbitration is requested for the [question](${realityURL}) about *${data.moderationInfo.UserHistory.user.username}*'s conduct due to the [message](${data.moderationInfo.message}) ([backup](${data.moderationInfo.messageBackup})). Consequences of the report are lifted for the duration of the [dispute](${disputeURL}) (on Gnosis Chain).`, {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}}); 
+                queue.add(async () => {try{await bot.sendMessage(getFederationChannel(db, 'telegram',settings.federation_id), `[Arbitration](${disputeURL}) is requested for the [question](${realityURL}) about *${data.moderationInfo.UserHistory.user.username}*'s conduct due to the [message](${data.moderationInfo.message}) ([backup](${data.moderationInfo.messageBackup})) in the group [${chatname}](${invite_url}).`, {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}}); 
             handleTelegramUpdate(db, bot,settings, data.moderationInfo,timestampNew, false, false, true);
         } catch (e){
             console.log(e)
@@ -130,9 +136,12 @@ const queue = new PQueue({intervalCap: 10, interval: 1000,carryoverConcurrencyCo
         // settings[1] language
         try{
             queue.add(async () => {try{await bot.sendMessage(settings.channelID, `An appeal has been funded in the dispute over the [question](${realityURL}) about *${data.moderationInfo.UserHistory.user.username}*'s conduct due to the [message](${msgLink}) ([backup](${data.moderationInfo.msgBackup})). Juror's voted in the previous round that *${data.moderationInfo.UserHistory.user.username}*'s conduct ${data.currentRuling == 2? 'broke the rules': 'did not break the rules'}. The contribution funded ${data.RulingFunded == data.currentRuling ? 'the previous round winning option': 'a different option that the previous round'}. If you think the funded option is incorrect, you can win some of their deposit by funding the correct side of the [appeal](${disputeURL})`, settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown',disable_web_page_preview: true}: {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
-            queue.add(async () => {try{await bot.sendMessage(process.env.JUSTICE_LEAGUE, `An appeal has been funded in the dispute over the [question](${realityURL}) about *${data.moderationInfo.UserHistory.user.username}*'s conduct due to the [message](${msgLink}) ([backup](${data.moderationInfo.msgBackup})). Juror's voted in the previous round that *${data.moderationInfo.UserHistory.user.username}*'s conduct ${data.currentRuling == 2? 'broke the rules': 'did not break the rules'}. The contribution funded ${data.RulingFunded == data.currentRuling ? 'the previous round winning option': 'a different option that the previous round'}. If you think the funded option is incorrect, you can win some of their deposit by funding the correct side of the [appeal](${disputeURL})`, {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
+            const chatname = (await queue.add(async () => {try{const val = await bot.getChat(data.moderationInfo.UserHistory.group.groupID)
+                return val}catch{}}))?.title
+            const invite_url = getInviteURL(db,'telegram',data.moderationInfo.UserHistory.group.groupID)
+            queue.add(async () => {try{await bot.sendMessage(process.env.JUSTICE_LEAGUE, `An appeal has been funded in the dispute over the [question](${realityURL}) about *${data.moderationInfo.UserHistory.user.username}*'s conduct due to the [message](${msgLink}) ([backup](${data.moderationInfo.msgBackup})) in the group ${chatname}[${invite_url}]. Juror's voted in the previous round that *${data.moderationInfo.UserHistory.user.username}*'s conduct ${data.currentRuling == 2? 'broke the rules': 'did not break the rules'}. The contribution funded ${data.RulingFunded == data.currentRuling ? 'the previous round winning option': 'a different option that the previous round'}. If you think the funded option is incorrect, you can win some of their deposit by funding the correct side of the [appeal](${disputeURL})`, {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
             if(settings.federation_id)
-                queue.add(async () => {try{await bot.sendMessage(getFederationChannel(db, 'telegram',settings.federation_id), `An appeal has been funded in the dispute over the [question](${realityURL}) about *${data.moderationInfo.UserHistory.user.username}*'s conduct due to the [message](${msgLink}) ([backup](${data.moderationInfo.msgBackup})). Juror's voted in the previous round that *${data.moderationInfo.UserHistory.user.username}*'s conduct ${data.currentRuling == 2? 'broke the rules': 'did not break the rules'}. The contribution funded ${data.RulingFunded == data.currentRuling ? 'the previous round winning option': 'a different option that the previous round'}. If you think the funded option is incorrect, you can win some of their deposit by funding the correct side of the [appeal](${disputeURL})`, {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
+                queue.add(async () => {try{await bot.sendMessage(getFederationChannel(db, 'telegram',settings.federation_id), `An appeal has been funded in the dispute over the [question](${realityURL}) about *${data.moderationInfo.UserHistory.user.username}*'s conduct due to the [message](${msgLink}) ([backup](${data.moderationInfo.msgBackup})) in the group ${chatname}[${invite_url}]. Juror's voted in the previous round that *${data.moderationInfo.UserHistory.user.username}*'s conduct ${data.currentRuling == 2? 'broke the rules': 'did not break the rules'}. The contribution funded ${data.RulingFunded == data.currentRuling ? 'the previous round winning option': 'a different option that the previous round'}. If you think the funded option is incorrect, you can win some of their deposit by funding the correct side of the [appeal](${disputeURL})`, {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
         } catch(e){
             console.log(e)
         }
@@ -178,9 +187,13 @@ const queue = new PQueue({intervalCap: 10, interval: 1000,carryoverConcurrencyCo
             //console.log('answered')
             
             queue.add(async () => {try{await bot.sendMessage(settings.channelID, `The question\n\n"Did *${data.moderationInfo.UserHistory.user.username}*'s conduct due to this [message](${data.moderationInfo.message}) ([backup](${data.moderationInfo.messageBackup})) violate the [rules](${data.moderationInfo.rules})?\"\n\nis answered with *${answer}*.\n\nDo you think this answer is true? If not, you can [correct](${realityURL}) the answer.`, settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown',disable_web_page_preview: true}: {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
-            queue.add(async () => {try{await bot.sendMessage(process.env.JUSTICE_LEAGUE, `The question\n\n"Did *${data.moderationInfo.UserHistory.user.username}*'s conduct due to this [message](${data.moderationInfo.message}) ([backup](${data.moderationInfo.messageBackup})) violate the [rules](${data.moderationInfo.rules})?\"\n\nis answered with *${answer}*.\n\nDo you think this answer is true? If not, you can [correct](${realityURL}) the answer.`, settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown',disable_web_page_preview: true}: {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
+            const chatname = (await queue.add(async () => {try{const val = await bot.getChat(data.moderationInfo.UserHistory.group.groupID)
+                return val}catch{}}))?.title
+            const invite_url = getInviteURL(db,'telegram',data.moderationInfo.UserHistory.group.groupID)
+            queue.add(async () => {try{await bot.sendMessage(process.env.JUSTICE_LEAGUE, `The question\n\n"Did *${data.moderationInfo.UserHistory.user.username}*'s conduct due to this [message](${data.moderationInfo.message}) ([backup](${data.moderationInfo.messageBackup})) in the group [${chatname}](${invite_url}) violate the [rules](${data.moderationInfo.rules})?\"\n\nis answered with *${answer}*.\n\nDo you think this answer is true? If not, you can [correct](${realityURL}) the answer.`, settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown',disable_web_page_preview: true}: {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
+            
             if(settings.federation_id)
-                queue.add(async () => {try{await bot.sendMessage(getFederationChannel(db, 'telegram',settings.federation_id), `The question\n\n"Did *${data.moderationInfo.UserHistory.user.username}*'s conduct due to this [message](${data.moderationInfo.message}) ([backup](${data.moderationInfo.messageBackup})) violate the [rules](${data.moderationInfo.rules})?\"\n\nis answered with *${answer}*.\n\nDo you think this answer is true? If not, you can [correct](${realityURL}) the answer.`, settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown',disable_web_page_preview: true}: {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
+                queue.add(async () => {try{await bot.sendMessage(getFederationChannel(db, 'telegram',settings.federation_id), `The question\n\n"Did *${data.moderationInfo.UserHistory.user.username}*'s conduct due to this [message](${data.moderationInfo.message}) ([backup](${data.moderationInfo.messageBackup})) in the group [${chatname}](${invite_url}) violate the [rules](${data.moderationInfo.rules})?\"\n\nis answered with *${answer}*.\n\nDo you think this answer is true? If not, you can [correct](${realityURL}) the answer.`, settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown',disable_web_page_preview: true}: {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
             handleTelegramUpdate(db, bot,settings, data.moderationInfo,timestampNew, data.currentAnswer === "0x0000000000000000000000000000000000000000000000000000000000000001", false, false);
         } catch(e){
             console.log(e)
@@ -196,7 +209,7 @@ const queue = new PQueue({intervalCap: 10, interval: 1000,carryoverConcurrencyCo
             const sherrif = await queue.add(async () => {try{const val = await bot.getChatMember(data.group.groupID, data.sheriff.user.userID)
                 return val}catch{}});
             //console.log(sherrif)
-            queue.add(async () => {try{await bot.sendMessage(settings.channelID, `There's a new sheriff in town 👑🥇🤠[${sherrif.user.username}](tg://user?id=${sherrif.user.id})🤠🥇👑`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
+            queue.add(async () => {try{await bot.sendMessage(data.group.groupID, `There's a new sheriff in town 👑🥇🤠[${sherrif.user.username}](tg://user?id=${sherrif.user.id})🤠🥇👑`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
         } catch(e){
             console.log(e)
         }
@@ -208,7 +221,7 @@ const queue = new PQueue({intervalCap: 10, interval: 1000,carryoverConcurrencyCo
         try{
             const deputysherrif = await queue.add(async () => {try{const val = await bot.getChatMember(data.group.groupID, data.deputySheriff.user.userID)
                 return val}catch{}})
-            queue.add(async () => {try{await bot.sendMessage(settings.channelID, `There's a new deputy sheriff in town 🥈[${deputysherrif.user.username}](tg://user?id=${deputysherrif.user.id})🥈`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
+            queue.add(async () => {try{await bot.sendMessage(data.group.groupID, `There's a new deputy sheriff in town 🥈[${deputysherrif.user.username}](tg://user?id=${deputysherrif.user.id})🥈`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
         } catch(e){
             console.log(e)
         }
@@ -226,10 +239,11 @@ const queue = new PQueue({intervalCap: 10, interval: 1000,carryoverConcurrencyCo
             } else if (data.status === "NeighborhoodWatch"){
                 message = "🤝 ***Neighborhood Watch Recognition*** 🤝\n\n The Neighborhood Watch recognition is given to members who help protect their community. Thank you for your service 🙏"
             } else if (data.status === "BoyWhoCriedWolf"){
-                "Have you ever heard of the fable of 💩 the boy who cried wolf 💩?\n\nBe careful, too many unanswered reports could hurt your reputation, "
+                message = "Have you ever heard of the fable of 💩 the boy who cried wolf 💩?\n\nBe careful, too many unanswered reports could hurt your reputation, "
             }
+            console.log(data)
             if(data.status !== "CommunityMember")
-                queue.add(async () => {try{await bot.sendMessage(settings.channelID, `${message} [${userUpdate.user.username}](tg://user?id=${userUpdate.user.id})`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
+                queue.add(async () => {try{await bot.sendMessage(data.group.groupID, `${message} [${userUpdate.user.username}](tg://user?id=${userUpdate.user.id})`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
         } catch(e){
             console.log(e)
         }
