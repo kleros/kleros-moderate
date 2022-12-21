@@ -9,11 +9,11 @@ import { groupSettings } from "../../../types";
 const regexp = /\/getaccount/
 var address: string;
 
-const callback = async (db: any, settings: groupSettings, bot: any, botId: number, msg: any) => {
+const callback = async (queue: any, db: any, settings: groupSettings, bot: any, botId: number, msg: any) => {
     try{
         if (!address)
             address = process.env.TRANSACTION_BATCHER_CONTRACT_ADDRESS;
-        bot.sendMessage(settings.channelID, `${langJson[settings.lang].getAccount}: ${address}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}:{});
+        queue.add(async () => {try{await bot.sendMessage(settings.channelID, `${langJson[settings.lang].getAccount}: ${address}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}:{})}catch{}});
     } catch(e){
         console.log('gettaccount error. '+e)
     }

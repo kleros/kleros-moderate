@@ -8,10 +8,10 @@ import langJson from "../assets/lang.json";
  */
 const regexp = /\/leavefed/
 
-const callback = async (db: any, settings: groupSettings, bot: any, botId: string, msg: any, match: string[]) => {
+const callback = async (queue: any, db: any, settings: groupSettings, bot: any, botId: string, msg: any, match: string[]) => {
     try{
         leaveFederation(db, 'telegram', String(msg.chat.id), String(msg.from.id))
-        bot.sendMessage(msg.chat.id, 'Your group has left the federation.', msg.chat.is_forum? {message_thread_id: msg.message_thread_id}:{})
+        queue.add(async () => {try{await bot.sendMessage(msg.chat.id, 'Your group has left the federation.', msg.chat.is_forum? {message_thread_id: msg.message_thread_id}:{})}catch{}})
     } catch(e){
         console.log(e)
     }

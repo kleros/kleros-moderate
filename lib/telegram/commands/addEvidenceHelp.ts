@@ -9,10 +9,10 @@ import { groupSettings } from "../../../types";
  */
 const regexp = /\/addevidencehelp/
 
-const callback = async (db: any, settings: groupSettings, bot: any, botId: number, msg: any) => {
+const callback = async (queue: any, db: any, settings: groupSettings, bot: any, botId: number, msg: any) => {
     const groupId = getUsersWithQuestionsNotFinalized(db, 'telegram', msg.text.substring(22))
     if (!groupId || groupId.length === 0){
-        bot.sendMessage(msg.chat.id, `There are no reports to add evidence to in your group.`);        
+        queue.add(() => bot.sendMessage(msg.chat.id, `There are no reports to add evidence to in your group.`));        
     }
     var inline_keyboard_evidence = []
     var inline_keyboard_evidence_cursor = [];
@@ -36,7 +36,7 @@ const callback = async (db: any, settings: groupSettings, bot: any, botId: numbe
             inline_keyboard: inline_keyboard_evidence
         }
     }
-    bot.sendMessage(msg.chat.id, `Let me help you find the report you want to add evidence to. Which user is the report about?`,opts);        
+    queue.add(() => bot.sendMessage(msg.chat.id, `Let me help you find the report you want to add evidence to. Which user is the report about?`,opts));        
 }
 
 export {regexp, callback};

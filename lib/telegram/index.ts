@@ -6,6 +6,7 @@ import * as getRules from "../../lib/telegram/commands/getRules";
 import * as getLeaderboard from "../../lib/telegram/commands/getLeaderboard";
 import * as addEvidenceHelp from "../../lib/telegram/commands/addEvidenceHelp";
 import * as report from "../../lib/telegram/commands/report";
+import * as fedinfo from "../../lib/telegram/commands/fedinfo";
 import * as welcome from "../../lib/telegram/commands/welcome";
 import * as toggleWelcome from "../../lib/telegram/commands/toggleWelcome";
 import * as toggleAdminReportable from "../../lib/telegram/commands/toggleAdminReportable";
@@ -20,13 +21,16 @@ import * as joinFed from "../../lib/telegram/commands/joinfed";
 import * as start from "../../lib/telegram/commands/start";
 import * as setLanguage from "../../lib/telegram/commands/setLanguage";
 import * as setChannel from "../../lib/telegram/commands/setChannel";
+import * as setChannelFed from "../../lib/telegram/commands/setChannelFed";
 import * as getChannel from "../../lib/telegram/commands/getChannel";
 import * as getReports from "../../lib/telegram/commands/getReports";
 import langJson from "./assets/lang.json";
 import {groupSettings, groupSettingsUnderspecified} from "../../types";
-import {openDb, getGroupSettings, getRule, getReportsUserInfo,getFederatedBanHistoryBase, getFederatedFollowingBanHistoryBase, getLocalBanHistoryBase, eraseThreadID} from "../db";
-
+import {openDb, getGroupSettings, getRule, getReportsUserInfoActive,getFederatedBanHistory, getFederatedFollowingBanHistory, getLocalBanHistory, eraseThreadID} from "../db";
+import { calcPenalty } from "../cron";
 const Web3 = require('web3')
+const {default: PQueue} = require('p-queue');
+const queue = new PQueue({intervalCap: 20, interval: 1000,carryoverConcurrencyCount: true});
 const _batchedSend = require('web3-batched-send')
 const web3 = new Web3(process.env.WEB3_PROVIDER_URL)
 const batchedSend = _batchedSend(
@@ -49,7 +53,9 @@ const batchedSend = _batchedSend(
     federation_id_following: ''
 }
 const ModeratorBot = require('node-telegram-bot-api');
-const bot: any = new ModeratorBot(process.env.BOT_TOKEN, {polling: true, testEnvironment: true});
+const bot: any = new ModeratorBot(process.env.BOT_TOKEN, {polling: {params: {"allowed_updates": JSON.stringify(["my_chat_member", "chat_member", "message","callback_query", "new_chat_members", "inline_query"])}}, testEnvironment: true});
+//const bot: any = new ModeratorBot(process.env.BOT_TOKEN, {polling: true, testEnvironment: true});
+
 //bot.
 var botId: number; 
 const db = openDb();
@@ -58,9 +64,10 @@ const myCache = new NodeCache( { stdTTL: 900, checkperiod: 1200 } );
 // Throttling
 
 const myCacheGarbageCollection = new NodeCache( { stdTTL: 90, checkperiod: 120 } );
+const myCacheThrottle = new NodeCache( { stdTTL: 60, checkperiod: 90 } );
 
 myCacheGarbageCollection.on("expired",function(key,value){
-    bot.deleteMessage(value, key);
+    queue.add(async () => {try{await bot.deleteMessage(value, key)}catch{}});
     });
 
 const delay = (delayInms) => {
@@ -77,20 +84,20 @@ bot.on("my_chat_member", async function(myChatMember: any) {
             await delay(2000);
             if( myChatMember.new_chat_member.status === "administrator"){
                 try{
-                    bot.sendMessage(myChatMember.chat.id, `The channel id is <code>${myChatMember.chat.id}</code>`, {parse_mode: "HTML"});
+                    queue.add(async () => {try{await bot.sendMessage(myChatMember.chat.id, `The channel id is <code>${myChatMember.chat.id}</code>`, {parse_mode: "HTML"})}catch{}});
                 } catch(e) {
                     console.log('channel id msg error'+e);
                 }
             }
             return;
         } else if (myChatMember.chat.type === "supergroup")
-            welcome.callback(settings, bot, myChatMember);
+            welcome.callback(queue, settings, bot, myChatMember);
         else if (myChatMember.chat.type === "private")
             return
         else
             try{
                 const video = myChatMember.chat.is_forum? 'QmSdP3SDoHCdW739xLDBKM3gnLeeZug77RgwgxBJSchvYV/guide_topics.mp4' : 'QmbnEeVzBjcAnnDKGYJrRo1Lx2FFnG62hYfqx4fLTqYKC7/guide.mp4'
-                bot.sendVideo(myChatMember.chat.id, `https://ipfs.kleros.io/ipfs/${video}`, {caption: "Hi! I'm Susie, a moderation and group management bot. Please promote me to an admin then try to /start me to unlock my full potential."});
+                queue.add(async () => {try{await bot.sendVideo(myChatMember.chat.id, `https://ipfs.kleros.io/ipfs/${video}`, {caption: "Hi! I'm Susie, a moderation and group management bot. Please promote me to an admin then try to /start me to unlock my full potential."})}catch{}});
             } catch(e){
                 console.log(e)
             }
@@ -99,47 +106,101 @@ bot.on("my_chat_member", async function(myChatMember: any) {
     }
 });
 
-bot.on("new_chat_members", async function (chatMemberUpdated: TelegramBot.ChatMemberUpdated) {
+
+//invite_url only present in private groups
+/*
+bot.on("chat_member", async function (msg: any) {
+    if (msg.new_chat_member){
+        if(msg.invite_link?.creator?.is_bot){
+            const options = {can_send_messages: false, can_send_media_messages: false, can_send_polls: false, can_send_other_messages: false, can_add_web_page_previews: false, can_change_info: false, can_pin_messages: false};
+            bot.restrictChatMember(msg.chat.id, msg.new_chat_member.id, options)
+        }
+        else{
+            const options = await bot.getChat(msg.chat.id).permissions
+            bot.restrictChatMember(msg.chat.id, msg.new_chat_member.id, options)
+        }
+    }
+})
+*/
+
+bot.on("new_chat_members", async function (chatMemberUpdated: any) {
     if(!hasStarted(chatMemberUpdated.chat.id)||throttled(chatMemberUpdated.from.id)||chatMemberUpdated.chat.type !== "supergroup")
         return;    
-    const settings = validate(chatMemberUpdated.chat);
+        
+        const settings = validate(chatMemberUpdated.chat);
     let calculateHistory = []
     if (settings.federation_id)
-        calculateHistory = getFederatedBanHistoryBase(db, 'telegram', String(chatMemberUpdated.from.id),String(chatMemberUpdated.chat.id),false)
+        calculateHistory = getFederatedBanHistory(db, 'telegram', String(chatMemberUpdated.new_chat_member.id),settings.federation_id,true)
     else if (settings.federation_id_following)
-        calculateHistory = getFederatedFollowingBanHistoryBase(db, 'telegram', String(chatMemberUpdated.from.id),String(chatMemberUpdated.chat.id),settings.federation_id_following,false)
+        calculateHistory = getFederatedFollowingBanHistory(db, 'telegram', String(chatMemberUpdated.new_chat_member.id),String(chatMemberUpdated.chat.id),settings.federation_id_following,true)
     else 
-        calculateHistory = getLocalBanHistoryBase(db, 'telegram', String(chatMemberUpdated.from.id),String(chatMemberUpdated.chat.id),false)
+        calculateHistory = getLocalBanHistory(db, 'telegram', String(chatMemberUpdated.new_chat_member.id),String(chatMemberUpdated.chat.id),true)
 
-    if (calculateHistory)
-        return
+    console.log(calculateHistory)
+
+    if (calculateHistory.length > 0){
+        var max_timestamp = 0
+        for (const ban of calculateHistory){
+            if (ban.timestamp_active > max_timestamp)
+                max_timestamp = ban.timestamp_active
+            else if (ban.timestamp_finalized > max_timestamp)
+                max_timestamp = ban.timestamp_finalized
+        }
+        const parole_time = calcPenalty(calculateHistory.length, max_timestamp)
+        if (parole_time*1000 > Date.now()){
+            queue.add(async () => {try{await bot.banChatMember(chatMemberUpdated.chat.id, chatMemberUpdated.new_chat_member.id, {until_date: parole_time})}catch{}})
+            return
+        }
+    }
+
+    let calculateHistoryActive = []
+    if (settings.federation_id)
+        calculateHistoryActive = getFederatedBanHistory(db, 'telegram', String(chatMemberUpdated.new_chat_member.id),settings.federation_id,false)
+    else if (settings.federation_id_following)
+        calculateHistoryActive = getFederatedFollowingBanHistory(db, 'telegram', String(chatMemberUpdated.new_chat_member.id),String(chatMemberUpdated.chat.id),settings.federation_id_following,false)
+    else 
+        calculateHistoryActive = getLocalBanHistory(db, 'telegram', String(chatMemberUpdated.new_chat_member.id),String(chatMemberUpdated.chat.id),false)
+
+    if (calculateHistoryActive.length > calculateHistory.length ){
+        var max_timestamp = 0
+        for (const ban of calculateHistoryActive){
+            if (ban.timestamp_active > max_timestamp)
+                max_timestamp = ban.timestamp_active
+            else if (ban.timestamp_finalized > max_timestamp)
+                max_timestamp = ban.timestamp_finalized
+        }
+        const parole_time = calcPenalty(calculateHistoryActive.length, max_timestamp)
+        if (parole_time > Date.now()){
+            const options = {can_send_messages: false, can_send_media_messages: false, can_send_polls: false, can_send_other_messages: false, can_add_web_page_previews: false, can_change_info: false, can_pin_messages: false, until_date: parole_time};
+            queue.add(async () => {try{await bot.restrictChatMember(chatMemberUpdated.chat.id, chatMemberUpdated.new_chat_member.id, options)}catch{}})
+            return;
+        }
+    } 
 
     if(settings.captcha || settings.greeting_mode)
-        greeting.callback(bot, settings, chatMemberUpdated);        
+        greeting.callback(queue, bot, settings, chatMemberUpdated);        
 });
 
 // Handle callback queries
 bot.on('callback_query', async function onCallbackQuery(callbackQuery: TelegramBot.CallbackQuery) {
     const calldata = callbackQuery.data.split('|');
-    if (calldata.length < 2)
-        return
-    if((!hasStarted(callbackQuery.message.chat.id) && callbackQuery.message.chat.type == "supergroup")||throttled(callbackQuery.from.id))
+    if((callbackQuery.data !== '6' && !hasStarted(callbackQuery.message.chat.id) && callbackQuery.message.chat.type == "supergroup")||throttled(callbackQuery.from.id))
         return;
     const settings = validate(callbackQuery.message.chat);
     if (Number(calldata[0]) === 0){ // set language
         if (callbackQuery.from.id !== Number(calldata[1]))
             return;
-        setLanguage.setLanguageConfirm(db, bot, settings, calldata[2], callbackQuery.message);
+        setLanguage.setLanguageConfirm(queue, db, bot, settings, calldata[2], callbackQuery.message);
     } else if (Number(calldata[0]) === 1){ // add evidence
         if (callbackQuery.from.id !== Number(calldata[1]))
             return;
         // handle addevidence callback
     } else if (Number(calldata[0]) === 2){ // report confirmations
-        socialConsensus.callback(db, settings, bot, callbackQuery, batchedSend);
+        socialConsensus.callback(queue, db, settings, bot, callbackQuery, batchedSend);
     } else if (Number(calldata[0]) === 3){ // report confirmations
-        help.respond(settings, bot, calldata[1], callbackQuery);
+        help.respond(queue, settings, bot, calldata[1], callbackQuery);
     } else if (Number(calldata[0]) === 4){
-        const reports = getReportsUserInfo(db, 'telegram', calldata[1], calldata[2]);
+        const reports = getReportsUserInfoActive(db, 'telegram', calldata[1], calldata[2]);
         var reportMessage: string = `To add evidence, reply to the message you want saved in the original chat with the evidence index.\n\n`
         reports.forEach( (report) => {
             const MsgLink = 'https://t.me/c/' + calldata[1].substring(4) + '/' + report.msg_id;
@@ -154,8 +215,8 @@ bot.on('callback_query', async function onCallbackQuery(callbackQuery: TelegramB
             disable_web_page_preview: true
         };
         try{
-            bot.editMessageReplyMarkup({inline_keyboard: [[]]}, optsResponse)
-            bot.editMessageText(reportMessage , optsResponse);
+            queue.add(async () => {try{await bot.editMessageReplyMarkup({inline_keyboard: [[]]}, optsResponse)}catch{}})
+            queue.add(async () => {try{await bot.editMessageText(reportMessage , optsResponse)}catch{}});
         } catch (e){
             console.log(e)
         }
@@ -163,10 +224,17 @@ bot.on('callback_query', async function onCallbackQuery(callbackQuery: TelegramB
         if (callbackQuery.from.id !== Number(calldata[1]))
             return;
         const options = {can_send_messages: true, can_send_media_messages: true, can_send_polls: true, can_send_other_messages: true, can_add_web_page_previews: false, can_change_info: false, can_pin_messages: false};
-        bot.restrictChatMember(callbackQuery.message.chat.id, callbackQuery.from.id, options);
-        bot.deleteMessage(callbackQuery.message.chat.id, callbackQuery.message.message_id)
+        queue.add(async () => {try{await bot.restrictChatMember(callbackQuery.message.chat.id, callbackQuery.from.id, options)}catch{}});
+        queue.add(async () => {try{await bot.deleteMessage(callbackQuery.message.chat.id, callbackQuery.message.message_id)}catch{}})
+    } else if (Number(calldata[0]) === 6){
+        const member = await queue.add(async () => {try{const val = await bot.getChatMember(callbackQuery.message.chat.id, callbackQuery.from.id)
+            return val}catch{}})
+        if (member.status === "admin" || member.status === "creator"){
+            queue.add(async () => {try{await bot.deleteMessage(callbackQuery.message.chat.id, callbackQuery.message.message_id)}catch{}})
+            start.callback(queue, db, settings,bot,String(botId),callbackQuery.message,[],batchedSend, true)
+        }
     }
-  });
+    });
 
 const commands: {regexp: RegExp, callback: any}[] = [
     getAccount,
@@ -175,6 +243,7 @@ const commands: {regexp: RegExp, callback: any}[] = [
     report,
     toggleWelcome,
     start,
+    fedinfo,
     toggleCaptcha,
     help,
     newFed,
@@ -183,38 +252,43 @@ const commands: {regexp: RegExp, callback: any}[] = [
     leaveFed,
     joinFed,
     setChannel,
+    setChannelFed,
     addEvidence,
     getReports,
     setLanguage,
 ];
 
-const adminOnlyCommands = [joinFed, leaveFed, newFed, toggleCaptcha, setLanguage, setChannel, toggleWelcome, toggleAdminReportable, start, setRulesCommand ]
+const adminOnlyCommands = [joinFed, leaveFed, newFed, toggleCaptcha, setLanguage, setChannelFed, setChannel, toggleWelcome, toggleAdminReportable, start, setRulesCommand ]
 
 commands.forEach((command) => {
     bot.onText(
         command.regexp,
-        async (msg: any, match: string[]) => {  
+        async (msg: any, match: string[]) => { 
             if(throttled(msg.from.id))
                 return
             const groupSettings = validate(msg.chat);
             if(msg.chat.type === "private"){
                 if (msg.text === '/start help'){
-                    help.callback(db, groupSettings, bot, botId, msg);
+                    help.callback(queue, db, groupSettings, bot, botId, msg);
                     return
                 } else if(msg.text === '/start helpgnosis'){
-                    help.helpgnosis(db, groupSettings, bot, botId, msg);
+                    help.helpgnosis(queue, db, groupSettings, bot, botId, msg);
                     return
                 } else if(msg.text === '/start helpnotifications'){
-                    help.helpnotifications(db, groupSettings, bot, botId, msg);
+                    help.helpnotifications(queue, db, groupSettings, bot, botId, msg);
                     return
                 } else if (msg.text.substring(0,22) === '/start addevidencehelp'){
-                    addEvidenceHelp.callback(db, groupSettings, bot, botId, msg);
+                    addEvidenceHelp.callback(queue, db, groupSettings, bot, botId, msg);
                     return
                 } else if (msg.text.substring(0,16) === '/start getreport'){
-                    getReports.callback(db, groupSettings, bot, botId, msg);
+                    getReports.callback(queue, db, groupSettings, bot, botId, msg);
                     return
                 } else if (msg.text === '/start newfed' || msg.text.substring(0,7) === '/newfed'){
-                    newFed.callback(db, groupSettings, bot, String(botId), msg, match);
+                    newFed.callback(queue, db, groupSettings, bot, String(botId), msg, match);
+                    return
+                }
+                else if (msg.text === '/start setfedchannel' || msg.text.substring(0,14) === '/setfedchannel'){
+                    setChannelFed.callback(queue, db, groupSettings, bot, String(botId), msg, match, batchedSend);
                     return
                 } else if (msg.text !== '/start' && msg.text != '/help' && msg.text !== '/start botstart')
                     return
@@ -223,7 +297,8 @@ commands.forEach((command) => {
             if (command === start){
                 if (hasStarted(msg.chat.id)){
                     try{
-                        const resp = await bot.sendMessage(msg.chat.id, "Susie is already moderating this community.", msg.chat.is_forum? {message_thread_id: msg.message_thread_id} : {})
+                        const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, "Susie is already moderating this community.", msg.chat.is_forum? {message_thread_id: msg.message_thread_id} : {})
+                        return val}catch{}});
                         myCacheGarbageCollection.set(resp.message_id, msg.chat.id)
                         return
                     } catch(e){
@@ -236,7 +311,8 @@ commands.forEach((command) => {
 
             try{
                 if (!botId)
-                    botId = (await bot.getMe()).id;
+                    botId = (await queue.add(async () => {try{const val = await bot.getMe()
+                        return val}catch{}})).id;
             } catch(e){
                 console.log(e)
             }
@@ -245,7 +321,8 @@ commands.forEach((command) => {
                 var status = myCache.get("status"+msg.chat.id+msg.from.id)
                 if (!status){
                     try{
-                        status = (await bot.getChatMember(msg.chat.id, String(msg.from.id))).status;
+                        status = (await queue.add(async () => {try{const val = await bot.getChatMember(msg.chat.id, String(msg.from.id))
+                            return val}catch{}})).status;
                         myCache.set("status"+msg.chat.id+msg.from.id,status)
                     } catch(e){
                         console.log(e)
@@ -254,7 +331,8 @@ commands.forEach((command) => {
                 }
                 if (!(status === 'creator' || status === 'administrator')) {
                     try{
-                        const resp = await bot.sendMessage(msg.chat.id, langJson[groupSettings.lang].errorAdminOnly, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})
+                        const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, langJson[groupSettings.lang].errorAdminOnly, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})
+                        return val}catch{}})
                         myCacheGarbageCollection.set(resp.message_id, msg.chat.id)
                     } catch(e){
                         console.log(e)
@@ -264,8 +342,8 @@ commands.forEach((command) => {
             }
 
             // todo success bool return val, to not always delete settings
-            command.callback(db, groupSettings, bot, botId, msg, match,batchedSend);
-            if (command === setLanguage || command === setRulesCommand || command === setChannel || command === toggleWelcome || command === toggleCaptcha || command === toggleAdminReportable)
+            command.callback(queue, db, groupSettings, bot, botId, msg, match,batchedSend);
+            if (command === setLanguage || command === setRulesCommand || command === joinFed || command === setChannel || command === toggleWelcome || command === toggleCaptcha || command === toggleAdminReportable)
                 myCache.del(msg.chat.id)
             if (command === start)
                 myCache.del("started"+msg.chat.id)
@@ -275,10 +353,10 @@ commands.forEach((command) => {
 
 
 const throttled = (userId: number): boolean => {
-    const count = myCache.get(userId) ?? 1
-    if (count >100)
+    const count = myCacheThrottle.get(userId) ?? 1
+    if (count >20)
         return true
-    myCache.set(userId.toString(), count + 1)
+    myCacheThrottle.set(userId.toString(), count + 1)
     return false;
 }
 
@@ -297,7 +375,7 @@ const hasStarted = (chatid: number): boolean=> {
     }
 }
 
-const validate = (chat: any): groupSettings=> {
+const validate = (chat: any, language_code?: string): groupSettings=> {
     if (!hasStarted(chat.id)){
         let settings = defaultSettings;
         settings.channelID = String(chat.id)
@@ -332,15 +410,15 @@ const validate = (chat: any): groupSettings=> {
 const checkMigration = async (groupSettings: groupSettings, chat: any): Promise<groupSettings> => {
     if (chat.is_forum && !groupSettings.thread_id_notifications){ // turn topics on
         try{
-            const threads = await start.topicMode(db, bot, groupSettings, chat);
-            bot.sendMessage(chat.id, "Started topic mode", {messsage_thread_id: groupSettings.thread_id_notifications})
+            const threads = await start.topicMode(queue, db, bot, groupSettings, chat);
+            queue.add(async () => {try{await bot.sendMessage(chat.id, "Started topic mode", {messsage_thread_id: groupSettings.thread_id_notifications})}catch{}})
             groupSettings.thread_id_rules = threads[0]
             groupSettings.thread_id_notifications = threads[1]
             groupSettings.channelID = String(chat.id)
             myCache.set(chat.id, groupSettings)
         } catch(e){
             try{
-                bot.sendMessage(chat.id, "Susie cannot manage groups in topic mode with out permission to manage topics. Please ask an admin to enable this permission to allow Susie to continue help moderating your community.", {messsage_thread_id: groupSettings.thread_id_notifications})
+                queue.add(async () => {try{await bot.sendMessage(chat.id, "Susie cannot manage groups in topic mode with out permission to manage topics. Please ask an admin to enable this permission to allow Susie to continue help moderating your community.", {messsage_thread_id: groupSettings.thread_id_notifications})}catch{}})
             } catch(e){
                 console.log(e)
             }

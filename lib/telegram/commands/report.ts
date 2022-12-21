@@ -15,24 +15,32 @@ const myCache = new NodeCache( { stdTTL: 900, checkperiod: 1200 } );
 const myCacheGarbageCollection = new NodeCache( { stdTTL: 90, checkperiod: 120 } );
 const myCacheGarbageCollectionSlow = new NodeCache( { stdTTL: 900, checkperiod: 1200 } );
 var myBot;
+var myQueue;
 
 myCacheGarbageCollection.on("expired",function(key,value){
-    myBot.deleteMessage(value, key);
+    myQueue.add(async () => {try{await myBot.deleteMessage(value, key)}catch{}});
     });
 myCacheGarbageCollectionSlow.on("expired",function(key,value){
-        myBot.deleteMessage(value, key);
+    myQueue.add(async () => {try{await myBot.deleteMessage(value, key)}catch{}});
     });
-const callback = async (db:any, settings: groupSettings, bot: any, botId: number, msg: any, match: string[]) => {
+const callback = async (queue: any, db:any, settings: groupSettings, bot: any, botId: number, msg: any, match: string[]) => {
     try{        
-        myBot = bot
+        if(msg.text.substring(0,11) === '/reportinfo')
+            return
+        if (!myBot)
+            myBot = bot
+        if (!myQueue)
+            myQueue = queue
         if (!msg.reply_to_message) {
-            const resp = await bot.sendMessage(msg.chat.id, `/report ${langJson[settings.lang].errorReply}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {});
+            const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `/report ${langJson[settings.lang].errorReply}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})
+        return val}catch{}});
             myCacheGarbageCollection.set(resp.message_id, msg.chat.id)
             return;
         }
 
         if (msg.reply_to_message.date < Date.now()/1000-86400*7){
-            const resp = await bot.sendMessage(msg.chat.id, `Live and let live. This message is more than one week old. The future is asynchronous, but we believe moderation should not be punitive. Next time try to make the report sooner.`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {});
+            const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `Live and let live. This message is more than one week old. The future is asynchronous, but we believe moderation should not be punitive. Next time try to make the report sooner.`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})
+            return val}catch{}});
             myCacheGarbageCollection.set(resp.message_id, msg.chat.id)
             return;
         }
@@ -42,18 +50,22 @@ const callback = async (db:any, settings: groupSettings, bot: any, botId: number
         if (msg.reply_to_message.from.is_bot){
             let resp;
             if(msg.reply_to_message.from.username === "GroupAnonymousBot")
-                resp = await bot.sendMessage(msg.chat.id, `User is anonymous. Ask admins to disable anonymouse admins to moderate admin behavior.`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {});
+                resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `User is anonymous. Ask admins to disable anonymouse admins to moderate admin behavior.`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})
+                return val}catch{}});
             else
-                resp = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].report.errorModBot}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {});
+                resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].report.errorModBot}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})
+                return val}catch{}});
 
             myCacheGarbageCollection.set(resp.message_id, msg.chat.id)
             return
         }
         let report: TelegramBot.ChatMember
         if(!settings.admin_reportable){
-            report = await bot.getChatMember(msg.chat.id,msg.reply_to_message.from.id)
+            report = await queue.add(async () => {try{const val = await bot.getChatMember(msg.chat.id,msg.reply_to_message.from.id)
+                return val}catch{}})
             if(report.status === "administrator" || report.status === "creator"){
-                const resp = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].report.errorAdmin}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {});
+                const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].report.errorAdmin}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})
+                return val}catch{}});
                 myCacheGarbageCollection.set(resp.message_id, msg.chat.id)
                 return
             }
@@ -66,13 +78,15 @@ const callback = async (db:any, settings: groupSettings, bot: any, botId: number
         const cachedReportRequestMessage = myCache.get([msg.chat.id, msg.reply_to_message.message_id].toString())
         if (cachedReportRequestMessage){ // message already reported
             const msgLinkReport = 'https://t.me/c/' + String(msg.chat.id).substring(4) + '/' + cachedReportRequestMessage;
-            const resp = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].report.reported}(${msgLinkReport})`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'});
+            const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].report.reported}(${msgLinkReport})`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})
+            return val}catch{}});
             myCacheGarbageCollection.set(resp.message_id, msg.chat.id)
             return;
         }
         const reportedQuestionId = getQuestionId(db, 'telegram', String(msg.chat.id), reportedUserID, String(msg.reply_to_message.message_id));
         if (reportedQuestionId){
-            const resp = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].report.reported}(https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${reportedQuestionId})`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id, parse_mode: 'Markdown', disable_web_page_preview: true}: {parse_mode: 'Markdown', disable_web_page_preview: true});
+            const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].report.reported}(https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${reportedQuestionId})`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id, parse_mode: 'Markdown', disable_web_page_preview: true}: {parse_mode: 'Markdown', disable_web_page_preview: true})
+            return val}catch{}});
             myCacheGarbageCollection.set(resp.message_id, msg.chat.id)
             return;
         }
@@ -82,23 +96,27 @@ const callback = async (db:any, settings: groupSettings, bot: any, botId: number
         const rules = getRule(db, 'telegram', String(msg.chat.id), msg.reply_to_message.date);
 
         if (!rules){
-            const resp = await bot.sendMessage(msg.chat.id, langJson[settings.lang].report.norules, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {});
+            const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, langJson[settings.lang].report.norules, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})
+        return val}catch{}});
             myCacheGarbageCollection.set(resp.message_id, msg.chat.id)
             return;
         }
         
 
-        const evidencepath = await upload(bot, settings.lang, msg);
+        const evidencepath = await upload(queue, bot, settings.lang, msg);
         const msgBackup = 'https://ipfs.kleros.io'+evidencepath;
         // TODO report
         
         const reportAllowance = getAllowance(db, 'telegram', String(msg.chat.id), String(msg.from.id));
-        if(!settings.admin_reportable && (report.status === "administrator" || report.status === "creator")){
-
+        const reporter = await queue.add(async () => {try{const val = await bot.getChatMember(msg.chat.id,msg.from.id)
+            return val}catch{}})
+        if(!settings.admin_reportable && (reporter.status === "administrator" || reporter.status === "creator")){
+            console.log(report.status)
         } else if (!reportAllowance){
             setAllowance(db, 'telegram', String(msg.chat.id), String(msg.from.id), 2, 15, currentTimeMs);
         } else if (currentTimeMs < reportAllowance.timestamp_refresh + 28800 && reportAllowance.report_allowance == 0 ){
-            const resp = await bot.sendMessage(msg.chat.id, langJson[settings.lang].report.noallowance, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {});
+            const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, langJson[settings.lang].report.noallowance, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})
+            return val}catch{}});
             myCacheGarbageCollection.set(resp.message_id, msg.chat.id)
             return;
         } else{
@@ -139,7 +157,8 @@ const callback = async (db:any, settings: groupSettings, bot: any, botId: number
             }
         };
         const msgLink = `https://t.me/c/${String(msg.chat.id).substring(4)}/${msg.chat.is_forum? `${msg.message_thread_id}/`:''}${msg.reply_to_message.message_id}`;
-        const reportRequestMsg: TelegramBot.Message = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].socialConsensus.consensus2} [${fromUsername}](tg://user?id=${reportedUserID}) ${langJson[settings.lang].socialConsensus.consensus3}(${rules}) ${langJson[settings.lang].socialConsensus.consensus4}(${msgLink}) ([${langJson[settings.lang].socialConsensus.consensus5}](${msgBackup}))?`, msg.chat.is_forum? optsThread: opts); 
+        const reportRequestMsg: TelegramBot.Message = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].socialConsensus.consensus2} [${fromUsername}](tg://user?id=${reportedUserID}) ${langJson[settings.lang].socialConsensus.consensus3}(${rules}) ${langJson[settings.lang].socialConsensus.consensus4}(${msgLink}) ([${langJson[settings.lang].socialConsensus.consensus5}](${msgBackup}))?`, msg.chat.is_forum? optsThread: opts)
+        return val}catch{}}); 
         myCache.set([msg.chat.id, msg.reply_to_message.message_id].toString(),`${msg.chat.is_forum? `${msg.message_thread_id}/${reportRequestMsg.message_id}`:''}${reportRequestMsg.message_id}`) ; 
         myCacheGarbageCollectionSlow.set(reportRequestMsg.message_id, msg.chat.id)
         return;
@@ -147,13 +166,14 @@ const callback = async (db:any, settings: groupSettings, bot: any, botId: number
         console.log(e)       
     }
 }
-const reportMsg = async (settings: groupSettings, db: any, bot: any, msg: any, fromUsername: string, reportedUserID: string, rules: string, msgId: string, msgBackup: string, reportedBy: string, batchedSend: any) => {
+const reportMsg = async (queue: any, settings: groupSettings, db: any, bot: any, msg: any, fromUsername: string, reportedUserID: string, rules: string, msgId: string, msgBackup: string, reportedBy: string, batchedSend: any) => {
     try {
         var inviteURL = myCache.get(msg.chat.id)
         if (!inviteURL){
             inviteURL = getInviteURL(db, 'telegram', String(msg.chat.id));
             if (!inviteURL){
-                inviteURL = await bot.exportChatInviteLink(msg.chat.id);
+                inviteURL = await queue.add(async () => {try{const val = await bot.exportChatInviteLink(msg.chat.id)
+                    return val}catch{}});
                 setInviteURL(db, 'telegram', String(msg.chat.id), inviteURL);
             }
             myCache.set(msg.chat.id, inviteURL)
@@ -182,12 +202,12 @@ const reportMsg = async (settings: groupSettings, db: any, bot: any, msg: any, f
 
         addReport(db, questionId, 'telegram', String(msg.chat.id), reportedUserID, fromUsername , (msg.chat.is_forum? `${msg.message_thread_id}/`:'')+String(msg.reply_to_message.message_id), msg.reply_to_message.date,evidenceIndex, msgBackup);
 
-        bot.sendMessage(settings.channelID, `[${fromUsername}](tg://user?id=${reportedUserID})'s conduct due to this [message](${msgLink}) ([backup](${msgBackup})) is reported for breaking the [rules](${rules}).\n\nDid *${fromUsername}* break the rules? The [question](${appealUrl}) can be answered with a minimum bond of 5 DAI. Need assistance answering the question? [DM](https://t.me/${process.env.BOT_USERNAME}?start=helpgnosis) me for help : )\n\nTo save a record, reply to messages you want saved with \`/addevidence ${evidenceIndex}\``, msg.chat.is_forum? {message_thread_id: msg.message_thread_id, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'});
+        queue.add(async () => {try{await bot.sendMessage(settings.channelID, `[${fromUsername}](tg://user?id=${reportedUserID})'s conduct due to this [message](${msgLink}) ([backup](${msgBackup})) is reported for breaking the [rules](${rules}).\n\nDid *${fromUsername}* break the rules? The [question](${appealUrl}) can be answered with a minimum bond of 5 DAI. Need assistance answering the question? [DM](https://t.me/${process.env.BOT_USERNAME}?start=helpgnosis) me for help : )\n\nTo save a record, reply to messages you want saved with \`/evidence ${evidenceIndex}\``, msg.chat.is_forum? {message_thread_id: msg.message_thread_id, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
         return questionId;
     } catch (e) {
         console.log(e);
         try{
-            bot.sendMessage(msg.chat.id, `${langJson[settings.lang].errorTxn}. ${e.reason}. `,msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {});
+            queue.add(async () => {try{await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].errorTxn}. ${e.reason}. `,msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})}catch{}});
         } catch(e){
             console.log(e)
         }
