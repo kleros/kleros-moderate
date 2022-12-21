@@ -202,8 +202,11 @@ Topics allow large (>200 member) groups to focus discussion in dedicated **topic
 
 To prevent important messages from deletion, pre-emptively, messages can be saved as evidence.
 
+Note that Susie uses a proxy contract to efficiently batch reports. In case of dispute over authenticity, evidence submitted by the Kleros Moderate bot is time stamped in chat. Moreover, this timestamp should be consistent with any evidence submitted by the bot address through the transaction batching contract.
+
 *User commands*:
-- \`/evidence\` <by reply> <evidencegroup>\n\nReply to a message to add it as evidence`
+- \`/evidence\` <by reply> <evidencegroup>: Reply to a message to add it as evidence.
+- \`/getaccount\`: Gets bot and transaction batcher addresses.`
                 ,optsResponse)}catch{}})
                 break;
             }

@@ -38,11 +38,11 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
                 myCache.set(resp.message_id, msg.chat.id)
                 }
             else if (msg.from.id == match[1]){
-                queue.add(async () => {try{await bot.sendMessage(settings.channelID, `Your group is now part of the *${name}* federation.`,msg.chat.is_forum? {message_thread_id: msg.message_thread_id,parse_mode: 'Markdown'}:{parse_mode: 'Markdown'})}catch{}});
+                queue.add(async () => {try{await bot.sendMessage(msg.chat.id, `Your group is now part of the *${name}* federation.`,msg.chat.is_forum? {message_thread_id: msg.message_thread_id,parse_mode: 'Markdown'}:{parse_mode: 'Markdown'})}catch{}});
                 joinFederation(db, 'telegram', String(msg.chat.id), match[1])
             }
             else{
-                queue.add(async () => {try{await bot.sendMessage(settings.channelID, `Your group is now following the *${name}* federation.`,msg.chat.is_forum? {message_thread_id: msg.message_thread_id,parse_mode: 'Markdown'}:{parse_mode: 'Markdown'})}catch{}});
+                queue.add(async () => {try{await bot.sendMessage(msg.chat.id, `Your group is now following the *${name}* federation.`,msg.chat.is_forum? {message_thread_id: msg.message_thread_id,parse_mode: 'Markdown'}:{parse_mode: 'Markdown'})}catch{}});
                 followFederation(db, 'telegram', String(msg.chat.id), match[1])
             }
         }
