@@ -386,7 +386,7 @@ const validate = (chat: any, language_code?: string): groupSettings=> {
     const fullSettings = {
         lang: groupSettings?.lang ?? defaultSettings.lang,
         rules: groupSettings?.rules ?? defaultSettings.rules,
-        channelID: groupSettings?.channelID ?? String(chat.id),
+        channelID: chat.is_forum? String(chat.id): (groupSettings?.channelID ?? String(chat.id)),
         greeting_mode: groupSettings?.greeting_mode ?? defaultSettings.greeting_mode,
         admin_reportable: groupSettings?.admin_reportable ?? defaultSettings.admin_reportable,
         captcha: groupSettings?.captcha ?? defaultSettings.captcha,

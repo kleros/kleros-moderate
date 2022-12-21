@@ -78,7 +78,7 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: Teleg
             return val}catch{}});
         setInviteURLChannel(db, 'telegram', String(msg.chat.id), invite_url_channel);
         setChannelID(db, 'telegram', String(msg.chat.id), newmatch[1]);
-        queue.add(async () => {try{await bot.sendMessage(msg.chat.id, `Moderation notifications will now be sent to this [channel](${invite_url_channel}).`, {parse_mode: "Markdown"})}catch{}});
+        queue.add(async () => {try{await bot.sendMessage(msg.chat.id, `Moderation notifications will now be sent to this [channel](${invite_url_channel}).`, {parse_mode: "Markdown", disable_web_page_preview: true})}catch{}});
         queue.add(async () => {try{await bot.sendMessage(newmatch[1], `This channel will now relay moderation notifications for ${msg.chat.title}`, {parse_mode: "Markdown"})}catch{}});
     } catch (error) {
         console.log(error);

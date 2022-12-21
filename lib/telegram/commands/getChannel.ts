@@ -32,7 +32,7 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
         return val}catch{}});     
         myCache.set(resp.message_id, msg.chat.id)   
     } else {
-        const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `I notify this [channel](${channel_invite}) about moderation activity.`,msg.chat.is_forum? {parse_mode: "Markdown", message_thread_id: msg.message_thread_id}:{parse_mode: "Markdown"})
+        const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `I notify this [channel](${channel_invite}) about moderation activity.`,msg.chat.is_forum? {parse_mode: "Markdown", message_thread_id: msg.message_thread_id, disable_web_page_preview: true}:{parse_mode: "Markdown", disable_web_page_preview: true})
         return val}catch{}});     
         myCache.set(resp.message_id, msg.chat.id)
     }
