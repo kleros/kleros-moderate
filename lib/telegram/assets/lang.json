@@ -80,7 +80,7 @@
         "greeting1": "Welcome, this group is moderated with ",
         "greeting2": "Please make sure to follow the [community rules]",
         "greeting3": "Users who break the rules can be reported by replying to a message with the command /report.",
-        "defaultRules": "https://ipfs.kleros.io/ipfs/QmRxgfYYLRdrCnd492GRinJLT2PvyPkvDhpA5eawEXs3bP/Kleros%20Moderate%20Community%20Guidelines%20v1.0.pdf",
+        "defaultRules": "https://ipfs.kleros.io/ipfs/QmbgRUB4dEgcvRfYmWo34GJhpBGNWWJNsbz8dxN2QLTyLb/Kleros%20Moderate%20Community%20Rules%20v1.0.pdf",
         "defaultRulesMsg1": "The Kleros Moderate Community Guidelines apply as the default [rules]",
         "defaultRulesMsg1alt": "The Kleros Moderate Community Guidelines apply as the default rules",
         "defaultRulesMsg2": "Crafting precise policies can be challenging, if you are certain in setting a new policy, you can set new rules with /setrules \\[url] or /setrules \\[reply to message]"
