@@ -25,7 +25,7 @@ myCacheGarbageCollectionSlow.on("expired",function(key,value){
     });
 const callback = async (queue: any, db:any, settings: groupSettings, bot: any, botId: number, msg: any, match: string[]) => {
     try{        
-        if(msg.text.substring(0,11) === '/reportinfo')
+        if(msg.text.substring(0,11) === '/info')
             return
         if (!myBot)
             myBot = bot
@@ -74,7 +74,7 @@ const callback = async (queue: any, db:any, settings: groupSettings, bot: any, b
         const fromUsername = (msg.reply_to_message.from.username || msg.reply_to_message.from.first_name || `no-username-set`);
         const reportedUserID = String(msg.reply_to_message.from.id);
         const currentTimeMs = Date.now()/1000;
-
+/*
         const cachedReportRequestMessage = myCache.get([msg.chat.id, msg.reply_to_message.message_id].toString())
         if (cachedReportRequestMessage){ // message already reported
             const msgLinkReport = 'https://t.me/c/' + String(msg.chat.id).substring(4) + '/' + cachedReportRequestMessage;
@@ -82,7 +82,7 @@ const callback = async (queue: any, db:any, settings: groupSettings, bot: any, b
             return val}catch{}});
             myCacheGarbageCollection.set(resp.message_id, msg.chat.id)
             return;
-        }
+        }*/
         const reportedQuestionId = getQuestionId(db, 'telegram', String(msg.chat.id), reportedUserID, String(msg.reply_to_message.message_id));
         if (reportedQuestionId){
             const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].report.reported}(https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${reportedQuestionId})`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id, parse_mode: 'Markdown', disable_web_page_preview: true}: {parse_mode: 'Markdown', disable_web_page_preview: true})

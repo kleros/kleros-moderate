@@ -224,8 +224,8 @@ Answers to reports can be disputed, creating a case in the Kleros court. Refer t
 
 *User commands*:
 - \`/report\` <by reply>: Reply to a message to report it
-- \`/reportinfo\`: Returns active reports
-- \`/reportinfo\` <by reply>: Returns active reports for user`
+- \`/info\`: Returns active reports
+- \`/info\` <by reply>: Returns active reports for user`
                 ,optsResponse)}catch{}})
                 break;
             }

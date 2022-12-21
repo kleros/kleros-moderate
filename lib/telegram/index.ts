@@ -207,7 +207,7 @@ bot.on('callback_query', async function onCallbackQuery(callbackQuery: TelegramB
             reportMessage += `- [Message](${MsgLink}) ([${langJson[settings.lang].socialConsensus.consensus5}](${report.msgBackup})) [${langJson[settings.lang].getReports.reportMessage3}](https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${report.question_id}), \`/addevidence ${report.evidenceIndex}\` <context (optional)>\n`;
         });
 
-        reportMessage +='\n eg. /addevidence 1 This message breaks the rules because xyz.'
+        reportMessage +='\n eg. \`/evidence\` 1 This message breaks the rules because xyz.'
         const optsResponse = {
             chat_id: callbackQuery.message.chat.id,
             message_id: callbackQuery.message.message_id,
@@ -264,6 +264,9 @@ commands.forEach((command) => {
     bot.onText(
         command.regexp,
         async (msg: any, match: string[]) => { 
+            if (!botId)
+                botId = (await queue.add(async () => {try{const val = await bot.getMe()
+                    return val}catch{}})).id;
             if(throttled(msg.from.id))
                 return
             const groupSettings = validate(msg.chat);
@@ -307,14 +310,6 @@ commands.forEach((command) => {
                 }
             } else if(!hasStarted(msg.chat.id) && command !== help){
                 return;
-            }
-
-            try{
-                if (!botId)
-                    botId = (await queue.add(async () => {try{const val = await bot.getMe()
-                        return val}catch{}})).id;
-            } catch(e){
-                console.log(e)
             }
 
             if (msg.chat.type !== "private" && adminOnlyCommands.indexOf(command)!==-1){
