@@ -1,13 +1,13 @@
 import * as TelegramBot from "node-telegram-bot-api";
-import {getRule, getInviteURLChannel, getChannelID} from "../../db";
+import {getRule, getInviteURLChannel, getFederatedInviteURLChannel, getChannelID} from "../../db";
 import langJson from "../assets/lang.json";
 import { groupSettings } from "../../../types";
 const NodeCache = require( "node-cache" );
 const myCache = new NodeCache( { stdTTL: 90, checkperiod: 120 } );
 var myBot;
-
+var myQueue;
 myCache.on("expired",function(key,value){
-    myBot.deleteMessage(value, key);
+    myQueue.add(async () => {try{await myBot.deleteMessage(value, key)}catch{}});
     });
 
 /*
@@ -15,14 +15,25 @@ myCache.on("expired",function(key,value){
  */
 const regexp = /\/notifications/
 
-const callback = async (db: any, settings: groupSettings, bot: any, botId: number, msg: any) => {
-    myBot = bot;
+const callback = async (queue: any, db: any, settings: groupSettings, bot: any, botId: number, msg: any) => {
+    if (!myBot)
+        myBot = bot
+    if (!myQueue)
+        myQueue = queue
     const channel_invite = getInviteURLChannel(db, 'telegram', String(msg.chat.id));
-    if(!channel_invite){
-        const resp = await bot.sendMessage(msg.chat.id, `Notifications channel not set. Ask an admin to /setchannel.`,msg.chat.is_forum? {parse_mode: "Markdown", message_thread_id: msg.message_thread_id}:{parse_mode: "Markdown"});     
+    if(settings.federation_id || settings.federation_id_following){
+        const inviteurl = getFederatedInviteURLChannel(db, 'telegram', settings.federation_id);
+        const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `The notifications for this group's federation are sent to this [channel](${inviteurl}).`,msg.chat.is_forum? {parse_mode: "Markdown", message_thread_id: msg.message_thread_id}:{parse_mode: "Markdown"})
+        return val}catch{}});     
+        myCache.set(resp.message_id, msg.chat.id)  
+    }
+    if(!channel_invite && !msg.chat.is_forum){
+        const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `Notifications channel for this group is not set. Ask an admin to \`/setchannel\`.`,msg.chat.is_forum? {parse_mode: "Markdown", message_thread_id: msg.message_thread_id}:{parse_mode: "Markdown"})
+        return val}catch{}});     
         myCache.set(resp.message_id, msg.chat.id)   
     } else {
-        const resp = await bot.sendMessage(msg.chat.id, `I notify this [channel](${channel_invite}) about moderation activity.`,msg.chat.is_forum? {parse_mode: "Markdown", message_thread_id: msg.message_thread_id}:{parse_mode: "Markdown"});     
+        const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `I notify this [channel](${channel_invite}) about moderation activity.`,msg.chat.is_forum? {parse_mode: "Markdown", message_thread_id: msg.message_thread_id}:{parse_mode: "Markdown"})
+        return val}catch{}});     
         myCache.set(resp.message_id, msg.chat.id)
     }
 }

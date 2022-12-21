@@ -5,13 +5,16 @@ import {groupSettings} from "../../../types";
 const NodeCache = require( "node-cache" );
 const myCache = new NodeCache( { stdTTL: 90, checkperiod: 120 } );
 var myBot;
-
+var myQueue;
 myCache.on("expired",function(key,value){
-    myBot.deleteMessage(value, key);
+    myQueue.add(async () => {try{await myBot.deleteMessage(value, key)}catch{}});
     });
 
-const callback = async (bot: any, settings: groupSettings, msg: any) => {
-    myBot = bot
+const callback = async (queue: any, bot: any, settings: groupSettings, msg: any) => {
+    if (!myBot)
+        myBot = bot
+    if (!myQueue)
+        myQueue = queue
     try{
 
 
@@ -45,7 +48,8 @@ const callback = async (bot: any, settings: groupSettings, msg: any) => {
                 ]
             }
         };
-        const msg_welcome = bot.sendMessage(msg.chat.id, `Welcome [${msg.from.first_name}](tg://user?id=${msg.from.id}) ${langJson[settings.lang].greeting2}(${settings.rules}). ${langJson[settings.lang].greeting3}`, msg.chat.is_forum? optsThread: opts);
+        const msg_welcome = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `Welcome [${msg.from.first_name}](tg://user?id=${msg.from.id}) ${langJson[settings.lang].greeting2}(${settings.rules}). ${langJson[settings.lang].greeting3}`, msg.chat.is_forum? optsThread: opts)
+        return val}catch{}});
         myCache.set(msg_welcome.message_id, msg.chat.id)
     } catch(e){
         console.log(e)

@@ -1,5 +1,5 @@
 require('dotenv').config()
-import {openDb, getGroupSettings, getRule, getCron, getTimestampFinalized, getFederatedFollowingBanHistory, getLocalBanHistory, getFederatedBanHistory, setCron, getGroupsInAndFollowingFederation, getReportMessageTimestampAndActive, setReport} from "./db";
+import {openDb, getGroupSettings, getRule, getCron, getFederationChannel, getFederatedFollowingBanHistory, getLocalBanHistory, getFederatedBanHistory, setCron, getGroupsInAndFollowingFederation, getReportMessageTimestampAndActive, setReport} from "./db";
 import request from "graphql-request";
 import {BigNumber} from "ethers";
 import TelegramBot from "node-telegram-bot-api";
@@ -14,7 +14,7 @@ const realitio_bot = require('./realitioReporting')
 const myCache = new NodeCache( { stdTTL: 900, checkperiod: 1200 } );
 const db = openDb();
 const bot: any = new ModeratorBot(process.env.BOT_TOKEN, {polling: false, testEnvironment: true});  
-const queue = new PQueue({intervalCap: 25, interval: 1000,carryoverConcurrencyCount: true});
+const queue = new PQueue({intervalCap: 10, interval: 1000,carryoverConcurrencyCount: true});
 // Only need DB for
 // - channelID
 // - finalizedReportCount
@@ -23,7 +23,7 @@ const queue = new PQueue({intervalCap: 25, interval: 1000,carryoverConcurrencyCo
 // - rules (for new reports)
 
 (async ()=> {
-    const botaddress = await (await new Wallet(process.env.PRIVATE_KEY)).address;
+    const botaddress = (await new Wallet(process.env.PRIVATE_KEY)).address;
     var history = getCron(db)
     const web3 = new Web3(process.env.WEB3_PROVIDER_URL)
     const privateKey = process.env.PRIVATE_KEY
@@ -40,8 +40,8 @@ const queue = new PQueue({intervalCap: 25, interval: 1000,carryoverConcurrencyCo
         console.log(history.last_timestamp)
         console.log(history.last_block)
         // hardcode values for tests
-    //history.last_timestamp = 1671166007
-    //history.last_block = 8143190
+    //history.last_timestamp = 1671604752
+    //history.last_block = 8173468
     const timestampNew = currentTime
     const timestampLastUpdated = history.last_timestamp
     const reports = {};
@@ -78,7 +78,8 @@ const queue = new PQueue({intervalCap: 25, interval: 1000,carryoverConcurrencyCo
             const message = (data.finalRuling === 2)? 'broke the rules' : 'did not break the rules'
             //console.log(data.finalRuling)
             try{
-                bot.sendMessage(settings.channelID, `The [dispute](${disputeURL}) over *${data.moderationInfo.UserHistory.user.username}*'s [message](${msgLink}) ([backup](${data.moderationInfo.messageBackup})) resolved. *${data.moderationInfo.UserHistory.user.username}* ${message}`, settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'});
+                queue.add(async () => {try{await bot.sendMessage(settings.channelID, `The [dispute](${disputeURL}) over *${data.moderationInfo.UserHistory.user.username}*'s [message](${msgLink}) ([backup](${data.moderationInfo.messageBackup})) resolved. *${data.moderationInfo.UserHistory.user.username}* ${message}`, settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
+                //bot.sendMessage(process.env.JUSTICE_LEAGUE, `The [dispute](${disputeURL}) over *${data.moderationInfo.UserHistory.user.username}*'s [message](${msgLink}) ([backup](${data.moderationInfo.messageBackup})) resolved. *${data.moderationInfo.UserHistory.user.username}* ${message}`, {parse_mode: 'Markdown'});
                 handleTelegramUpdate(db, bot,settings, data.moderationInfo,timestampNew, data.finalRuling === 2, true, true);
             } catch(e){
                 console.log(e)
@@ -96,8 +97,10 @@ const queue = new PQueue({intervalCap: 25, interval: 1000,carryoverConcurrencyCo
         const disputeURL = `https://resolve.kleros.io/cases/${BigNumber.from(data.id).toNumber()}`;
         // settings[1] language
         try{
-            //TODO
-            bot.sendMessage(settings.channelID, `The dispute over the [question](${realityURL}) about *${data.moderationInfo.UserHistory.user.username}*'s conduct due to the [message](${msgLink}) ([backup](${data.moderationInfo.msgBackup})) has concluded it's current round. *${data.moderationInfo.UserHistory.user.username}*'s conduct ${data.currentRuling == 2? 'broke the rules': 'did not break the rules'} If you think the decision is incorrect, you can request an [appeal](${disputeURL})`, settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown',disable_web_page_preview: true}: {parse_mode: 'Markdown',disable_web_page_preview: true});
+            queue.add(async () => {try{await bot.sendMessage(settings.channelID, `The dispute over the [question](${realityURL}) about *${data.moderationInfo.UserHistory.user.username}*'s conduct due to the [message](${msgLink}) ([backup](${data.moderationInfo.msgBackup})) has concluded it's current round. *${data.moderationInfo.UserHistory.user.username}*'s conduct ${data.currentRuling == 2? 'broke the rules': 'did not break the rules'}. If you think the decision is incorrect, you can request an [appeal](${disputeURL})`, settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown',disable_web_page_preview: true}: {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
+            queue.add(async () => {try{await bot.sendMessage(process.env.JUSTICE_LEAGUE, `The dispute over the [question](${realityURL}) about *${data.moderationInfo.UserHistory.user.username}*'s conduct due to the [message](${msgLink}) ([backup](${data.moderationInfo.msgBackup})) has concluded it's current round. *${data.moderationInfo.UserHistory.user.username}*'s conduct ${data.currentRuling == 2? 'broke the rules': 'did not break the rules'}. If you think the decision is incorrect, you can request an [appeal](${disputeURL})`, {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
+            if(settings.federation_id)
+                queue.add(async () => {try{await bot.sendMessage(getFederationChannel(db, 'telegram',settings.federation_id), `The dispute over the [question](${realityURL}) about *${data.moderationInfo.UserHistory.user.username}*'s conduct due to the [message](${msgLink}) ([backup](${data.moderationInfo.msgBackup})) has concluded it's current round. *${data.moderationInfo.UserHistory.user.username}*'s conduct ${data.currentRuling == 2? 'broke the rules': 'did not break the rules'}. If you think the decision is incorrect, you can request an [appeal](${disputeURL})`, {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
         } catch(e){
             console.log(e)
         }
@@ -109,7 +112,10 @@ const queue = new PQueue({intervalCap: 25, interval: 1000,carryoverConcurrencyCo
         const realityURL = `https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${data.moderationInfo.id}`;
         const disputeURL = `https://resolve.kleros.io/cases/${BigNumber.from(data.id).toNumber()}`;
         try{
-            bot.sendMessage(settings.channelID, `Arbitration is requested for the [question](${realityURL}) about *${data.moderationInfo.UserHistory.user.username}*'s conduct due to the [message](${data.moderationInfo.message}) ([backup](${data.moderationInfo.messageBackup})). Consequences of the report are lifted for the duration of the [dispute](${disputeURL}) (on Gnosis Chain).`, settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown',disable_web_page_preview: true}: {parse_mode: 'Markdown',disable_web_page_preview: true});
+            queue.add(async () => {try{await bot.sendMessage(settings.channelID, `Arbitration is requested for the [question](${realityURL}) about *${data.moderationInfo.UserHistory.user.username}*'s conduct due to the [message](${data.moderationInfo.message}) ([backup](${data.moderationInfo.messageBackup})). Consequences of the report are lifted for the duration of the [dispute](${disputeURL}) (on Gnosis Chain).`, settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown',disable_web_page_preview: true}: {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
+            queue.add(async () => {try{await bot.sendMessage(process.env.JUSTICE_LEAGUE, `Arbitration is requested for the [question](${realityURL}) about *${data.moderationInfo.UserHistory.user.username}*'s conduct due to the [message](${data.moderationInfo.message}) ([backup](${data.moderationInfo.messageBackup})). Consequences of the report are lifted for the duration of the [dispute](${disputeURL}) (on Gnosis Chain).`, {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
+            if(settings.federation_id)
+                queue.add(async () => {try{await bot.sendMessage(getFederationChannel(db, 'telegram',settings.federation_id), `Arbitration is requested for the [question](${realityURL}) about *${data.moderationInfo.UserHistory.user.username}*'s conduct due to the [message](${data.moderationInfo.message}) ([backup](${data.moderationInfo.messageBackup})). Consequences of the report are lifted for the duration of the [dispute](${disputeURL}) (on Gnosis Chain).`, {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}}); 
             handleTelegramUpdate(db, bot,settings, data.moderationInfo,timestampNew, false, false, true);
         } catch (e){
             console.log(e)
@@ -118,9 +124,15 @@ const queue = new PQueue({intervalCap: 25, interval: 1000,carryoverConcurrencyCo
 
     for (const data of moderationActions.disputesAppealFunded) {
         const settings = validate(data.moderationInfo.UserHistory.group.groupID);
+        const msgLink = data.moderationInfo.message;
+        const realityURL = `https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${data.moderationInfo.id}`;
+        const disputeURL = `https://resolve.kleros.io/cases/${BigNumber.from(data.id).toNumber()}`;
         // settings[1] language
         try{
-            bot.sendMessage(settings.channelID, "An appeal has been funded",settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'});
+            queue.add(async () => {try{await bot.sendMessage(settings.channelID, `An appeal has been funded in the dispute over the [question](${realityURL}) about *${data.moderationInfo.UserHistory.user.username}*'s conduct due to the [message](${msgLink}) ([backup](${data.moderationInfo.msgBackup})). Juror's voted in the previous round that *${data.moderationInfo.UserHistory.user.username}*'s conduct ${data.currentRuling == 2? 'broke the rules': 'did not break the rules'}. The contribution funded ${data.RulingFunded == data.currentRuling ? 'the previous round winning option': 'a different option that the previous round'}. If you think the funded option is incorrect, you can win some of their deposit by funding the correct side of the [appeal](${disputeURL})`, settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown',disable_web_page_preview: true}: {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
+            queue.add(async () => {try{await bot.sendMessage(process.env.JUSTICE_LEAGUE, `An appeal has been funded in the dispute over the [question](${realityURL}) about *${data.moderationInfo.UserHistory.user.username}*'s conduct due to the [message](${msgLink}) ([backup](${data.moderationInfo.msgBackup})). Juror's voted in the previous round that *${data.moderationInfo.UserHistory.user.username}*'s conduct ${data.currentRuling == 2? 'broke the rules': 'did not break the rules'}. The contribution funded ${data.RulingFunded == data.currentRuling ? 'the previous round winning option': 'a different option that the previous round'}. If you think the funded option is incorrect, you can win some of their deposit by funding the correct side of the [appeal](${disputeURL})`, {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
+            if(settings.federation_id)
+                queue.add(async () => {try{await bot.sendMessage(getFederationChannel(db, 'telegram',settings.federation_id), `An appeal has been funded in the dispute over the [question](${realityURL}) about *${data.moderationInfo.UserHistory.user.username}*'s conduct due to the [message](${msgLink}) ([backup](${data.moderationInfo.msgBackup})). Juror's voted in the previous round that *${data.moderationInfo.UserHistory.user.username}*'s conduct ${data.currentRuling == 2? 'broke the rules': 'did not break the rules'}. The contribution funded ${data.RulingFunded == data.currentRuling ? 'the previous round winning option': 'a different option that the previous round'}. If you think the funded option is incorrect, you can win some of their deposit by funding the correct side of the [appeal](${disputeURL})`, {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
         } catch(e){
             console.log(e)
         }
@@ -144,7 +156,8 @@ const queue = new PQueue({intervalCap: 25, interval: 1000,carryoverConcurrencyCo
             //bot.sendMessage(settings[0], `The reality question ${data.id} is finalized with ${data.currentAnswer}`);
             const realityURL = `https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${data.moderationInfo.id}`;
 
-            bot.sendMessage(settings.channelID, `The [report](${realityURL}) is finalized.`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'});
+            //bot.sendMessage(settings.channelID, `The [report](${realityURL}) is finalized.`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'});
+            //bot.sendMessage(process.env.JUSTICE_LEAGUE,  `The [report](${realityURL}) is finalized.`, {parse_mode: 'Markdown'});
             // finalize
             handleTelegramUpdate(db, bot, settings, data.moderationInfo, timestampNew, data.currentAnswer === "0x0000000000000000000000000000000000000000000000000000000000000001", true, false);
         } catch(e){
@@ -163,7 +176,11 @@ const queue = new PQueue({intervalCap: 25, interval: 1000,carryoverConcurrencyCo
             //console.log(data)
             //console.log(data.moderationInfo.UserHistory)
             //console.log('answered')
-            bot.sendMessage(settings.channelID, `The question\n\n"Did *${data.moderationInfo.UserHistory.user.username}*'s conduct due to this [message](${data.moderationInfo.message}) ([backup](${data.moderationInfo.messageBackup})) violate the [rules](${data.moderationInfo.rules})?\"\n\nis answered with *${answer}*.\n\nDo you think this answer is true? If not, you can [correct](${realityURL}) the answer.`, settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown',disable_web_page_preview: true}: {parse_mode: 'Markdown',disable_web_page_preview: true});
+            
+            queue.add(async () => {try{await bot.sendMessage(settings.channelID, `The question\n\n"Did *${data.moderationInfo.UserHistory.user.username}*'s conduct due to this [message](${data.moderationInfo.message}) ([backup](${data.moderationInfo.messageBackup})) violate the [rules](${data.moderationInfo.rules})?\"\n\nis answered with *${answer}*.\n\nDo you think this answer is true? If not, you can [correct](${realityURL}) the answer.`, settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown',disable_web_page_preview: true}: {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
+            queue.add(async () => {try{await bot.sendMessage(process.env.JUSTICE_LEAGUE, `The question\n\n"Did *${data.moderationInfo.UserHistory.user.username}*'s conduct due to this [message](${data.moderationInfo.message}) ([backup](${data.moderationInfo.messageBackup})) violate the [rules](${data.moderationInfo.rules})?\"\n\nis answered with *${answer}*.\n\nDo you think this answer is true? If not, you can [correct](${realityURL}) the answer.`, settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown',disable_web_page_preview: true}: {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
+            if(settings.federation_id)
+                queue.add(async () => {try{await bot.sendMessage(getFederationChannel(db, 'telegram',settings.federation_id), `The question\n\n"Did *${data.moderationInfo.UserHistory.user.username}*'s conduct due to this [message](${data.moderationInfo.message}) ([backup](${data.moderationInfo.messageBackup})) violate the [rules](${data.moderationInfo.rules})?\"\n\nis answered with *${answer}*.\n\nDo you think this answer is true? If not, you can [correct](${realityURL}) the answer.`, settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown',disable_web_page_preview: true}: {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
             handleTelegramUpdate(db, bot,settings, data.moderationInfo,timestampNew, data.currentAnswer === "0x0000000000000000000000000000000000000000000000000000000000000001", false, false);
         } catch(e){
             console.log(e)
@@ -176,9 +193,10 @@ const queue = new PQueue({intervalCap: 25, interval: 1000,carryoverConcurrencyCo
         const settings = validate(data.group.groupID);
         // settings[1] language
         try{
-            const sherrif = await bot.getChatMember(data.group.groupID, data.sheriff.user.userID)
+            const sherrif = await queue.add(async () => {try{const val = await bot.getChatMember(data.group.groupID, data.sheriff.user.userID)
+                return val}catch{}});
             //console.log(sherrif)
-            queue.add(() => bot.sendMessage(settings.channelID, `There's a new sheriff in town 👑🥇🤠[${sherrif.user.username}](tg://user?id=${sherrif.user.id})🤠🥇👑`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'}));
+            queue.add(async () => {try{await bot.sendMessage(settings.channelID, `There's a new sheriff in town 👑🥇🤠[${sherrif.user.username}](tg://user?id=${sherrif.user.id})🤠🥇👑`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
         } catch(e){
             console.log(e)
         }
@@ -188,8 +206,9 @@ const queue = new PQueue({intervalCap: 25, interval: 1000,carryoverConcurrencyCo
         const settings = validate(data.group.groupID);
         // settings[1] language
         try{
-            const deputysherrif = await bot.getChatMember(data.group.groupID, data.deputySheriff.user.userID)
-            bot.sendMessage(settings.channelID, `There's a new deputy sheriff in town 🥈[${deputysherrif.user.username}](tg://user?id=${deputysherrif.user.id})🥈`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'});
+            const deputysherrif = await queue.add(async () => {try{const val = await bot.getChatMember(data.group.groupID, data.deputySheriff.user.userID)
+                return val}catch{}})
+            queue.add(async () => {try{await bot.sendMessage(settings.channelID, `There's a new deputy sheriff in town 🥈[${deputysherrif.user.username}](tg://user?id=${deputysherrif.user.id})🥈`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
         } catch(e){
             console.log(e)
         }
@@ -199,7 +218,8 @@ const queue = new PQueue({intervalCap: 25, interval: 1000,carryoverConcurrencyCo
         const settings = validate(data.group.groupID);
         // settings[1] language
         try{
-            const userUpdate = await bot.getChatMember(data.group.groupID, data.user.userID)
+            const userUpdate = await queue.add(async () => {try{const val = await bot.getChatMember(data.group.groupID, data.user.userID)
+                return val}catch{}})
             let message = ""
             if (data.status === "GoodSamaritan"){
                 message = "🎖 ***Good Samaritan Award***🎖\n\nThe Good Samaritan award is this group's highest honor, given to members who performed exemplary deeds of service for their group or their fellow members. Thank you for your service 🙏"
@@ -209,7 +229,7 @@ const queue = new PQueue({intervalCap: 25, interval: 1000,carryoverConcurrencyCo
                 "Have you ever heard of the fable of 💩 the boy who cried wolf 💩?\n\nBe careful, too many unanswered reports could hurt your reputation, "
             }
             if(data.status !== "CommunityMember")
-                bot.sendMessage(settings.channelID, `${message} [${userUpdate.user.username}](tg://user?id=${userUpdate.user.id})`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'});
+                queue.add(async () => {try{await bot.sendMessage(settings.channelID, `${message} [${userUpdate.user.username}](tg://user?id=${userUpdate.user.id})`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
         } catch(e){
             console.log(e)
         }
@@ -261,11 +281,11 @@ const validate = (chatId: string): groupSettings=> {
 
 const calcPenalty = (ban_level: number, timestamp_finalized: number): number => {
     if(ban_level == 1)
-        return  timestamp_finalized + 86400
+        return  timestamp_finalized + 120
     else if (ban_level == 2)
         return  timestamp_finalized + 604800
     else
-        return  timestamp_finalized + 220147200
+        return  timestamp_finalized + 31536000
 }
 
 const calcPenaltyPhrase = (ban_level: number): string => {
@@ -282,22 +302,19 @@ const handleTelegramUpdate = async (db: any, bot: any, settings: groupSettings, 
         const reportInfo = getReportMessageTimestampAndActive(db, moderationInfo.id)
         if (!reportInfo) return;
         let calculateHistory = []
-
-        if (settings.federation_id)
-            calculateHistory = getFederatedBanHistory(db, 'telegram', moderationInfo.UserHistory.user.userID,moderationInfo.UserHistory.group.groupID,finalize)
-         else {
-            if (settings.federation_id_following)
-                calculateHistory = getFederatedFollowingBanHistory(db, 'telegram', moderationInfo.UserHistory.user.userID,moderationInfo.UserHistory.group.groupID,settings.federation_id_following,finalize)
-             else 
-                calculateHistory = getLocalBanHistory(db, 'telegram', moderationInfo.UserHistory.user.userID,moderationInfo.UserHistory.group.groupID,finalize)
+        if (settings.federation_id){
+            calculateHistory = getFederatedBanHistory(db, 'telegram', moderationInfo.UserHistory.user.userID,settings.federation_id,finalize)
         }
+        else if (settings.federation_id_following){
+            calculateHistory = getFederatedFollowingBanHistory(db, 'telegram', moderationInfo.UserHistory.user.userID,moderationInfo.UserHistory.group.groupID,settings.federation_id_following,finalize)
+        } else 
+            calculateHistory = getLocalBanHistory(db, 'telegram', moderationInfo.UserHistory.user.userID,moderationInfo.UserHistory.group.groupID,finalize)
 
         const ban_level_history = calculateHistory.length
-
         setReport(db, moderationInfo.id,restrict,true,finalize,disputed, finalize? 0 : (restrict? timestampNew: 0), finalize? timestampNew: 0)
 
         if (settings.federation_id){
-            calculateHistory = getFederatedBanHistory(db, 'telegram', moderationInfo.UserHistory.user.userID,moderationInfo.UserHistory.group.groupID,finalize)
+            calculateHistory = getFederatedBanHistory(db, 'telegram', moderationInfo.UserHistory.user.userID,settings.federation_id,finalize)
         } else {
             if (settings.federation_id_following){
                 calculateHistory = getFederatedFollowingBanHistory(db, 'telegram', moderationInfo.UserHistory.user.userID,moderationInfo.UserHistory.group.groupID,settings.federation_id_following,finalize)
@@ -311,7 +328,7 @@ const handleTelegramUpdate = async (db: any, bot: any, settings: groupSettings, 
             // TODO federation subscriptions
             const groups = settings.federation_id? getGroupsInAndFollowingFederation(db,'telegram',settings.federation_id) : [moderationInfo.UserHistory.group.groupID]
 
-            if (ban_level_current >= ban_level_history){
+            if (ban_level_current > ban_level_history){
                 const parole = calcPenalty(ban_level_current,timestampNew)
                 if(finalize){
                     // if message reported timestamp is before the most recent finalized ban / penality, users deserve a second chance, no action taken
@@ -319,20 +336,17 @@ const handleTelegramUpdate = async (db: any, bot: any, settings: groupSettings, 
                     // this report changed penalties, recalculate all
                     //console.log(moderationInfo.UserHistory.group.groupID)
                     for (const group of groups){
-                        //console.log(group)
-                        bot.banChatMember(group, moderationInfo.UserHistory.user.userID, {until_date: parole});
+                        queue.add(async () => {try{await bot.banChatMember(group.group_id, moderationInfo.UserHistory.user.userID, {until_date: parole})}catch{}});
                     }
                 } else if(!finalize){
                     const options = {can_send_messages: false, can_send_media_messages: false, can_send_polls: false, can_send_other_messages: false, can_add_web_page_previews: false, can_change_info: false, can_pin_messages: false, until_date: parole};
                     for (const group of groups){
-                        console.log(group)
-                        bot.restrictChatMember(group, moderationInfo.UserHistory.user.userID, options);
+                        queue.add(async () => {try{await bot.restrictChatMember(group.group_id, moderationInfo.UserHistory.user.userID, options)}catch{}});
                     }
                 }
-                // TODO notify federation
-                bot.sendMessage(settings.channelID, `*${moderationInfo.UserHistory.user.username}*'s conduct due to this [message](${moderationInfo.message}) ([backup](${moderationInfo.messageBackup})) violated the [rules](${moderationInfo.rulesUrl}) for the ${calcPenaltyPhrase(ban_level_current)} ban.`, settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown',disable_web_page_preview: true}: {parse_mode: 'Markdown',disable_web_page_preview: true});
+                queue.add(async () => {try{await bot.sendMessage(settings.channelID, `*${moderationInfo.UserHistory.user.username}*'s conduct due to this [message](${moderationInfo.message}) ([backup](${moderationInfo.messageBackup})) violated the [rules](${moderationInfo.rulesUrl}) for the ${calcPenaltyPhrase(ban_level_current)} ban.`, settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown',disable_web_page_preview: true}: {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
             } else{
-                bot.sendMessage(settings.channelID, `*${moderationInfo.UserHistory.user.username}*'s conduct due to this [message](${moderationInfo.message}) ([backup](${moderationInfo.messsageBackup})) violated the [rules](${moderationInfo.rulesUrl}). The conduct occured before *${moderationInfo.UserHistory.user.username}*'s latest effective ban. The next time ${moderationInfo.UserHistory.user.username} breaks the rules, the consequences are more severe.`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown', disable_web_page_preview: true}: {parse_mode: 'Markdown', disable_web_page_preview: true});
+                queue.add(async () => {try{await bot.sendMessage(settings.channelID, `*${moderationInfo.UserHistory.user.username}*'s conduct due to this [message](${moderationInfo.message}) ([backup](${moderationInfo.messsageBackup})) violated the [rules](${moderationInfo.rulesUrl}). The conduct occured before *${moderationInfo.UserHistory.user.username}*'s latest effective ban. The next time ${moderationInfo.UserHistory.user.username} breaks the rules, the consequences are more severe.`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown', disable_web_page_preview: true}: {parse_mode: 'Markdown', disable_web_page_preview: true})}catch{}});
             }
         } else if (ban_level_current < ban_level_history){
                 let liftbans = true;
@@ -340,11 +354,12 @@ const handleTelegramUpdate = async (db: any, bot: any, settings: groupSettings, 
                     if (ban_level.timestamp_active > 0)
                         liftbans = false
                 if(liftbans){
-                    const options = {can_send_messages: true, can_send_media_messages: true, can_send_polls: true, can_send_other_messages: true, can_add_web_page_previews: false, can_change_info: false, can_pin_messages: false};
-                    bot.restrictChatMember(moderationInfo.UserHistory.group.groupID, moderationInfo.UserHistory.user.userID, options);
-                    bot.sendMessage(settings.channelID, `*${moderationInfo.UserHistory.user.username}* has no other active reports. All bans are lifted.`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'});
+                    const permissions = await queue.add(async () => {try{const val = await bot.getChat(moderationInfo.UserHistory.group.groupID).permissions
+                        return val}catch{}})
+                    queue.add(async () => {try{await bot.restrictChatMember(moderationInfo.UserHistory.group.groupID, moderationInfo.UserHistory.user.userID, permissions)}catch{}});
+                    queue.add(async () => {try{await bot.sendMessage(settings.channelID, `*${moderationInfo.UserHistory.user.username}* has no other active reports. All bans are lifted.`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
                 } else
-                    bot.sendMessage(settings.channelID, `*${moderationInfo.UserHistory.user.username}* has other active reports, and is still restricted.`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'});
+                    queue.add(async () => {try{await bot.sendMessage(settings.channelID, `*${moderationInfo.UserHistory.user.username}* has other active reports, and is still restricted.`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
             }
     } catch(e){
         console.log(e)
@@ -445,3 +460,4 @@ return `{
             }
     }`;
 }
+export {calcPenalty}

@@ -8,10 +8,10 @@ import {groupSettings} from "../../../types";
  */
 const regexp = /\/adminreportable/
 
-const callback = async (db: any, settings: groupSettings, bot: any, botId: number, msg: any) => {
+const callback = async (queue, db: any, settings: groupSettings, bot: any, botId: number, msg: any) => {
     try{
         setAdminReportableMode(db, 'telegram', String(msg.chat.id),settings.admin_reportable? 0: 1)
-        bot.sendMessage(msg.chat.id, settings.admin_reportable? "Admins are immune from reports." : "Admins are now held accountable like regular users.", msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {});
+        queue.add(async () => {try{await bot.sendMessage(msg.chat.id, settings.admin_reportable? "Admins are immune from reports." : "Admins are now held accountable like regular users.", msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})}catch{}});
     } catch(e){
         console.log(e)
     }

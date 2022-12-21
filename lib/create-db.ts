@@ -15,6 +15,7 @@ const Database = require('better-sqlite3');
     `CREATE TABLE groups (
         platform TEXT, 
         group_id TEXT, 
+        title TEXT,
         channel_id TEXT,
         thread_id_rules TEXT,
         thread_id_notifications TEXT,
@@ -48,6 +49,7 @@ const Database = require('better-sqlite3');
         report_allowance INTEGER, 
         evidence_allowance INTEGER, 
         timestamp_refresh INTEGER,
+        limit_level INTEGER,
         PRIMARY KEY (platform, group_id, user_id))`
     );
 

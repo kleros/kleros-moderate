@@ -1,67 +1,38 @@
 import * as TelegramBot from "node-telegram-bot-api";
 import { groupSettings } from "../../../types";
-import {setFederation,getFederationName} from "../../db";
+import {getFederationName,getGroupFederation,getGroupFederationFollowing} from "../../db";
 import langJson from "../assets/lang.json";
+const NodeCache = require( "node-cache" );
+const myCache = new NodeCache( { stdTTL: 90, checkperiod: 120 } );
+var myBot;
+var myQueue;
+myCache.on("expired",function(key,value){
+    myQueue.add(async () => {try{await myBot.deleteMessage(value, key)}catch{}});
+    });
 
 /*
  * /joinfed
  */
 const regexp = /\/fedinfo\s?(.+)?/
 
-const callback = async (db: any, settings: groupSettings, bot: any, botId: string, msg: any, match: string[]) => {
+const callback = async (queue: any, db: any, settings: groupSettings, bot: any, botId: string, msg: any, match: string[]) => {
     try{
-        if (msg.chat.type !== "private"){
-            const opts = msg.chat.is_forum? {
-                message_thread_id: msg.message_thread_id,
-                parse_mode: 'Markdown',
-                reply_markup: {
-                    inline_keyboard: [
-                    [
-                        {
-                            text: 'Get Help (DM)',
-                            url: `https://t.me/${process.env.BOT_USERNAME}?start=newfed`
-                        }
-                    ]
-                    ]
-                }
-            }: {
-                parse_mode: 'Markdown',
-                reply_markup: {
-                    inline_keyboard: [
-                    [
-                        {
-                            text: 'Get Help (DM)',
-                            url: `https://t.me/${process.env.BOT_USERNAME}?start=newfed`
-                        }
-                    ]
-                    ]
-                }
-            }
-            bot.sendMessage(msg.chat.id, `DM me for help with your federation : )`, opts);        
-            return;
-        }
-        const name = getFederationName(db, 'telegram',msg.from.id);
-        console.log(name)
-        if (name){
-            bot.sendMessage(settings.channelID, `Your federation *${name}* with id \`${msg.from.id}\` already exists.`,msg.chat.is_forum? {
-                message_thread_id: msg.message_thread_id,
-                parse_mode: 'Markdown'}:{parse_mode: 'Markdown'});
-            return
-        }
-        if (!match[1]){
-            bot.sendMessage(settings.channelID, `Please name your federation eg: \`/newfed My New Federation\``,msg.chat.is_forum? {
-                message_thread_id: msg.message_thread_id,
-                parse_mode: 'Markdown'}:{parse_mode: 'Markdown'});
-            return
-        } else{
-            const name = match[1].substring(0,65)
-            setFederation(db, 'telegram',name, msg.from.id)
-            bot.sendMessage(settings.channelID, `Your new federation is called *${match[1].substring(0,65)}* with id ${msg.from.id}. You can add groups to your federation by sending \`/joinfed ${msg.from.id}\` in each group.`,msg.chat.is_forum? {
-                message_thread_id: msg.message_thread_id,
-                parse_mode: 'Markdown'}:{parse_mode: 'Markdown'});
-        }
-        //joinFederation(db, 'telegram', String(msg.chat.id), String(msg.from.id))
-        //bot.sendMessage(msg.chat.id, 'Your group has joined the federation.', msg.chat.is_forum? {message_thread_id: msg.message_thread_id}:{})
+        if (!myBot)
+            myBot = bot
+        if (!myQueue)
+            myQueue = queue
+        // TODO private fed info
+        const fed_id = getGroupFederation(db, 'telegram',String(msg.chat.id));
+        const fed_id_following = getGroupFederationFollowing(db, 'telegram',String(msg.chat.id));
+        let resp;
+        if (fed_id || fed_id_following){
+            const name = getFederationName(db, 'telegram', fed_id ?? fed_id_following);
+            resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `This group is ${fed_id? 'in': 'following'} the *${name}* federation with id \`${fed_id ?? fed_id_following}\``,  msg.chat.is_forum? {message_thread_id: msg.message_thread_id, parse_mode: 'Markdown'} : {parse_mode: 'Markdown'})
+            return val}catch{}})
+        } else
+            resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `No federation set.`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id, parse_mode: 'Markdown'} : {parse_mode: 'Markdown'})
+            return val}catch{}});
+        myCache.set(resp.message_id,msg.chat.id)
     } catch(e){
         console.log(e)
     }

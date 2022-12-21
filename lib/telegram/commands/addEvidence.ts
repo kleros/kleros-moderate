@@ -18,17 +18,20 @@ var botAddress: string;
 const NodeCache = require( "node-cache" );
 const myCache = new NodeCache( { stdTTL: 90, checkperiod: 120 } );
 var myBot;
-
+var myQueue
 myCache.on("expired",function(key,value){
-    myBot.deleteMessage(value, key);
+    myQueue.add(async () => {try{await myBot.deleteMessage(value, key)}catch{}});
     });
 
-const processCommand = async (bot: any, settings: groupSettings, msg: any, questionId: number|string, batchedSend: any ): Promise<string> => {
-    myBot = bot
-    const evidencePath = await upload(bot, settings.lang, msg);
+const processCommand = async (queue: any, bot: any, settings: groupSettings, msg: any, questionId: number|string, batchedSend: any ): Promise<string> => {
+    if (!myBot)
+        myBot = bot
+    if (!myQueue)
+        myQueue = queue
+    const evidencePath = await upload(queue, bot, settings.lang, msg);
     const evidenceJsonPath = await uploadEvidenceJson(settings.lang, msg, evidencePath);
     try{
-        bot.sendMessage(msg.chat.id, `${langJson[settings.lang].addevidence.submitted}(https://ipfs.kleros.io${evidencePath}).`, msg.chat.is_forum? {parse_mode: "Markdown", message_thread_id: msg.message_thread_id}:{parse_mode: "Markdown"});
+        queue.add(async () => {try{await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].addevidence.submitted}(https://ipfs.kleros.io${evidencePath}).`, msg.chat.is_forum? {parse_mode: "Markdown", message_thread_id: msg.message_thread_id}:{parse_mode: "Markdown"})}catch{}});
     } catch(e){
         console.log(e)
     }
@@ -37,7 +40,7 @@ const processCommand = async (bot: any, settings: groupSettings, msg: any, quest
     return evidenceJsonPath;
 }
 
-const upload = async (bot: TelegramBot, lang: string, msg: TelegramBot.Message): Promise<string> => {
+const upload = async (queue:any, bot: TelegramBot, lang: string, msg: TelegramBot.Message): Promise<string> => {
     if (msg.reply_to_message.text){
         return await uploadTextEvidence(lang, msg);
     } else if (msg.reply_to_message.location){
@@ -47,19 +50,28 @@ const upload = async (bot: TelegramBot, lang: string, msg: TelegramBot.Message):
     } else {
         var file: TelegramBot.File;
         if (msg.reply_to_message.sticker){
-            file = await bot.getFile(msg.reply_to_message.sticker.file_id);
+            file = await queue.add(async () => {try{
+                const val = await bot.getFile(msg.reply_to_message.sticker.file_id);
+                return val
+            }catch{}});
         } else if (msg.reply_to_message.photo){
-            file = await bot.getFile(msg.reply_to_message.photo[msg.reply_to_message.photo.length-1].file_id);   
+            file = await queue.add(async () => {try{const val = await bot.getFile(msg.reply_to_message.photo[msg.reply_to_message.photo.length-1].file_id)
+            return val}catch{}});   
         } else if (msg.reply_to_message.audio){
-            file = await bot.getFile(msg.reply_to_message.audio.file_id);   
+            file = await queue.add(async () => {try{const val = await bot.getFile(msg.reply_to_message.audio.file_id)
+                return val}catch{}});   
         } else if (msg.reply_to_message.voice){
-            file = await bot.getFile(msg.reply_to_message.voice.file_id);   
+            file = await queue.add(async () => {try{const val = await bot.getFile(msg.reply_to_message.voice.file_id)
+                return val}catch{}});   
         } else if (msg.reply_to_message.video){
-            file = await bot.getFile(msg.reply_to_message.video.file_id);   
+            file = await queue.add(async () => {try{const val = await bot.getFile(msg.reply_to_message.video.file_id)
+                return val}catch{}});   
         } else if (msg.reply_to_message.video_note){
-            file = await bot.getFile(msg.reply_to_message.video_note.file_id);   
+            file = await queue.add(async () => {try{const val = await bot.getFile(msg.reply_to_message.video_note.file_id)
+                return val}catch{}});   
         } else if (msg.reply_to_message.document){
-            file = await bot.getFile(msg.reply_to_message.document.file_id);   
+            file = await queue.add(async () => {try{const val = await bot.getFile(msg.reply_to_message.document.file_id)
+                return val}catch{}});   
         }
         const filePath = `https://api.telegram.org/file/bot${process.env.BOT_TOKEN}/`+file.file_path;
         const fileIPFS = await uploadFileEvidence(filePath, file.file_path.replace('/','_'));
@@ -118,7 +130,6 @@ const uploadTextEvidence = async (lang: string, msg: TelegramBot.Message): Promi
         var remainderMatch = match[1].split(' ')
         remainderMatch.shift();
         const reason = remainderMatch.join(' ')
-        console.log(reason)
         textReason = reason.length > 0? `Evidence Submitted with explanation: ${reason}` : ''
     }
     const author = (msg.reply_to_message.from.username || msg.reply_to_message.from.first_name) + ' ID:'+msg.reply_to_message.from.id ;
@@ -177,16 +188,17 @@ const submitEvidence = async (batchedSend: any, evidencePath: string, questionId
 }
 
 /*
- * /addevidence [questionId]
+ * /evidence [questionId]
  */
-const regexp = /\/addevidence/
-const regexpFull = /\/addevidence (.+)/
-const regexpFullReason = /\/addevidence (.+) (.+)/
+const regexp = /\/evidence/
+const regexpFull = /\/evidence (.+)/
+const regexpFullReason = /\/evidence (.+) (.+)/
 
-const callback = async (db: any, settings: groupSettings, bot: any, botID: number, msg: any, matchh: string[], batchedSend: any) => {
+const callback = async (queue: any, db: any, settings: groupSettings, bot: any, botID: number, msg: any, matchh: string[], batchedSend: any) => {
     if (!msg.reply_to_message) {
         try{
-            const resp = bot.sendMessage(msg.chat.id, `/addevidence ${langJson[settings.lang].errorReply}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}:{})
+            const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `/evidence ${langJson[settings.lang].errorReply}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}:{})
+            return val}catch{}})
             myCache.set(resp.message_id, msg.chat.id)
         } catch (e){
             console.log(e)
@@ -224,7 +236,8 @@ const callback = async (db: any, settings: groupSettings, bot: any, botID: numbe
     //TODO Evidence IDs and button callback UX
     if (!match || match.length < 2){
         try{
-            const msgresponse = await bot.sendMessage(msg.chat.id, `You did not specify an evidence group.`, opts)            
+            const msgresponse = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `You did not specify an evidence group.`, opts)
+            return val}catch{}})            
             myCache.set(msgresponse.message_id, msg.chat.id)
         } catch(e){
             console.log(e)
@@ -240,7 +253,8 @@ const callback = async (db: any, settings: groupSettings, bot: any, botID: numbe
     const evidenceID = getActiveEvidenceGroupId(db, 'telegram', String(msg.chat.id), Number(remainderMatch[0]));
     if (!evidenceID){
         try{
-            const resp = await bot.sendMessage(msg.chat.id, langJson[settings.lang].addevidence.errorId, opts)
+            const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, langJson[settings.lang].addevidence.errorId, opts)
+                return val}catch{}})
             myCache.set(resp.message_id, msg.chat.id)
         } catch(e){
             console.log(e)
@@ -254,7 +268,8 @@ const callback = async (db: any, settings: groupSettings, bot: any, botID: numbe
         setAllowance(db, 'telegram', String(msg.chat.id), String(msg.from.id), 3, 14, Math.ceil( new Date().getTime() / 1000));
     } else if ((Math.ceil( new Date().getTime() / 1000) < reportAllowance.timestamp_refresh + 5760) && reportAllowance.evidence_allowance == 0 ){
         try{
-            const resp = await bot.sendMessage(msg.chat.id, langJson[settings.lang].errorAllowance);
+            const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, langJson[settings.lang].errorAllowance)
+                return val}catch{}});
             myCache.set(resp.message_id, msg.chat.id)
         } catch (e){
             console.log(e)
@@ -267,7 +282,7 @@ const callback = async (db: any, settings: groupSettings, bot: any, botID: numbe
     }
 
     try {
-        const evidencePath = await processCommand(bot, settings, msg, evidenceID,batchedSend);
+        const evidencePath = await processCommand(queue, bot, settings, msg, evidenceID,batchedSend);
     } catch (e) {
         console.log(e);
     }
