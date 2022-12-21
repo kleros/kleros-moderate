@@ -8,10 +8,8 @@ import {Wallet} from "@ethersproject/wallet";
 const {default: PQueue} = require('p-queue');
 import {groupSettings, groupSettingsUnderspecified} from "../types";
 const ModeratorBot = require('node-telegram-bot-api');
-const NodeCache = require( "node-cache" );
 const Web3 = require('web3')
 const realitio_bot = require('./realitioReporting')
-const myCache = new NodeCache( { stdTTL: 900, checkperiod: 1200 } );
 const db = openDb();
 const bot: any = new ModeratorBot(process.env.BOT_TOKEN, {polling: false, testEnvironment: true});  
 const queue = new PQueue({intervalCap: 10, interval: 1000,carryoverConcurrencyCount: true});
@@ -270,13 +268,9 @@ const validate = (chatId: string): groupSettings=> {
         federation_id: '',
         federation_id_following: ''
     }
-    var groupSettings : groupSettingsUnderspecified = myCache.get(chatId)
-    if (!groupSettings){
-        const rules = getRule(db, 'telegram', chatId, Math.floor(Date.now()/1000))
-        groupSettings = getGroupSettings(db, 'telegram', chatId)
-        groupSettings.rules = rules
-        myCache.set(chatId, groupSettings)
-    }
+    var groupSettings : groupSettingsUnderspecified = getGroupSettings(db, 'telegram', chatId)
+    groupSettings.rules = getRule(db, 'telegram', chatId, Math.floor(Date.now()/1000))
+
     const fullSettings = {
         lang: groupSettings?.lang ?? defaultSettings.lang,
         rules: groupSettings?.rules ?? defaultSettings.rules,

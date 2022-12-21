@@ -138,7 +138,7 @@ const respond = (queue: any, settings: groupSettings, bot: any, helpType: string
                             text: '🧑‍⚖️ Lawyer',
                             callback_data: `3|lawyer`
                         }, {
-                            text: '✨ Open',
+                            text: '🕵️ Privacy',
                             callback_data: `3|open`
                         }
                     ],[
@@ -320,12 +320,18 @@ If you would like to offer your services as a lawyer or solicit services, please
                 break;
             }
             case 'open': {
-                queue.add(async () => {try{await bot.editMessageText(`✨ *Open Source* ✨
+                queue.add(async () => {try{await bot.editMessageText(`🕵️ *Privacy* 🕵️
 
-Susie is [open source](https://github.com/kleros/kleros-moderate). Feel free to make an issue, feature request, bug report, comments, suggests, PRs, forks, etc : )
+Effective moderation requires understsanding the full context and nuance of messages. To achieve this goal, Susie can:
+
+- save messages to submit as evidence on behalf of users.
+- create open invitations for moderators or jurors to join the group and investigate reports.
+
+When you invite Susie to your group, have a similar expectation of privacy as a conversation in a public town square. Susie enforces the rules protecting members from harassment, but free speech and sharing of unpopular opinions are also protected with a fair dispute resolution process.
 `
                 ,optsResponse)}catch{}})
                 break;
+                //Susie is [open source](https://github.com/kleros/kleros-moderate). Feel free to make an issue, feature request, bug report, comments, suggests, PRs, forks, etc : )
                 //Susie is hosted. You can self-host Susie. A raspberry pi or an old laptop are sufficient to keep your own instance of Susie online. To learn more about self-hosting, guide *coming soon*.
             }
             default: {
@@ -386,7 +392,7 @@ const opts = {
                     text: '🧑‍⚖️ Lawyer',
                     callback_data: `3|lawyer`
                 }, {
-                    text: '✨ Open',
+                    text: '🕵️ Privacy',
                     callback_data: `3|open`
                 }
             ],
