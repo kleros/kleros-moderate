@@ -51,7 +51,9 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
             }
             const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `DM me for report info : )`, opts)
             return val}catch{}});       
-            myCache.set(resp.message_id, msg.chat.id) 
+            if(!resp)
+            return
+            myCache.set(resp?.message_id, msg.chat.id) 
             return;
         }
 
@@ -73,6 +75,8 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
             const reports = getReportsUserInfo(db, 'telegram', group_id, user_id);
             const user = await queue.add(async () => {try{const val = await bot.getChatMember(group_id, user_id)
                 return val}catch{}})
+            if(!user)
+            return
             const fromUsername = (user.user.username || user.user.first_name || `no-username-set`);
             const ban_level = banHistory.length
             var reportMessage: string = ""

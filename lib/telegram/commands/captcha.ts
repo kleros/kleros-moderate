@@ -50,6 +50,8 @@ const callback = async (queue: any, bot: any, settings: groupSettings, msg: any)
         };
         const msg_welcome = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `Welcome [${msg.from.first_name}](tg://user?id=${msg.from.id}) ${langJson[settings.lang].greeting2}(${settings.rules}). ${langJson[settings.lang].greeting3}`, msg.chat.is_forum? optsThread: opts)
         return val}catch{}});
+        if(!msg_welcome)
+        return
         myCache.set(msg_welcome.message_id, msg.chat.id)
     } catch(e){
         console.log(e)

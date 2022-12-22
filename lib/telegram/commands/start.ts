@@ -56,6 +56,8 @@ const callback = async (queue:any, db: any, settings: groupSettings, bot: any, b
             }
             const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `My native language is English. I am learning new languages, starting with [Spanish](https://linguo.kleros.io/home). Please reach out to @SusieSupport to let me know which language I should learn next.\n\nTo continue, please understand that I can currently only effectively moderate communities in English.`, opts)
             return val}catch{}}) 
+            if(!resp)
+            return
             myCache.set(msg.chat.id,resp.message_id)          
             return;
         }
@@ -85,6 +87,8 @@ Join my news channel @KlerosModerateNews to get information on all the latest up
 
         const botUser = await queue.add(async () => {try{const val = await bot.getChatMember(msg.chat.id, botID)
             return val}catch{}})
+            if(!botUser)
+            return
         if(botUser.status !== "administrator" || !botUser.can_restrict_members){
             const video = msg.chat.is_forum? 'QmSdP3SDoHCdW739xLDBKM3gnLeeZug77RgwgxBJSchvYV/guide_topics.mp4' : 'QmbnEeVzBjcAnnDKGYJrRo1Lx2FFnG62hYfqx4fLTqYKC7/guide.mp4'
             queue.add(async () => {try{await bot.sendVideo(msg.chat.id, `https://ipfs.kleros.io/ipfs/${video}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id, caption: "Please give Susie full admin rights.\n\nThen try to /start community moderation again."} : {caption: "Please give Susie full admin rights.\n\nThen try to /start community moderation again."})}catch{}});
@@ -129,7 +133,8 @@ const topicMode = async (queue: any, db:any, bot: any, settings: groupSettings, 
         // tg bugging, won't display icon_color if set
         const topicRules = await queue.add(async () => {try{const val = await bot.createForumTopic(chat.id, 'Rules', {icon_custom_emoji_id: '4929691942553387009'})}catch{}});
         const topicModeration = await queue.add(async () => {try{const val = await bot.createForumTopic(chat.id, 'Moderation Notifications', {icon_custom_emoji_id: '4929336692923432961'})}catch{}});
-
+        if(!topicRules || !topicModerationxw)
+        return
         queue.add(async () => {try{await bot.sendMessage(chat.id, `Please follow the community [rules](${settings.rules}). Misbehavior can be reported with /report.`, {parse_mode: "Markdown", message_thread_id: topicRules.message_thread_id})}catch{}});
             //bot.sendMessage(chat_id, `${langJson[settings.lang].greeting2}(${settings.rules}). ${langJson[settings.lang].greeting3}`, {parse_mode: "Markdown", message_thread_id: topicRules.message_thread_id});
         queue.add(async () => {try{await bot.sendMessage(chat.id, `${langJson[settings.lang].greeting1}[Kleros Moderate](https://kleros.io/moderate/).`, {parse_mode: "Markdown", message_thread_id: topicModeration.message_thread_id})}catch{}});

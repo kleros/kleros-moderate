@@ -51,6 +51,8 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
             }
             const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `DM me for help with your federation : )`, opts)
             return val}catch{}}); 
+            if (!resp)
+            return resp
             myCache.set(resp.message_id, msg.chat.id)       
             return;
         }
