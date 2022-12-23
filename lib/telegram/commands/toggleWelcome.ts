@@ -23,8 +23,12 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
 const createWelcomeThread = async (queue:any, db: any, settings: groupSettings, bot: any, msg: any) => {
     const topicWelcome = await queue.add(async () => {try{const val = await bot.createForumTopic(msg.chat.id, 'Welcome', {icon_custom_emoji_id: '4929292553544531969'})
     return val}catch{}});
+    if(!topicWelcome)
+    return
     const msg1: TelegramBot.Message = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].greeting1}[Kleros Moderate](https://kleros.io/moderate/).\n\nPlease treat this group with the same respect you would a public park. We, too, are a shared community resource — a place to share..`, {parse_mode: "Markdown", message_thread_id: topicWelcome.message_thread_id})
     return val}catch{}});
+    if(!msg1)
+    return
     queue.add(async () => {try{await bot.pinChatMessage(msg.chat.id, msg1.message_id, {message_thread_id: topicWelcome.message_thread_id})}catch{}})
     setThreadIDWelcome(db, 'telegram', String(msg.chat.id), String(topicWelcome.message_thread_id))
 }

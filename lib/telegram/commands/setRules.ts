@@ -28,6 +28,8 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
             if(msg.chat.is_forum){
                 const msgRules = await queue.add(async () => {try{const val = await bot.forwardMessage(msg.chat.id, msg.chat.id, msg.reply_to_message.message_id, {message_thread_id: settings.thread_id_rules})
                 return val}catch{}});
+                if(!msgRules)
+                return
                 queue.add(async () => {try{await bot.pinChatMessage(msg.chat.id, msgRules.message_id, {message_thread_id: settings.thread_id_rules})}catch{}})
             }
         } else if (validateUrl(match[1])) {
@@ -35,6 +37,8 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
             if(msg.chat.is_forum){
                     const msgRules = await queue.add(async () => {try{const val = await bot.forwardMessage(msg.chat.id, msg.chat.id, msg.message_id, {message_thread_id: settings.thread_id_rules})
                     return val}catch{}});
+                    if(!msgRules)
+                    return
                     queue.add(async () => {try{await bot.pinChatMessage(msg.chat.id, msgRules.message_id, {message_thread_id: settings.thread_id_rules})}catch{}})
             }
             queue.add(async () => {try{await bot.sendMessage(msg.chat.id, langJson[settings.lang].rulesUpdated, msg.chat.is_forum? {message_thread_id: settings.thread_id_rules}: {})}catch{}});

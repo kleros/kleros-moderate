@@ -16,7 +16,6 @@ module.exports = async (web3, lastBlock, realitioAddress, proxyAddress) => {
       fromBlock: lastBlock,
       toBlock: 'latest'
     })
-     console.log('realitio reporting: '+ruleEvents.length)
 
     // A Ruling was made
     for (const eventLog of ruleEvents) {

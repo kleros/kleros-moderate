@@ -229,6 +229,8 @@ bot.on('callback_query', async function onCallbackQuery(callbackQuery: TelegramB
     } else if (Number(calldata[0]) === 6){
         const member = await queue.add(async () => {try{const val = await bot.getChatMember(callbackQuery.message.chat.id, callbackQuery.from.id)
             return val}catch{}})
+            if(!member)
+            return
         if (member.status === "admin" || member.status === "creator"){
             queue.add(async () => {try{await bot.deleteMessage(callbackQuery.message.chat.id, callbackQuery.message.message_id)}catch{}})
             start.callback(queue, db, settings,bot,String(botId),callbackQuery.message,[],batchedSend, true)
@@ -302,6 +304,8 @@ commands.forEach((command) => {
                     try{
                         const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, "Susie is already moderating this community.", msg.chat.is_forum? {message_thread_id: msg.message_thread_id} : {})
                         return val}catch{}});
+                        if(!resp)
+                        return
                         myCacheGarbageCollection.set(resp.message_id, msg.chat.id)
                         return
                     } catch(e){
@@ -328,6 +332,8 @@ commands.forEach((command) => {
                     try{
                         const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, langJson[groupSettings.lang].errorAdminOnly, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})
                         return val}catch{}})
+                        if(!resp)
+                        return
                         myCacheGarbageCollection.set(resp.message_id, msg.chat.id)
                     } catch(e){
                         console.log(e)

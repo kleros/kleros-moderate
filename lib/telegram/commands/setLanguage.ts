@@ -56,8 +56,12 @@ const setLanguageConfirm = async (queue: any, db: any, bot: any, settings: group
         if (msg.chat.is_forum){
             const msgDefaultRules = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `${langJson[langCode].defaultRulesMsg1}(${langJson[langCode].defaultRules}). ${langJson[langCode].defaultRulesMsg2}.`, msg.chat.is_forum? {parse_mode: "Markdown", message_thread_id: settings.thread_id_rules}: {})
             return val}catch{}})
+            if(!msgDefaultRules)
+                return
             const msgRules = await queue.add(async () => {try{const val = await bot.forwardMessage(msg.chat.id, msg.chat.id, msgDefaultRules.message_id, {message_thread_id: settings.thread_id_rules})
             return val}catch{}});
+            if(!msgRules)
+                return
             queue.add(async () => {try{await bot.pinChatMessage(msg.chat.id, msgRules.message_id, {message_thread_id: settings.thread_id_rules})}catch{}})
         }
     } catch(e){

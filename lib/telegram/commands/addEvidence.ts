@@ -54,24 +54,38 @@ const upload = async (queue:any, bot: TelegramBot, lang: string, msg: TelegramBo
                 const val = await bot.getFile(msg.reply_to_message.sticker.file_id);
                 return val
             }catch{}});
+            if(!file)
+                return
         } else if (msg.reply_to_message.photo){
             file = await queue.add(async () => {try{const val = await bot.getFile(msg.reply_to_message.photo[msg.reply_to_message.photo.length-1].file_id)
             return val}catch{}});   
+            if(!file)
+            return
         } else if (msg.reply_to_message.audio){
             file = await queue.add(async () => {try{const val = await bot.getFile(msg.reply_to_message.audio.file_id)
                 return val}catch{}});   
+            if(!file)
+            return
         } else if (msg.reply_to_message.voice){
             file = await queue.add(async () => {try{const val = await bot.getFile(msg.reply_to_message.voice.file_id)
                 return val}catch{}});   
+                if(!file)
+                return
         } else if (msg.reply_to_message.video){
             file = await queue.add(async () => {try{const val = await bot.getFile(msg.reply_to_message.video.file_id)
                 return val}catch{}});   
+                if(!file)
+                return
         } else if (msg.reply_to_message.video_note){
             file = await queue.add(async () => {try{const val = await bot.getFile(msg.reply_to_message.video_note.file_id)
                 return val}catch{}});   
+                if(!file)
+                return
         } else if (msg.reply_to_message.document){
             file = await queue.add(async () => {try{const val = await bot.getFile(msg.reply_to_message.document.file_id)
                 return val}catch{}});   
+                if(!file)
+                return
         }
         const filePath = `https://api.telegram.org/file/bot${process.env.BOT_TOKEN}/`+file.file_path;
         const fileIPFS = await uploadFileEvidence(filePath, file.file_path.replace('/','_'));
@@ -199,6 +213,8 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
         try{
             const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `/evidence ${langJson[settings.lang].errorReply}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}:{})
             return val}catch{}})
+            if(!resp)
+            return
             myCache.set(resp.message_id, msg.chat.id)
         } catch (e){
             console.log(e)
@@ -238,6 +254,8 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
         try{
             const msgresponse = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `You did not specify an evidence group.`, opts)
             return val}catch{}})            
+            if(!msgresponse)
+            return
             myCache.set(msgresponse.message_id, msg.chat.id)
         } catch(e){
             console.log(e)
@@ -255,6 +273,8 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
         try{
             const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, langJson[settings.lang].addevidence.errorId, opts)
                 return val}catch{}})
+                if(!resp)
+                return
             myCache.set(resp.message_id, msg.chat.id)
         } catch(e){
             console.log(e)
@@ -270,6 +290,8 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
         try{
             const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, langJson[settings.lang].errorAllowance)
                 return val}catch{}});
+                if(!resp)
+                return
             myCache.set(resp.message_id, msg.chat.id)
         } catch (e){
             console.log(e)

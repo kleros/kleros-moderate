@@ -29,9 +29,13 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
             const name = getFederationName(db, 'telegram', fed_id ?? fed_id_following);
             resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `This group is ${fed_id? 'in': 'following'} the *${name}* federation with id \`${fed_id ?? fed_id_following}\``,  msg.chat.is_forum? {message_thread_id: msg.message_thread_id, parse_mode: 'Markdown'} : {parse_mode: 'Markdown'})
             return val}catch{}})
+            if(!resp)
+            return
         } else
             resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `No federation set.`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id, parse_mode: 'Markdown'} : {parse_mode: 'Markdown'})
             return val}catch{}});
+            if(!resp)
+            return
         myCache.set(resp.message_id,msg.chat.id)
     } catch(e){
         console.log(e)

@@ -206,6 +206,8 @@ const queue = new PQueue({intervalCap: 10, interval: 1000,carryoverConcurrencyCo
         try{
             const sherrif = await queue.add(async () => {try{const val = await bot.getChatMember(data.group.groupID, data.sheriff.user.userID)
                 return val}catch{}});
+                if(!sherrif)
+                continue
             //console.log(sherrif)
             queue.add(async () => {try{await bot.sendMessage(data.group.groupID, `There's a new sheriff in town 👑🥇🤠[${sherrif.user.username}](tg://user?id=${sherrif.user.id})🤠🥇👑`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
         } catch(e){
@@ -219,6 +221,8 @@ const queue = new PQueue({intervalCap: 10, interval: 1000,carryoverConcurrencyCo
         try{
             const deputysherrif = await queue.add(async () => {try{const val = await bot.getChatMember(data.group.groupID, data.deputySheriff.user.userID)
                 return val}catch{}})
+                if(!deputysherrif)
+                continue
             queue.add(async () => {try{await bot.sendMessage(data.group.groupID, `There's a new deputy sheriff in town 🥈[${deputysherrif.user.username}](tg://user?id=${deputysherrif.user.id})🥈`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
         } catch(e){
             console.log(e)
@@ -231,6 +235,8 @@ const queue = new PQueue({intervalCap: 10, interval: 1000,carryoverConcurrencyCo
         try{
             const userUpdate = await queue.add(async () => {try{const val = await bot.getChatMember(data.group.groupID, data.user.userID)
                 return val}catch{}})
+                if(!userUpdate)
+                continue
             let message = ""
             if (data.status === "GoodSamaritan"){
                 message = "🎖 ***Good Samaritan Award***🎖\n\nThe Good Samaritan award is this group's highest honor, given to members who performed exemplary deeds of service for their group or their fellow members. Thank you for your service 🙏"
@@ -364,6 +370,8 @@ const handleTelegramUpdate = async (db: any, bot: any, settings: groupSettings, 
                 if(liftbans){
                     const permissions = await queue.add(async () => {try{const val = await bot.getChat(moderationInfo.UserHistory.group.groupID).permissions
                         return val}catch{}})
+                        if(!permissions)
+                        return
                     queue.add(async () => {try{await bot.restrictChatMember(moderationInfo.UserHistory.group.groupID, moderationInfo.UserHistory.user.userID, permissions)}catch{}});
                     queue.add(async () => {try{await bot.sendMessage(settings.channelID, `*${moderationInfo.UserHistory.user.username}* has no other active reports. All bans are lifted.`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
                 } else

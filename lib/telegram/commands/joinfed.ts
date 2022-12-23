@@ -27,6 +27,8 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
                 message_thread_id: msg.message_thread_id,
                 parse_mode: 'Markdown'}:{parse_mode: 'Markdown'})
             return val}catch{}});
+            if (!resp)
+                return resp
             myCache.set(resp.message_id, msg.chat.id)
         } else{
             const name = getFederationName(db, 'telegram',match[1])
@@ -35,6 +37,8 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
                     message_thread_id: msg.message_thread_id,
                     parse_mode: 'Markdown'}:{parse_mode: 'Markdown'})
                     return val}catch{}});
+                    if (!resp)
+                    return resp
                 myCache.set(resp.message_id, msg.chat.id)
                 }
             else if (msg.from.id == match[1]){
