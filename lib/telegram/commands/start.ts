@@ -133,7 +133,7 @@ const topicMode = async (queue: any, db:any, bot: any, settings: groupSettings, 
         // tg bugging, won't display icon_color if set
         const topicRules = await queue.add(async () => {try{const val = await bot.createForumTopic(chat.id, 'Rules', {icon_custom_emoji_id: '4929691942553387009'})}catch{}});
         const topicModeration = await queue.add(async () => {try{const val = await bot.createForumTopic(chat.id, 'Moderation Notifications', {icon_custom_emoji_id: '4929336692923432961'})}catch{}});
-        if(!topicRules || !topicModerationxw)
+        if(!topicRules || !topicModeration)
         return
         queue.add(async () => {try{await bot.sendMessage(chat.id, `Please follow the community [rules](${settings.rules}). Misbehavior can be reported with /report.`, {parse_mode: "Markdown", message_thread_id: topicRules.message_thread_id})}catch{}});
             //bot.sendMessage(chat_id, `${langJson[settings.lang].greeting2}(${settings.rules}). ${langJson[settings.lang].greeting3}`, {parse_mode: "Markdown", message_thread_id: topicRules.message_thread_id});

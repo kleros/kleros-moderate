@@ -32,7 +32,7 @@ boy who cried wolf (>2/3 answered !yes, >10 reports)
 
 const callback = async (db: any, settings: groupSettings, bot: any, botid: number, msg: any) => {
     try{
-        const reports = await getLeaderboard(msg.chat.id);
+        const reports = await getLeaderboard(msg.chat.id, String(botid));
         if (reports.length == 0){
             bot.sendMessage(msg.chat.id, "No active leaderboard", msg.chat.is_forum? {message_thread_id: msg.message_thread_id, parse_mode: "Markdown"}:{parse_mode: "Markdown"});
             return;
