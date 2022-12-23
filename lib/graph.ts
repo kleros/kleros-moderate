@@ -38,9 +38,9 @@ const getAllowance = async (botAddress: string, platform: string, groupId: strin
     }
 }
 
-const getLeaderboard = async (group_id: string) => {
+const getLeaderboard = async (group_id: string, botAddress: string) => {
     const query = `{
-        userHistories(first: 10, orderBy: countReportsMadeAndRespondedYes, orderDirection: desc, where:{group_:{botAddress: "${process.env.BOT_ACCOUNT}", groupID: "${group_id}", platform: "Telegram"}}) {
+        userHistories(first: 10, orderBy: countReportsMadeAndRespondedYes, orderDirection: desc, where:{group_:{botAddress: "${botAddress}", groupID: "${group_id}", platform: "Telegram"}}) {
             status
             countReportsMadeAndRespondedYes
             user{
