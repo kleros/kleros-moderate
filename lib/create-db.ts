@@ -27,6 +27,7 @@ const Database = require('better-sqlite3');
         greeting_mode BIT,
         admins_reportable BIT,
         captcha BIT,
+        privacy_mode BIT,
         lang TEXT,
         rules TEXT,
         PRIMARY KEY (platform, group_id))`
