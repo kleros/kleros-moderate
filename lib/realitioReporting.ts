@@ -11,10 +11,12 @@ module.exports = async (web3, lastBlock, realitioAddress, proxyAddress) => {
     _proxy.abi,
     proxyAddress
   )
+  const block = await web3.eth.getBlockNumber()
+
     // console.log(lastBlock)
     const ruleEvents = await proxyInstance.getPastEvents('Ruling', {
       fromBlock: lastBlock,
-      toBlock: 'latest'
+      toBlock: lastBlock < block - 1000 ? lastBlock + 1000:'latest'
     })
 
     // A Ruling was made

@@ -18,13 +18,14 @@
     "markdown-escape": "^1.1.0",
     "node-cache": "^5.1.2",
     "node-fetch": "2",
-    "node-telegram-bot-api": "^0.60.0",
+    "node-telegram-bot-api": "^0.61.0",
+    "function-batch": "^1.1.2",
     "p-queue": "^6.6.2",
     "pm2": "^5.2.0",
     "sqlite": "^4.0.23",
     "sqlite3": "^5.0.2",
-    "web3": "^1.8.0",
-    "web3-batched-send": "^1.0.3"
+    "web3": "^1.8.1",
+    "urbit-ob": "^5.0.1"
   },
   "devDependencies": {
     "@typechain/ethers-v5": "^8.0.5",

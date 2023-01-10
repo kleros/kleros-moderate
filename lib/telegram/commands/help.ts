@@ -322,13 +322,10 @@ If you would like to offer your services as a lawyer or solicit services, please
             case 'open': {
                 queue.add(async () => {try{await bot.editMessageText(`🕵️ *Privacy* 🕵️
 
-To facillitate effective moderation, requiring full context and nuance of messages, Susie can:
+Effective moderation depends on access to the full context of a reported message. To provide context, users can request Susie to save messages to submit as evidence on their behalf. Susie manages moderation private and public groups differently,
 
-- save messages to submit as evidence on behalf of users.
-- create open invitations for moderators or jurors to join the group and investigate reports.
-
-When you invite Susie to your group, have a similar expectation of privacy as a conversation in a public town square.
-`
+- In *private* groups, reports are created using psuedonyms for users involved.
+- In *public* groups, reports are created using original usernames. Susie also creates open invitations for moderators to join the group and investigate reports.`
                 ,optsResponse)}catch{}})
                 break;
                 //Susie is [open source](https://github.com/kleros/kleros-moderate). Feel free to make an issue, feature request, bug report, comments, suggests, PRs, forks, etc : )
@@ -351,7 +348,7 @@ Helpful commands:
     - /start: Starts me. You've probably already used this.
     - /help: Sends this message and I'll tell you more about myself.
     
-Select a feature to learn more. My [documentation](https://shotaro.gitbook.io/kleros-moderate/products/moderate/susie-or-kleros-moderator) is also helpful, or ask a question in @SusieSupport.`;
+Select a feature to learn more. My [documentation](https://shotaro.gitbook.io/kleros-moderate/products/moderate/susie-or-kleros-moderator) is also helpful, or ask a question in @SusieSupport. You can follow news and updates in @KlerosModerateNews.`;
 
 //Important: I moderate groups by crowd-sourcing community input with Gnosis Chain. Make sure you or some community members get DAI on Gnosis Chain to participate actively.
 

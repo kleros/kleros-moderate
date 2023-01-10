@@ -27,8 +27,9 @@ const queue = new PQueue({intervalCap: 10, interval: 1000,carryoverConcurrencyCo
     const privateKey = process.env.PRIVATE_KEY
     const account = web3.eth.accounts.privateKeyToAccount(privateKey)
     web3.eth.accounts.wallet.add(account)
-    const currentTime = Math.floor(Date.now()/1000)
-    const currentBlock = await web3.eth.getBlockNumber()
+    const currentTime = Math.min(Math.floor(Date.now()/1000), history.last_timestamp + 5000)
+    const block = await web3.eth.getBlockNumber()
+    const currentBlock = Math.min(block+1000,block)
     if (!history)
         history = {
             last_timestamp: currentTime,
@@ -268,6 +269,7 @@ const validate = (chatId: string): groupSettings=> {
         greeting_mode: false,
         captcha: false,
         admin_reportable: false,
+        privacy_mode: true,
         thread_id_rules: '',
         thread_id_welcome: '',
         thread_id_notifications: '',
@@ -284,6 +286,7 @@ const validate = (chatId: string): groupSettings=> {
         greeting_mode: groupSettings?.greeting_mode ?? defaultSettings.greeting_mode,
         admin_reportable: groupSettings?.admin_reportable ?? defaultSettings.admin_reportable,
         captcha: groupSettings?.captcha ?? defaultSettings.captcha,
+        privacy_mode: groupSettings?.privacy_mode ?? defaultSettings.privacy_mode,
         thread_id_rules: groupSettings?.thread_id_rules ?? defaultSettings.thread_id_rules,
         thread_id_welcome: groupSettings?.thread_id_welcome ?? defaultSettings.thread_id_rules,
         thread_id_notifications: groupSettings?.thread_id_notifications ?? defaultSettings.thread_id_notifications,

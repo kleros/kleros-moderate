@@ -25,7 +25,7 @@ const createWelcomeThread = async (queue:any, db: any, settings: groupSettings, 
     return val}catch{}});
     if(!topicWelcome)
     return
-    const msg1: TelegramBot.Message = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].greeting1}[Kleros Moderate](https://kleros.io/moderate/).\n\nPlease treat this group with the same respect you would a public park. We, too, are a shared community resource — a place to share..`, {parse_mode: "Markdown", message_thread_id: topicWelcome.message_thread_id})
+    const msg1: TelegramBot.Message = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].greeting1}[Kleros Moderate](https://kleros.io/moderate/).\n\nPlease treat this group with the same respect you would a public park. We, too, are a shared community resource — a place to share.`, {parse_mode: "Markdown", message_thread_id: topicWelcome.message_thread_id})
     return val}catch{}});
     if(!msg1)
     return

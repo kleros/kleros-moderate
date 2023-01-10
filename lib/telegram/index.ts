@@ -31,7 +31,7 @@ import { calcPenalty } from "../cron";
 const Web3 = require('web3')
 const {default: PQueue} = require('p-queue');
 const queue = new PQueue({intervalCap: 20, interval: 1000,carryoverConcurrencyCount: true});
-const _batchedSend = require('web3-batched-send')
+const _batchedSend = require('../batched-send')
 const web3 = new Web3(process.env.WEB3_PROVIDER_URL)
 const batchedSend = _batchedSend(
     web3, 
@@ -46,6 +46,7 @@ const batchedSend = _batchedSend(
     greeting_mode: false,
     captcha: false,
     admin_reportable: false,
+    privacy_mode: true,
     thread_id_rules: '',
     thread_id_welcome: '',
     thread_id_notifications: '',
@@ -396,6 +397,7 @@ const validate = (chat: any, language_code?: string): groupSettings=> {
         greeting_mode: groupSettings?.greeting_mode ?? defaultSettings.greeting_mode,
         admin_reportable: groupSettings?.admin_reportable ?? defaultSettings.admin_reportable,
         captcha: groupSettings?.captcha ?? defaultSettings.captcha,
+        privacy_mode: groupSettings?.privacy_mode ?? defaultSettings.privacy_mode,
         thread_id_rules: groupSettings?.thread_id_rules ?? defaultSettings.thread_id_rules,
         thread_id_welcome: groupSettings?.thread_id_welcome ?? defaultSettings.thread_id_rules,
         thread_id_notifications: groupSettings?.thread_id_notifications ?? defaultSettings.thread_id_notifications,
@@ -412,6 +414,8 @@ const checkMigration = async (groupSettings: groupSettings, chat: any): Promise<
     if (chat.is_forum && !groupSettings.thread_id_notifications){ // turn topics on
         try{
             const threads = await start.topicMode(queue, db, bot, groupSettings, chat);
+            if(!threads)
+                return;
             queue.add(async () => {try{await bot.sendMessage(chat.id, "Started topic mode", {messsage_thread_id: groupSettings.thread_id_notifications})}catch{}})
             groupSettings.thread_id_rules = threads[0]
             groupSettings.thread_id_notifications = threads[1]

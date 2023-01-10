@@ -391,6 +391,7 @@ const getGroupSettings = (db: any, platform: string, groupId: string): groupSett
             greeting_mode: result?.greeting_mode,
             captcha: result?.captcha,
             admin_reportable: result?.admins_reportable,
+            privacy_mode: result?.privacy_mode,
             federation_id: result?.federation_id,
             federation_id_following: result?.federation_id_following,
         }
@@ -434,7 +435,7 @@ const getReportsUserInfoFederation = (db:any, platform: string, userId: string, 
 
 const getReportsUserInfoActive = (db:any, platform: string, groupId: string, userId: string) => {
     try{
-        const stmt = db.prepare('SELECT question_id, active,msgBackup, msg_id, evidenceIndex, timestamp_msg, finalized FROM reports WHERE user_id = ? AND group_id = ? AND platform = ? AND NOT finalized = 1');
+        const stmt = db.prepare('SELECT question_id, active,msgBackup, msg_id, evidenceIndex, timestamp_msg, finalized FROM reports WHERE user_id = ? AND group_id = ? AND platform = ? AND (NOT finalized = 1 OR finalized IS NULL)');
         return stmt.all(userId, groupId, platform);
     } catch(err){
         console.log("db error: getReportsUserInfoActive, "+err);
@@ -505,9 +506,9 @@ const setReport = (db: any, questionId: string, active: boolean, answered: boole
     }
 }
 
-const getActiveEvidenceGroupId = (db: any, platform: string, groupId: string, evidenceIndex: number) => {
+const getActiveEvidenceGroupId = (db: any, platform: string, groupId: string, evidenceIndex: string) => {
     try{
-        const stmt = db.prepare( `SELECT question_id FROM reports WHERE platform = ? AND group_id = ? AND evidenceIndex = ? AND NOT finalized = 1`);
+        const stmt = db.prepare( `SELECT question_id FROM reports WHERE platform = ? AND group_id = ? AND evidenceIndex = ? AND (NOT finalized = 1 OR finalized IS NULL)`);
         return stmt.get(platform, groupId, evidenceIndex)?.question_id;
     } catch(err) {
         console.log("db error: getActiveEvidenceGroupId" + err);
@@ -743,7 +744,7 @@ const getFederatedBanHistory = (db: any, platform: string, userId: string, feder
 
 const getUsersWithQuestionsNotFinalized = (db: any, platform: string, groupId: string) => {
     try{
-        const stmt = db.prepare( `SELECT DISTINCT user_id, username FROM reports WHERE platform = ? AND group_id = ? AND NOT finalized = 1`);
+        const stmt = db.prepare( `SELECT DISTINCT user_id, username FROM reports WHERE platform = ? AND group_id = ? AND (NOT finalized = 1 OR finalized IS NULL)`);
         return stmt.all(platform, groupId);
     } catch(err) {
         console.log("db error: getActiveEvidenceGroupId");

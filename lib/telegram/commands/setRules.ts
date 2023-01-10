@@ -39,7 +39,9 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
                     return val}catch{}});
                     if(!msgRules)
                     return
-                    queue.add(async () => {try{await bot.pinChatMessage(msg.chat.id, msgRules.message_id, {message_thread_id: settings.thread_id_rules})}catch{}})
+                    await queue.add(async () => {try{await bot.reopenForumTopic(msg.chat.id, msgRules.message_id)}catch{}})
+                    await queue.add(async () => {try{await bot.pinChatMessage(msg.chat.id, msgRules.message_id, {message_thread_id: settings.thread_id_rules})}catch{}})
+                    await queue.add(async () => {try{await bot.closeForumTopic(msg.chat.id, settings.thread_id_rules)}catch{}})
             }
             queue.add(async () => {try{await bot.sendMessage(msg.chat.id, langJson[settings.lang].rulesUpdated, msg.chat.is_forum? {message_thread_id: settings.thread_id_rules}: {})}catch{}});
         } else {
