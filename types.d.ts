@@ -11,6 +11,7 @@ interface groupSettings {
     greeting_mode: boolean;
     admin_reportable: boolean;
     captcha: boolean;
+    enforcement: boolean;
     federation_id: string;
     federation_id_following: string;
   }
@@ -25,6 +26,7 @@ interface groupSettings {
     greeting_mode: boolean | undefined;
     captcha: boolean | undefined;
     admin_reportable: boolean;
+    enforcement: boolean | undefined;
     federation_id: string | undefined;
-    federation_id_following: string;
+    federation_id_following: string | undefined;
   }

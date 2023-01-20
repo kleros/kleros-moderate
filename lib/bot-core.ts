@@ -15,23 +15,18 @@ interface RealityBanResult {
     questionUrl: string
 }
 
-export const reportUser = async (batchedSend:any, lang: string, hasBanningPermission: boolean, fromUsername: string, UserID: string, platform: string, group: string, inviteURL: string, groupID: string, rules: string, message: string, messageBackup: string, reportedBy: string, isPrivate: boolean): Promise<RealityBanResult> => {
+export const reportUser = (batchedSend:any, lang: string, hasBanningPermission: boolean, fromUsername: string, UserID: string, platform: string, group: string, inviteURL: string, groupID: string, rules: string, message: string, messageBackup: string, reportedBy: string, isPrivate: boolean): RealityBanResult => {
     const minBond = utils.parseUnits('5', 12); // 5 DAI
-    var fromUsernameUrbit;
-    if(isPrivate){
-        // private group
-        const hashedUserID = web3.utils.sha3(UserID+process.env.secret);
-        fromUsernameUrbit = ob.patp(hashedUserID.substring(0,8))
-    }
     const delim = '\u241f';
-    const question = isPrivate? fromUsernameUrbit+delim+rules+delim+messageBackup+delim+reportedBy : fromUsername+delim+UserID+delim+platform+delim+group+delim+inviteURL+delim+groupID+delim+rules+delim+message+delim+messageBackup+delim+reportedBy ;
-    const template_id = Number(isPrivate? process.env.TEMPLATE_ID_PRIVATE: process.env.TEMPLATE_ID)
+    const question = fromUsername+delim+UserID+delim+platform+delim+group+delim+inviteURL+delim+groupID+delim+rules+delim+message+delim+messageBackup+delim+reportedBy ;
+    const template_id = lang === 'es'? Number(process.env.TEMPLATE_ID_ES): Number(process.env.TEMPLATE_ID_EN)
 
-    const questionId = await askQuestionWithMinBond(
+    const questionId = askQuestionWithMinBond(
         batchedSend,
         question,
         template_id,
-        minBond
+        minBond,
+        lang
     );
 
     return {
@@ -41,12 +36,12 @@ export const reportUser = async (batchedSend:any, lang: string, hasBanningPermis
 
 }
 
-async function askQuestionWithMinBond(batchedSend: any, question: string, template_id: number, minBond: number|BigNumber): Promise<string> {
+function askQuestionWithMinBond(batchedSend: any, question: string, template_id: number, minBond: number|BigNumber, lang: string): string {
     // A question is automatically created in Realitio with an answer in favor of banning the user.
     //const realityETHV30 = getRealityETHV30(process.env.REALITY_ETH_V30, process.env.PRIVATE_KEY);
 
     const openingTs = Math.floor(new Date().getTime()/1000);
-    const arbitrator = process.env.REALITIO_ARBITRATOR;
+    const arbitrator = lang === "es" ? process.env.REALITIO_ARBITRATOR_ES : process.env.REALITIO_ARBITRATOR_EN;
     const timeout = 86400;
     const reality = process.env.REALITY_ETH_V30;
     const txnBatchSender = process.env.TRANSACTION_BATCHER_CONTRACT_ADDRESS;
@@ -65,7 +60,8 @@ async function askQuestionWithMinBond(batchedSend: any, question: string, templa
         { type: 'address', value: txnBatchSender },
         { type: 'uint256', value: nonce });
 
-    await batchedSend({
+
+    batchedSend({
         args: [        
             template_id,
             question,

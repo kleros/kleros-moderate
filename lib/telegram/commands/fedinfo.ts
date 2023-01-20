@@ -1,7 +1,7 @@
 import * as TelegramBot from "node-telegram-bot-api";
 import { groupSettings } from "../../../types";
 import {getFederationName,getGroupFederation,getGroupFederationFollowing} from "../../db";
-import langJson from "../assets/lang.json";
+import langJson from "../assets/langNew.json";
 const NodeCache = require( "node-cache" );
 const myCache = new NodeCache( { stdTTL: 90, checkperiod: 120 } );
 var myBot;
@@ -27,12 +27,16 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
         let resp;
         if (fed_id || fed_id_following){
             const name = getFederationName(db, 'telegram', fed_id ?? fed_id_following);
-            resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `This group is ${fed_id? 'in': 'following'} the *${name}* federation with id \`${fed_id ?? fed_id_following}\``,  msg.chat.is_forum? {message_thread_id: msg.message_thread_id, parse_mode: 'Markdown'} : {parse_mode: 'Markdown'})
-            return val}catch{}})
+            if (settings.lang === 'en')
+                resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `This group is ${fed_id? 'in': 'following'} the *${name}* federation with id \`${fed_id ?? fed_id_following}\``,  msg.chat.is_forum? {message_thread_id: msg.message_thread_id, parse_mode: 'Markdown'} : {parse_mode: 'Markdown'})
+                return val}catch{}})
+            else if (settings.lang === 'es')
+                resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `Este grupo ${fed_id? 'está en la': 'sigue a la '} federación *${name}* con id \`${fed_id ?? fed_id_following}\``,  msg.chat.is_forum? {message_thread_id: msg.message_thread_id, parse_mode: 'Markdown'} : {parse_mode: 'Markdown'})
+                return val}catch{}})
             if(!resp)
             return
         } else
-            resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `No federation set.`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id, parse_mode: 'Markdown'} : {parse_mode: 'Markdown'})
+            resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, langJson[settings.lang].fed.nofed, msg.chat.is_forum? {message_thread_id: msg.message_thread_id, parse_mode: 'Markdown'} : {parse_mode: 'Markdown'})
             return val}catch{}});
             if(!resp)
             return

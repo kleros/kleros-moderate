@@ -11,7 +11,8 @@ const regexp = /\/adminreportable/
 const callback = async (queue, db: any, settings: groupSettings, bot: any, botId: number, msg: any) => {
     try{
         setAdminReportableMode(db, 'telegram', String(msg.chat.id),settings.admin_reportable? 0: 1)
-        queue.add(async () => {try{await bot.sendMessage(msg.chat.id, settings.admin_reportable? "Admins are immune from reports." : "Admins are now held accountable like regular users.", msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})}catch{}});
+        const msgToggle = settings.lang === "en" ? settings.admin_reportable? "Admins are immune from reports." : "Admins are now held accountable like regular users." : settings.admin_reportable? "Los administradores son inmunes a los informes." : "Los administradores son ahora responsables como los usuarios normales."
+        queue.add(async () => {try{await bot.sendMessage(msg.chat.id, msgToggle, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})}catch{}});
     } catch(e){
         console.log(e)
     }

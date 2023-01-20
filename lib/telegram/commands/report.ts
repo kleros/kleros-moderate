@@ -3,14 +3,11 @@ import {setInviteURL, getInviteURL, getRule,getAllowance, setAllowance, addRepor
 import { groupSettings } from "../../../types";
 import {upload} from "./addEvidence"
 import {reportUser} from "../../bot-core";
-import langJson from "../assets/lang.json";
-const Web3 = require('web3')
-const web3 = new Web3(process.env.WEB3_PROVIDER_URL)
+import langJson from "../assets/langNew.json";
 
 /*
  * /report
  */
-const ob = require('urbit-ob')
 const regexp = /\/report\s?(.+)?/
 // cacheIndex => groupID,reported message id => [pending report message id]
 const NodeCache = require( "node-cache" );
@@ -35,16 +32,22 @@ const callback = async (queue: any, db:any, settings: groupSettings, bot: any, b
         if (!myQueue)
             myQueue = queue
         if (!msg.reply_to_message) {
-            const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `/report ${langJson[settings.lang].errorReply}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})
+            const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, langJson[settings.lang].error.reply, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})
         return val}catch{}});
         if (!resp)
         return resp
             myCacheGarbageCollection.set(resp.message_id, msg.chat.id)
             return;
         }
+        const channelUserSusie = await queue.add(async () => {try{const val = await bot.getChatMember(msg.chat.id, botId)
+            return val}catch(e){console.log(e)}});
+        if(!channelUserSusie)
+            return
 
-        if (msg.reply_to_message.date < Date.now()/1000-86400*7){
-            const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `Live and let live. This message is more than one week old. The future is asynchronous, but we believe moderation should not be punitive. Next time try to make the report sooner.`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})
+        const isAdmin = channelUserSusie.status === "administrator"
+
+        if (isAdmin && msg.reply_to_message.date < Date.now()/1000-86400*7){
+            const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, langJson[settings.lang].report.expired, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})
             return val}catch{}});
             if (!resp)
             return resp
@@ -57,10 +60,10 @@ const callback = async (queue: any, db:any, settings: groupSettings, bot: any, b
         if (msg.reply_to_message.from.is_bot){
             let resp;
             if(msg.reply_to_message.from.username === "GroupAnonymousBot")
-                resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `User is anonymous. Ask admins to disable anonymouse admins to moderate admin behavior.`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})
+                resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, langJson[settings.lang].report.anon, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})
                 return val}catch{}});
             else
-                resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].report.errorModBot}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})
+                resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].report.bot}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})
                 return val}catch{}});
                 if (!resp)
                 return resp
@@ -71,11 +74,11 @@ const callback = async (queue: any, db:any, settings: groupSettings, bot: any, b
         if(!settings.admin_reportable){
             report = await queue.add(async () => {try{const val = await bot.getChatMember(msg.chat.id,msg.reply_to_message.from.id)
                 return val}catch{}})
-                if (!report)
-                return report
+            if (!report)
+                return
             if(report.status === "administrator" || report.status === "creator"){
-                const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].report.errorAdmin}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})
-                return val}catch{}});
+                const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].report.admin}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})
+                return val}catch(e){console.log(e)}});
                 if (!resp)
                 return resp
                 myCacheGarbageCollection.set(resp.message_id, msg.chat.id)
@@ -95,9 +98,12 @@ const callback = async (queue: any, db:any, settings: groupSettings, bot: any, b
             myCacheGarbageCollection.set(resp.message_id, msg.chat.id)
             return;
         }*/
-        const reportedQuestionId = getQuestionId(db, 'telegram', String(msg.chat.id), reportedUserID, String(msg.reply_to_message.message_id));
+        const msgId = (msg.chat.is_forum? (msg.is_topic_message? String(msg.message_thread_id)+'/': '1/') : '')+String(msg.reply_to_message.message_id)
+
+        const reportedQuestionId = getQuestionId(db, 'telegram', String(msg.chat.id), reportedUserID, msgId);
         if (reportedQuestionId){
-            const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].report.reported}(https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${reportedQuestionId})`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id, parse_mode: 'Markdown', disable_web_page_preview: true}: {parse_mode: 'Markdown', disable_web_page_preview: true})
+            console.log(msg)
+            const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].report.reported}(https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${reportedQuestionId})`, (msg.is_topic_message)? {message_thread_id: msg.message_thread_id, parse_mode: 'Markdown', disable_web_page_preview: true}: {parse_mode: 'Markdown', disable_web_page_preview: true})
             return val}catch{}});
             if (!resp)
             return resp
@@ -106,8 +112,7 @@ const callback = async (queue: any, db:any, settings: groupSettings, bot: any, b
         }
 
 
-
-        const rules = getRule(db, 'telegram', String(msg.chat.id), msg.reply_to_message.date);
+        const rules = getRule(db, 'telegram', String(msg.chat.id), isAdmin ?  msg.reply_to_message.date: Math.floor(Date.now()/1000))?.rules;
 
         if (!rules){
             const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, langJson[settings.lang].report.norules, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})
@@ -127,17 +132,17 @@ const callback = async (queue: any, db:any, settings: groupSettings, bot: any, b
         const msgBackup = 'https://ipfs.kleros.io'+evidencepath;
         // TODO report
         const reportAllowance = getAllowance(db, 'telegram', String(msg.chat.id), String(msg.from.id));
+        console.log(reportAllowance)
         const reporter = await queue.add(async () => {try{const val = await bot.getChatMember(msg.chat.id,msg.from.id)
-            return val}catch{}})
-            if (!reporter)
-            return reporter
-        if(!settings.admin_reportable && (reporter.status === "administrator" || reporter.status === "creator")){
-            console.log(report.status)
+            return val}catch(e){console.log(e)}})
+        if((reporter.status === "administrator" || reporter.status === "creator")){
+            console.log(reporter.status)
         } else if (!reportAllowance){
             setAllowance(db, 'telegram', String(msg.chat.id), String(msg.from.id), 2, 15, currentTimeMs);
         } else if (currentTimeMs < reportAllowance.timestamp_refresh + 28800 && reportAllowance.report_allowance == 0 ){
-            const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, langJson[settings.lang].report.noallowance, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})
-            return val}catch{}});
+            console.log(msg)
+            const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, langJson[settings.lang].report.noallowance, (msg.chat.is_forum && msg.is_topic_message)? String(msg.message_thread_id): {})
+            return val}catch (e){console.log(e)}});
             if (!resp)
                 return resp
             myCacheGarbageCollection.set(resp.message_id, msg.chat.id)
@@ -148,6 +153,8 @@ const callback = async (queue: any, db:any, settings: groupSettings, bot: any, b
             const newRefreshTimestamp = reportAllowance.timestamp_refresh + Math.floor((currentTimeMs - reportAllowance.timestamp_refresh)/28800)*28800;
             setAllowance(db, 'telegram', String(msg.chat.id), String(msg.from.id), Math.min(newReportAllowance,3), Math.min(newEvidenceAllowance,15), newRefreshTimestamp);
         }
+        console.log(msg)
+        console.log(msgId)
         const opts = {
             parse_mode: 'Markdown',
             reply_to_message_id: msg.reply_to_message.message_id,
@@ -158,7 +165,7 @@ const callback = async (queue: any, db:any, settings: groupSettings, bot: any, b
                 [
                     {
                     text: langJson[settings.lang].socialConsensus.confirm + ' (1/3)',
-                    callback_data: '2|'+String(msg.reply_to_message.from.id)+'|'+String(msg.reply_to_message.message_id)+'|'+String(msg.from.id)
+                    callback_data: '2|'+String(msg.reply_to_message.from.id)+'|'+msgId+'|'+String(msg.reply_to_message.date)+'|'+String(msg.from.id)
                     }
                 ]
                 ]
@@ -176,10 +183,29 @@ const callback = async (queue: any, db:any, settings: groupSettings, bot: any, b
         console.log(e)       
     }
 }
-const reportMsg = async (queue: any, settings: groupSettings, db: any, bot: any, msg: any, fromUsername: string, reportedUserID: string, rules: string, msgId: string, msgBackup: string, reportedBy: string, batchedSend: any) => {
+const reportMsg = async (queue: any, settings: groupSettings, db: any, bot: any, msg: any, fromUsername: string, reportedUserID: string, rules: string, msgId: string, msgBackup: string, reportedBy: string, msgDate: string, batchedSend: any) => {
     try {
-        var inviteURL = myCache.get(msg.chat.id)
-        if (!inviteURL){
+
+        const reportedQuestionId = getQuestionId(db, 'telegram', String(msg.chat.id), reportedUserID, msgId);
+        if (reportedQuestionId){
+            const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].report.reported}(https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${reportedQuestionId})`, (msg.chat.is_forum && msg.is_topic_message)? {message_thread_id: msg.message_thread_id, parse_mode: 'Markdown', disable_web_page_preview: true}: {parse_mode: 'Markdown', disable_web_page_preview: true})
+            return val}catch{}});
+            if (!resp)
+            return resp
+            myCacheGarbageCollection.set(resp.message_id, msg.chat.id)
+            return;
+        }
+
+        const chatobj = await queue.add(async () => {try{const val = await bot.getChat(msg.chat.id)
+            return val}catch{}});
+        if (!chatobj)
+            return
+        const isPrivate: boolean = !chatobj.active_usernames;
+        var inviteURL = isPrivate ? '': myCache.get(msg.chat.id)
+        if (!isPrivate && !inviteURL){
+            inviteURL = 'https://t.me/'+chatobj.active_usernames[0]
+            // TODO Handle private, but invites allowed
+            /*
             inviteURL = getInviteURL(db, 'telegram', String(msg.chat.id));
             if (!inviteURL){
                 inviteURL = await queue.add(async () => {try{const val = await bot.exportChatInviteLink(msg.chat.id)
@@ -188,21 +214,18 @@ const reportMsg = async (queue: any, settings: groupSettings, db: any, bot: any,
                     return
                 setInviteURL(db, 'telegram', String(msg.chat.id), inviteURL);
             }
+            */
             myCache.set(msg.chat.id, inviteURL)
         }
 
-        const msgLink = 'https://t.me/c/' + String(msg.chat.id).substring(4) + '/'+`${msg.chat.is_forum? msg.is_topic_message? msg.message_thread_id: 1 : ''}/`+msg.reply_to_message.message_id;
+        const msgLink = 'https://t.me/c/' + String(msg.chat.id).substring(4) + `/${msgId}`;
 
         const cachedEvidenceIndex = myCache.get("evidence"+msg.chat.id);
         const evidenceIndex = cachedEvidenceIndex? cachedEvidenceIndex+1:getRecordCount(db, 'telegram', String(msg.chat.id))+1
         myCache.set("evidence"+msg.chat.id, evidenceIndex);
-        const chatobj = await queue.add(async () => {try{const val = await bot.getChat(msg.chat.id)
-            return val}catch{}});
-        if (!chatobj)
-            return
-        const isPrivate: boolean = !chatobj.active_usernames;
 
-        const {questionId, questionUrl: appealUrl} = await reportUser(
+
+        const {questionId, questionUrl: appealUrl} = reportUser(
             batchedSend,
             settings.lang,
             false, 
@@ -218,14 +241,17 @@ const reportMsg = async (queue: any, settings: groupSettings, db: any, bot: any,
             reportedBy,
             isPrivate);
 
-        addReport(db, questionId, 'telegram', String(msg.chat.id), reportedUserID, fromUsername , (msg.chat.is_forum? `${msg.message_thread_id}/`:'')+String(msg.reply_to_message.message_id), msg.reply_to_message.date,evidenceIndex, msgBackup);
-
-        queue.add(async () => {try{await bot.sendMessage(settings.channelID, `[${fromUsername}](tg://user?id=${reportedUserID})'s conduct due to this [message](${msgLink}) ([backup](${msgBackup})) is reported for breaking the [rules](${rules}).\n\nDid *${fromUsername}* break the rules? The [question](${appealUrl}) can be answered with a minimum bond of 5 DAI. Need assistance answering the question? [DM](https://t.me/${process.env.BOT_USERNAME}?start=helpgnosis) me for help : )\n\nTo save a record, reply to messages you want saved with \`/evidence ${evidenceIndex}\``, msg.chat.is_forum? {message_thread_id: settings.thread_id_notifications , parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
+        addReport(db, questionId, 'telegram', String(msg.chat.id), reportedUserID, fromUsername , msgId, Number(msgDate),evidenceIndex, msgBackup);
+            console.log(msgLink)
+        if (settings.lang === "en")
+            queue.add(async () => {try{bot.sendMessage(settings.channelID, `[${fromUsername}](tg://user?id=${reportedUserID})'s conduct due to this [message](${msgLink}) ([backup](${msgBackup})) is reported for breaking the [rules](${rules}).\n\nDid *${fromUsername}* break the rules? The [question](${appealUrl}) can be answered with a minimum bond of 5 DAI. Need assistance answering the question? [DM](https://t.me/${process.env.BOT_USERNAME}?start=helpgnosis) me for help : )\n\nTo save a record, reply to messages you want saved with \`/evidence ${evidenceIndex}\``, msg.chat.is_forum? {message_thread_id: settings.thread_id_notifications , parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
+        else if (settings.lang === "es")
+            queue.add(async () => {try{bot.sendMessage(settings.channelID, `La conducta de [${fromUsername}](tg://user?id=${reportedUserID}) a este [mensaje](${msgLink}) ([backup](${msgBackup})) es denunciada por infringir las [reglas](${rules}).\n\nHa infringido el usuario  *${fromUsername}* las reglas? La [pregunta](${appealUrl}) puede responderse con un bono mínimo de 5 DAI. Necesitas ayuda para responder a la pregunta? [DM](https://t.me/${process.env.BOT_USERNAME}?start=helpgnosis) me para obetener ayuda : )\n\nPara guardar un registro, responda a los mensajes que desee guardar con \`/evidence ${evidenceIndex}\``, msg.chat.is_forum? {message_thread_id: settings.thread_id_notifications , parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
         return questionId;
     } catch (e) {
         console.log(e);
         try{
-            queue.add(async () => {try{await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].errorTxn}. ${e.reason}. `,msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})}catch{}});
+            queue.add(async () => {try{await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].error.txn}. ${e.reason}. `,msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})}catch{}});
         } catch(e){
             console.log(e)
         }

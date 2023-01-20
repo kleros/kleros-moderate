@@ -1,6 +1,6 @@
 import * as TelegramBot from "node-telegram-bot-api";
 import {getRule, getInviteURLChannel, getFederatedInviteURLChannel, getChannelID} from "../../db";
-import langJson from "../assets/lang.json";
+import langJson from "../assets/langNew.json";
 import { groupSettings } from "../../../types";
 const NodeCache = require( "node-cache" );
 const myCache = new NodeCache( { stdTTL: 90, checkperiod: 120 } );
@@ -23,20 +23,20 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
     const channel_invite = getInviteURLChannel(db, 'telegram', String(msg.chat.id));
     if(settings.federation_id || settings.federation_id_following){
         const inviteurl = getFederatedInviteURLChannel(db, 'telegram', settings.federation_id);
-        const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `The notifications for this group's federation are sent to this [channel](${inviteurl}).`,msg.chat.is_forum? {parse_mode: "Markdown", message_thread_id: msg.message_thread_id}:{parse_mode: "Markdown"})
+        const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].notifications.getFed}(${inviteurl}).`,msg.chat.is_forum? {parse_mode: "Markdown", message_thread_id: msg.message_thread_id}:{parse_mode: "Markdown"})
         return val}catch{}});     
         if(!resp)
         return
         myCache.set(resp.message_id, msg.chat.id)  
     }
     if(!channel_invite && !msg.chat.is_forum){
-        const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `Notifications channel for this group is not set. Ask an admin to \`/setchannel\`.`,msg.chat.is_forum? {parse_mode: "Markdown", message_thread_id: msg.message_thread_id}:{parse_mode: "Markdown"})
+        const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, langJson[settings.lang].notifications.notset,msg.chat.is_forum? {parse_mode: "Markdown", message_thread_id: msg.message_thread_id}:{parse_mode: "Markdown"})
         return val}catch{}});     
         if(!resp)
         return
         myCache.set(resp.message_id, msg.chat.id)   
     } else {
-        const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `I notify this [channel](${channel_invite}) about moderation activity.`,msg.chat.is_forum? {parse_mode: "Markdown", message_thread_id: msg.message_thread_id, disable_web_page_preview: true}:{parse_mode: "Markdown", disable_web_page_preview: true})
+        const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].notifications.get}(${channel_invite}).`,msg.chat.is_forum? {parse_mode: "Markdown", message_thread_id: msg.message_thread_id, disable_web_page_preview: true}:{parse_mode: "Markdown", disable_web_page_preview: true})
         return val}catch{}});     
         if(!resp)
         return

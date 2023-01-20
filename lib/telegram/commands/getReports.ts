@@ -1,9 +1,8 @@
 import * as TelegramBot from "node-telegram-bot-api";
 const escape = require('markdown-escape')
-import langJson from "../assets/lang.json";
+import langJson from "../assets/langNew.json";
 import {getReportsUserInfo ,getActiveReportsInfo,getReportsUserInfoFederation, getInviteURL,getLocalBanHistory, getFederatedBanHistory, getFederatedFollowingBanHistory, getTitle} from "../../db";
 import { groupSettings } from "../../../types";
-import {calcPenalty} from "../../cron"
 const NodeCache = require( "node-cache" );
 const myCache = new NodeCache( { stdTTL: 90, checkperiod: 120 } );
 var myBot;
@@ -15,7 +14,6 @@ myCache.on("expired",function(key,value){
  * /getreports
  */
 const regexp = /\/info/
-
 const callback = async (queue: any, db: any, settings: groupSettings, bot: any, botid: number, msg: any) => {
     if (!myBot)
         myBot = bot
@@ -30,7 +28,7 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
                     inline_keyboard: [
                     [
                         {
-                            text: 'Get Report Info',
+                            text: langJson[settings.lang].info.get,
                             url: `https://t.me/${process.env.BOT_USERNAME}?start=getreport${msg.chat.id}${(msg.reply_to_message && !msg.reply_to_message.forum_topic_created)? msg.reply_to_message.from.id: ''}${(settings.federation_id ?? settings.federation_id_following + 'following') ?? ''}`
                         }
                     ]
@@ -42,14 +40,14 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
                     inline_keyboard: [
                     [
                         {
-                            text: 'Get Report Info',
+                            text: langJson[settings.lang].info.get,
                             url: `https://t.me/${process.env.BOT_USERNAME}?start=getreport${msg.chat.id}${(msg.reply_to_message && !msg.reply_to_message.forum_topic_created)? msg.reply_to_message.from.id: ''}${(settings.federation_id ?? settings.federation_id_following) ?? ''}`
                         }
                     ]
                     ]
                 }
             }
-            const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `DM me for report info : )`, opts)
+            const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, langJson[settings.lang].info.DM, opts)
             return val}catch{}});       
             if(!resp)
             return
@@ -91,7 +89,7 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
             if (ban_level > 0){
                 const date_lastreport = new Date(banHistory[ban_level-1].timestamp*1000).toUTCString()
                 const date_parole = new Date(1000*calcPenalty(ban_level, max_timestamp)).toUTCString()
-                reportMessage += `*${escape(fromUsername)}* broke the rules atleast ${ban_level} time(s), and is banned until ${date_parole}.\n\n`
+                reportMessage += `*${escape(fromUsername)}* ${langJson[settings.lang].info.report1} ${ban_level} ${langJson[settings.lang].info.report2} ${date_parole}.\n\n`
             }
             reportMessage += `*${langJson[settings.lang].getReports.ReportsFor} ${escape(fromUsername)}*:\n\n`;
             if (reports.length === 0){
@@ -106,7 +104,7 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
             });
             if(federation_id){
                 const reportsFederation = getReportsUserInfoFederation(db, 'telegram', user_id, federation_id,group_id);
-                reportMessage += `\n*Federal reports for ${escape(fromUsername)}*:\n\n`
+                reportMessage += `\n*${langJson[settings.lang].info.fed} ${escape(fromUsername)}*:\n\n`
                 if (reportsFederation.length == 0){
                     reportMessage += `${langJson[settings.lang].getReports.noReports}.\n`
                 }
@@ -144,6 +142,18 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
     } catch(e){
         console.log(e)
     }
+}
+
+
+const calcPenalty = (ban_level: number, timestamp_finalized: number): number => {
+    if(ban_level == 1)
+        return  timestamp_finalized + 86400
+    else if (ban_level == 2)
+        return  timestamp_finalized + 604800
+    else if (ban_level == 3)
+        return  timestamp_finalized + 2678400
+    else
+        return  timestamp_finalized + 31536000
 }
 
 export {regexp, callback};

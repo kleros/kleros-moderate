@@ -13,7 +13,7 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
     try{
         if (!address)
             address = (await new Wallet(process.env.PRIVATE_KEY)).address
-        queue.add(async () => {try{await bot.sendMessage(settings.channelID, `*${langJson[settings.lang].getAccount}*: ${address}\n\n*Transaction Batch Address*: ${process.env.TRANSACTION_BATCHER_CONTRACT_ADDRESS}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id, parse_mode: "Markdown"}:{parse_mode: "Markdown"})}catch{}});
+        queue.add(async () => {try{await bot.sendMessage(settings.channelID, `*${langJson[settings.lang].getAccount}*: ${address}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id, parse_mode: "Markdown"}:{parse_mode: "Markdown"})}catch{}});
     } catch(e){
         console.log('gettaccount error. '+e)
     }

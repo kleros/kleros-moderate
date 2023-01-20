@@ -1,0 +1,384 @@
+{
+    "en":{
+        "reputation": {
+            "sheriff": "There's a new sheriff in town",
+            "deputy": "There's a new deputy sheriff in town",
+            "samaritan": "🎖 ***Good Samaritan Award***🎖\n\nThe Good Samaritan award is this group's highest honor, given to members who performed exemplary deeds of service for their group or their fellow members. Thank you for your service 🙏",
+            "BoyWhoCriedWolf": "Have you ever heard of the fable of 💩 the boy who cried wolf 💩?\n\nBe careful, too many unanswered reports could hurt your reputation",
+            "NeighborhoodWatch": "🤝 ***Neighborhood Watch Recognition*** 🤝\n\n The Neighborhood Watch recognition is given to members who help protect their community. Thank you for your service 🙏"
+        },
+        "notifications": {
+            "getfed": "The notifications for this group's federation are sent to this [channel]",
+            "notset": "Notifications channel for this group is not set. Ask an admin to `/setchannel`",
+            "get": "I send moderation notifications to this [channel]",
+            "set": "/setchannel must be followed by a channel id.  If you need more help, ",
+            "invalid": "/setchannel must be followed by a valid channel.",
+            "invalid2": "is not a valid channel.",
+            "admin": "You are not an authorized admin of the channel.",
+            "invite": "I need permissions to invite users to the channel.",
+            "confirm1": "Moderation notifications will now be sent to this [channel]",
+            "confirm2": "This channel will now relay moderation notifications for"
+        },
+        "fed": {
+            "specify" : "Please specify a federation eg. `/joinfed <federation_id>`.",
+            "nofed": "No federation set.",
+            "notfound": "Federation not found. Use /fedinfo in a group whose federation you want to join to find its ID.",
+            "joined": "Your group is now part of the federation",
+            "following": "Your group is now following the federation",
+            "leave": "Your group has left the federation.",
+            "create": "Create your federation",
+            "create2": "DM me for help with your federation : )",
+            "exists": "Your federation already exists:",
+            "name": "Please name your federation, `/newfed My New Federation`",
+            "created": "Your new federation is created.\n\nIt is highly recommended to create a notification channel for your federation with `/setfedchannel` so moderation can easily be monitored throughout the federation in one place.\n\nYou can add groups to your federation by sending `/joinfed",
+            "notfound2": "No federation found. Please first create a federation with `/newfed`",
+            "specify2": "/setchannelfed must be followed by a channel id.  If you need more help",
+            "invalid": "/setchannelfed must be followed by a valid channel.",
+            "invalid2": "is not a valid channel.",
+            "auth": "You are not an authorized admin of the channel.",
+            "confirm1": "Moderation notifications for the federation will now be sent to this [channel]",
+            "confirm2": "This channel will now relay moderation notifications for the federation"
+        },
+        "enforcement":{
+            "off": "I now only recommend penalties (1 day, 1 week, 1 year).",            
+            "on": "I now enforce penalties (1 day, 1 week, 1 year bans)."            
+        },
+        "captcha": {
+            "on": "Captcha is on.",
+            "off": "Captcha is off."
+        }, 
+        "getAccount": "Bot address",
+        "info": {
+            "evidence": "Which user is the report about?",
+            "noevidence": "There are no reports to add evidence to in your group.",
+            "get": "Get Report Info",
+            "DM": "DM me for report info : )",
+            "report1": "broke the rules atleast",
+            "report2": "time(s), and is banned until",
+            "fed": "Federal reports for "
+        },
+        "rules" : "User conduct is moderated according to these [rules]",
+        "rulesUpdated" : "Rules [updated]",
+        "lang" : {
+            "select" : "Select a supported language",
+            "confirm": "Idioma cambiado a español.",
+            "rules": "The Kleros Moderate Community Guidelines apply as the default [rules]",
+            "setrules": "You can set new rules with /setrules. Crafting precise rules is challenging, you can ask me for /help."
+        },
+        "addevidence" : {
+            "allowance": "Daily evidence allowance exhausted.",
+            "ID": "Evidence ID unspecified.",
+            "submitted": "Evidence [submitted]",
+            "explain": "Evidence Submitted with explanation",
+            "error1": "must be followed by a",
+            "id": "Evidence Group ID",
+            "errorId": "The ID is not active or does not exist.",
+            "msg1": "Active IDs",
+            "msg2": "reported for message sent",
+            "Chat": "Chat",
+            "Author": "Author",
+            "Date": "Date",
+            "Message": "Message",
+            "location": "location",
+            "longitude": "longitude",
+            "latitude": "latitude",
+            "History": "History",
+            "Poll": "Poll",
+            "Question": "Question",
+            "Option": "Option",
+            "Evidence": "Evidence",
+            "MessageSent": "Message Sent",
+            "Desc1": "Check the bot account of the chat with /getaccount to make it matches the submission address of this automated piece of evidence, to ensure its authenticity.",
+            "Desc2": "The attached file is a backup record of a message sent in the chat,"
+        },
+        "multilang": {
+            "es": "Spanish group set",
+            "error": "/multilang must be followed by an invite URL"
+        },
+        "greeting": {
+            "multilang": "Este grupo representa a la comunidad de lengua inglesa. La comunidad de lengua española se encuentra en este [grupo]",
+            "greeting0": "Hi 👋 Welcome",
+            "greeting1": "Welcome, this group is moderated with [Kleros Moderate](https://kleros.io/moderate/). Please make sure to follow the [community rules]",
+            "greeting2": "Users who break the rules can be reported by replying to a message with the command `/report`.",
+            "captcha": "I agree to follow the rules."
+        },
+        "error": {
+            "admin": "Admin only.",
+            "adminbot": "I need admin rights.",
+            "topics": "I need permissions to manage topics.",
+            "reply": "Must be used in reply.",
+            "txn": "Does the bot address have enough funds to pay the transaction? An unexpected error has occurred",
+            "url": "Invalid URL"
+        },
+        "report": {
+            "expired": "Live and let live. This message is more than one week old. Next time try to make the report sooner.",
+            "reported": "The message is already [reported]",
+            "anon": "User is anonymous. Ask admins to disable anonymouse admins to moderate admin behavior.",
+            "bot": "Bots can't be reported.",
+            "errorAdmin": "Admin reports are disabled. Admin reporting can be enabled with `/adminreportable`",
+            "norules": "No rules found for this message.",
+            "noallowance": "You have exhausted your daily report allowance."
+        },
+        "getReports" :{
+            "noReports": "No reports for user ",
+            "broke": "broke the rules.",
+            "nobreak": "did not break the rules.",
+            "reportFinal": "final",
+            "reportCurrent": "current",
+            "noActiveReports": "There are no active answered reports.",
+            "specificUser": "To find all reports for a specific user, reply to their message with `/info`.",
+            "reportMessage": "Active Answered Reports",
+            "reportMessage1": "reported for message sent",
+            "reportMessage2": "backup",
+            "reportMessage3": "Report",
+            "reportMessage4": "current answer",
+            "ReportsFor": "Local reports for"
+        },
+        "socialConsensus" : {
+            "confirm": "confirm",
+            "reportConfirm": "Report confirmed.",
+            "consensus1": "Reports require atleast 3 confirmations.",
+            "consensus2": "Should",
+            "consensus3": "be reported for breaking the [rules]",
+            "consensus4": "due to conduct over this [message]",
+            "consensus5": "backup"
+        },
+        "disputeFinal":{
+            "msg": "The dispute over <username>'s message (backup) resolved.",
+            "dispute": "dispute",
+            "message": "message",
+            "backup": "backup"
+        },
+        "brokeRules": "<username> broke the rules",
+        "notBrokeRules": "<username> did not break the rules.",
+        "disputeAppealPossible":{
+            "msg1": "The dispute over <username>'s message (backup) has concluded it's current round.",
+            "dispute": "dispute",
+            "message": "message",
+            "backup": "backup",
+            "msg1Fed": "The dispute over <username>'s message (backup) in the group <group-name> has concluded it's current round.",
+            "disputeFed": "dispute",
+            "messageFed": "message",
+            "backupFed": "backup",
+            "msg2": "If you think the decision is incorrect, you can request an appeal",
+            "appeal": "appeal"
+        },
+        "start": {
+            "start1": "Hi! My community moderation tools are at your service. [DM]",
+            "start2": " me to find out more about how to use me to my full potential : )\n\n            - /setrules to change the default [rules]",
+            "start3": "\n        - /report messages by reply.\n\nI inform the group about content moderation outcomes and deliver a reccomendation for the admin to take action. My recommended penalties (1 day, 1 week, 1 year) can automatically apply by turning on the /enforce setting.\n\n",
+            "private": "Hi! My name is Susie, nice to meet you : )\n\nI am a [Kleros Moderate](https://kleros.io/moderate) community manager at your service. Use /help to learn how to use me to my full potential.\n\nJoin @SusieSupport to get information on all the latest updates.",
+            "add": "Add me to your group!",
+            "already": "Already started."
+        },
+        "welcome": {
+            "welcome": "Hi, I'm Susie, a [Kleros Moderate](https://kleros.io/moderate/) bot.\n\nI need permission from an admin to /start.\n\nHow do I help resolve content moderation questions?\n\n1. I ask \"Did a user break the rules?\" on the crowdsourcing platform [Reality.Eth](https://realityeth.github.io/).\n2. Anyone can answer by leaving a bond (xDai on Gnosis Chain).\n3. Anyone can dispute the answer and [Kleros](https://kleros.io/), the decentralized court, resolves the question.\n\nTo learn more, read my [documentation](https://shotaro.gitbook.io/kleros-moderate/products/moderate/susie), ask a question in @SusieSupport, or [DM](https://t.me/${process.env.BOT_USERNAME}?start=help) me for help : )"
+        },
+        "defaultRules": "https://ipfs.kleros.io/ipfs/Qme3Qbj9rKUNHUe9vj9rqCLnTVUCWKy2YfveQF8HiuWQSu/Kleros%20Moderate%20Community%20Rules.pdf",
+        "index": {
+            "supergroup": "Hi! I'm Susie, a moderation and group management bot. I can only manage supergroups. To promote this group to a supergroup, make the group public or promote any member to a full admin and try to /start me again.",
+            "channel": "The channel id is <code>${myChatMember.chat.id}</code>",
+            "topicMode": "Started topic mode",
+            "topicError": "Susie cannot manage groups in topic mode with out permission to manage topics. Please ask an admin to enable this permission to allow Susie to continue help moderating your community. Then try to /start."
+        },
+        "help": {
+            "DM": "Get Help (DM)",
+            "DM2": "DM me for help : )",
+            "help": "*Help*\n\nHi! My name is Susie. I'm a [Kleros Moderate](https://kleros.io/moderate) bot, here to help you manage your groups!\n\nAs groups grow, so do their moderation problems. We're all busy people who don't have time to monitor groups 24/7. Users often complain about admin abuse and have no recourse. Who moderates the moderator? Presenting [Kleros Moderate](https://kleros.io/moderate), a crowd-sourced content moderation tool using [Reality.eth](https://reality.eth.limo/) and [Kleros](https://kleros.gitbook.io/docs/) on [Gnosis Chain](https://www.gnosis.io/).\n\nWhen users are reported, a question is created on Reality.Eth asking 'did the user break the rules?'. The question can be answered yes/no with a bond (5 DAI). When Susie is an admin, successful reports result in penalties, otherwise Susie recommends admins to take action but does not ban any users herself.\n\n- 1st Report: 1 day ban\n- 2nd Report: 1 week ban\n- 3rd Report: 1 year ban\n\nAnswers to reports can be disputed, creating a case in the Kleros court.\n\nHelpful commands:\n    - /start: Starts me. You probably already used this.\n    - /help: Sends this message to tell you more about myself.\n\nSelect a feature to learn more. My [documentation](https://shotaro.gitbook.io/kleros-moderate/products/moderate/susie-or-kleros-moderator) is also helpful, or ask a question in @SusieSupport."
+,            "back": "back",
+            "Greeting1": "👋 *Greeting* 👋\n\nWelcome your members with a greeting informing them of the group rules.\n\n*Admin commands:*\n- `/welcome` : Toggles on/off welcomes messages.\n- `/captcha` : Toggles on/off rules captcha.\n\nAfter 5 minutes, the previous welcome messages will get deleted\n\nCaptchas remain for up to 5 minutes. If a user forgets to respond within 5 minutes, they should rejoin the group to prompt a new captcha.",
+            "Language1": "🗣️ *Languages* 🗣️\n\nSusie's replies can be changed to one of the languages below.\n- EN (English)\n- ES (Español)\n\n*Admin commands*:    \n- `/lang`: Set your preferred language.\n\nContent moderation requires a nuanced understanding of context and language. Setting a language not only changes Susie's responses, but also specifies language skilled jurors.\n\nPlease make sure to set the appropriate language for your community for effective moderation.",
+            "Topics1": "ℹ️ *Topics* ℹ️\n\nTopics allow large groups to focus discussion in dedicated **topic** chats. Susie supports topics. When changing a group to topic mode, you will need to /start Susie again.\n\n*Admin commands*:\n- `/start`: Start topic mode.",
+            "Evidence1": "🔍 *Evidence* 🔍\n\nTo prevent important messages from deletion, pre-emptively, messages can be saved as evidence.\n\nNote that Susie uses a proxy contract to efficiently batch reports. In case of dispute over authenticity, evidence submitted by the Kleros Moderate bot is time stamped in chat. Moreover, this timestamp should be consistent with any evidence submitted by the bot address through the transaction batching contract.\n\n*User commands*:\n- `/evidence` <by reply> <evidencegroup>: Reply to a message to add it as evidence.\n- `/getaccount`: Gets bot and transaction batcher addresses.",
+            "Report1": "🚨 *Report* 🚨\n\nWhen users are reported, a question is created on Reality.Eth asking 'did the user break the rules?'. The question can be answered yes/no with a bond (5 DAI). Successful reports result in penalties,\n\n- 1st Report: 1 day ban\n- 2nd Report: 1 week ban\n- 3rd Report: 1 year ban\n\nWhen Susie is not an admin, she only reccomends the admins to take action.\n\nAnswers to reports can be disputed, creating a case in the Kleros court.\n\n*User commands*:\n- `/report` <by reply>: Reply to a message to report it\n- `/info`: Returns active reports\n- `/info` <by reply>: Returns active reports for user",
+            "Rules1": "📄 *Rules* 📄\n\nEvery groups starts with [default rules](https://ipfs.kleros.io/ipfs/QmYYcNfEYLtxPM8fof4wf9Tqj7gBGMDMmNnBqZKR1zSczX/Kleros%20Moderate%20Community%20Guidelines%20v1.pdf). Crafting precise policies can be challenging.\n\n***Rule Writing Tips***:\n\n- Start with a preamble defining the group culture.\n- Number each rule.\n- Be specific.\n\n***Bad Example***:\n\n- Users must not send immoral messages\n- Users must not send unethical messages\n\nThese rules are too abstract and do not describe the culture nor context of the group.\n\n***Good Example***:\n\nAs a vegan community, we adopt these rules with the goals of sharing lifestyle tips (recipes, sustainable clothing, etc) in an environment of mutual respect.\n\n1. Users must not encourage immoral behavior eg. encouraging meat consumption.\n2. Users must not engage in unethical behavior eg. stealing credit for vegan recipies.\n\nThese rules include a define the group culture in the preamble, are numbered, and are specific.\n\n*User commands*:\n- `/rules`: Returns current rules\n*Admin commands*:\n- `/setrules` <url>: Sets the rules to the the url\n- `/setrules` <by reply>: Sets the rules to a replied message",
+            "Court1": "`⚖️ *Court* ⚖️\n\nContent moderation questions are resolved by the [Kleros Court](https://kleros.gitbook.io/docs/) with a jury of moderators. If the jury made a mistake, the case can be appealed, drawing a larger pool of jurors and providing an opportunity to provide more context, analysis, and arguments.\n\nIf you would like a chance to serve as a jury member, get PNK ([Gnosis Chain](https://swapr.eth.link/#/swap?chainId=100) or [Mainnet](https://app.uniswap.org/#/swap?outputCurrency=0x93ed3fbe21207ec2e8f2d3c3de6e058cb73bc04d&inputCurrency=ETH)) and [stake](https://court.kleros.io/) in the Kleros court.\n\nTo discuss the merits of a dispute, see @klerosjuror.`",
+            "Lawyer1": "🧑‍⚖️ *Find a Lawyer* 🧑‍⚖️\n\nDisputes over reported behavior can be complicated and nuanced. Often, disputes resolve on the merits of the message and rules alone. In some cases, disputes are better resolved by presenting the court with analysis and arguments.\n\nIf you would like to offer your services as a lawyer or solicit services, please join this [group](https://t.me/+9fvGGkGfSZ1hZDBk).",
+            "Privacy1": "🕵️ *Privacy* 🕵️\n\nEffective moderation depends on access to the full context of a reported message. To provide context, users can request Susie to save messages to submit as evidence on their behalf. Susie manages moderation private and public groups differently,\n\n- In *private* groups, moderators depend on evidence submissions alone.\n- In *public* groups, Susie invites moderators to join the group and investigate message context.",
+            "Notifications1": "🔔 *Notifications* 🔔\n\nSusie sends notifications about moderation actions and report updates. These notifications are restricted to a separate chat in topic mode. In regular Telegram groups, notifications can be sent to a notification channel to avoid cluttering the main chat.\n\nHow to enable notification channels:\n\n1. Make a channel\n2. Add Susie\n3. Susie will send a channel ID\n4. Use that channel ID to set notifications with /setchannel in the original group\n\n*User commands*:\n- `/notifications`: Returns current notification channel\n*Admin commands*:\n- `/setchannel` <channelID>: Sets the notification channel to the specified channel id\n- `/setfedchannel` <channelID>: Sets the notification channel for your federation to the specified channel id",
+            "Federations1": "🌐 *Federations*\n\nModerating a single group is hard, but managing multiple is even harder? Do you have to ban spammers manually, in all your groups?\n\nNo more! With federations, Susie can enforce a ban on a user in all federate groups.\n\n*User commands*:\n- `/fedinfo`: Returns current federation\n*Admin commands*:\n- `/newfed`: Creates a federation\n- `/joinfed`: Joins the current group to a Federation",
+            "Gnosis1": "⛓️ *Gnosis Chain* ⛓️\n\nSusie uses [xDAI](https://docs.gnosischain.com/about/tokens/xdai), a stable coin, on [Gnosis Chain](https://www.gnosis.io/). Don't know what that means? It means Susie uses a cheap and fast public ledger to coordinate moderation fairly and transparently.\n\nDon't have any xDAI on Gnosis Chain? No problem, there's a (cheap, fast) [bridge](https://bridge.connext.network/?receivingChainId=100&receivingAssetId=0x0000000000000000000000000000000000000000) for that. \n\nWhat's crypto? I heard about that on the news, I don't want anything to do with crypto. No problem, you can ask for help from freelance moderators in @SusieSupport.\n\nDon't have any cryptocurrency? No problem, there's a convinient [fiat on-ramp](https://www.mtpelerin.com/buy-xdai) (credit card or bank transfer) to buy DAI on Gnosis Chain.\n\nNeed help adding the Gnosis Chain network to your wallet? Don't worry, there's a [guide](https://docs.gnosischain.com/tools/wallets/metamask#2-configure) for that.\n\nNeed more help? Don't worry, there's a @SusieSupport group for that",
+            "Greeting": "👋 Greeting",
+            "Language": "🗣️ Language",
+            "Topics": "ℹ️ Topics",
+            "Evidence": "🔍 Evidence",
+            "Report": "🚨 Report",
+            "Rules": "📄 Rules",
+            "Court": "⚖️ Court",
+            "Lawyer": "🧑‍⚖️ Lawyer",
+            "Privacy": "🕵️ Privacy",
+            "Notifications": "🔔 Notifications",
+            "Federations": "🌐 Federation",
+            "Gnosis": "⛓️ Gnosis"
+        }
+    },
+    "es":{
+        "reputation": {
+            "sheriff": "Hay un nuevo sheriff en la ciudad",
+            "deputy": "Hay un nuevo ayudante del sheriff en la ciudad",
+            "samaritan": "🎖 ***Premio al Buen Samaritano***🎖\n\nEl premio al Buen Samaritano es el máximo galardón de este grupo y se concede a los miembros que realizan actos ejemplares de servicio a su grupo o a sus compañeros. Gracias por su servicio 🙏",
+            "BoyWhoCriedWolf": "¿Has oído alguna vez la fábula del 💩 niño que gritó lobo 💩?\n\nTen cuidado, demasiadas denuncias sin respuesta podrían dañar tu reputación",
+            "NeighborhoodWatch": "🤝 ***Reconocimiento a la vigilancia vecinal*** 🤝\n\n El reconocimiento Neighborhood Watch se otorga a los miembros que ayudan a proteger su comunidad. Gracias por su servicio 🙏"
+        },
+        "notifications": {
+            "getfed": "Las notificaciones para la federación de este grupo se envían a este [canal].",
+            "notset": "El canal de notificaciones para este grupo no está configurado. Pida a un administrador `/setchannel`.",
+            "get": "Envío notificaciones de moderación a este [canal]"
+        },
+        "fed": {
+            "specify" : "Especifique una federación, por ejemplo `/joinfed <federation_id>`.",
+            "nofed": "No hay federación establecida.",
+            "notfound": "Federación no encontrada. Utilice /fedinfo en un grupo a cuya federación desee unirse para encontrar su ID.",
+            "joined": "Su grupo ya forma parte de la federación",
+            "following": "Su grupo sigue ahora a la federación",
+            "leave": "Su grupo ha abandonado la federación.",
+            "create": "Cree su federación",
+            "create2": "DM mí para obtener ayuda con su federación : )",
+            "exists": "Su federación ya existe:",
+            "name": "Nombre su federación, `/newfed Mi nueva federación`.",
+            "created": "Su nueva federación está creada.\n\nEs muy recomendable crear un canal de notificación para su federación con `/setfedchannel` para que la moderación pueda ser fácilmente supervisada en toda la federación en un solo lugar.\n\nPuede añadir grupos a su federación enviando `/joinfed"
+        },
+        "getAccount": "Bot dirección",
+        "info": {
+            "evidence": "¿De qué usuario trata el informe?",
+            "noevidence": "No hay informes a los que añadir pruebas en tu grupo.",
+            "get": "Obtener información del informe",
+            "DM": "DM mí para información de informe : )",
+            "report1": "rompió las reglas al menos",
+            "report2": "vece(s) y está prohibido hasta que",
+            "fed": "Informes federales para "
+        },
+        "captcha": {
+            "on": "Captcha está activado.",
+            "off": "Captcha está desactivado."
+        }, 
+        "getReports" :{
+            "noReports": "No hay informes para el usuario ",
+            "broke": "rompió las reglas.",
+            "nobreak": "no rompió las reglas.",
+            "reportFinal": "final",
+            "reportCurrent": "actual",
+            "noActiveReports": "No hay informes de respuesta activos.",
+            "specificUser": "Para encontrar todos los informes de un usuario concreto, responde a su mensaje con `/info`.",
+            "reportMessage": "Informes con respuesta activa",
+            "reportMessage1": "denunciado por mensaje enviado",
+            "reportMessage2": "backup",
+            "reportMessage3": "Informe",
+            "reportMessage4": "respuesta actual",
+            "ReportsFor": "Informes locales para"
+        },
+        "rules" : "La conducta de los usuarios se modera de acuerdo con las siguientes [reglas]",
+        "rulesUpdated" : "Normas [actualizadas]",
+        "lang" : {
+            "select" : "Seleccione un idioma compatible",
+            "confirm": "Language changed to english.",
+            "rules": "Se aplican por defecto las Directrices de la Comunidad Moderada de Kleros [normas]",
+            "setrules": "Puedes establecer nuevas reglas con /setrules. Elaborar reglas precisas es un reto, puedes pedirme ayuda (/help)."
+        },
+        "addevidence" : {
+            "allowance": "Se han agotado las pruebas diarias.",
+            "ID": "pruebas ID sin especificar.",
+            "submitted": "Pruebas [cargadas]",
+            "explain": "Pruebas presentadas con explicaciones",
+            "errorId": "El ID no está activo o no existe.",
+            "Chat": "Charla",
+            "Author": "Autor",
+            "Date": "Fecha",
+            "Message": "Mensaje",
+            "location": "ubicación",
+            "longitude": "longitud",
+            "latitude": "latitud",
+            "History": "Historia",
+            "Poll": "Encuesta",
+            "Question": "Pregunta",
+            "Option": "Opción",
+            "Evidence": "Pruebas",
+            "MessageSent": "Mensaje enviado",
+            "Desc1": "Comprueba que la cuenta bot del chat con /getaccount coincide con la dirección de envío de esta prueba automatizada, para asegurarte de su autenticidad.",
+            "Desc2": "El archivo adjunto es un registro de copia de seguridad de un mensaje enviado en el chat,"
+        },
+        "multilang": {
+            "en": "Grupo inglés conectado",
+            "error": "/multilang debe ir seguido de una URL de invitación"
+        },
+        "greeting": {
+            "multilang": "This group represents the Spanish language community. The English language community can be found in this [group]",
+            "greeting0": "Hola 👋 Bienvenido",
+            "greeting1": "Este grupo está moderado por [Kleros Moderate](https://kleros.io/moderate/). Por favor, asegúrese de seguir las [reglas de la comunidad]",
+            "greeting2": "Los usuarios que incumplan las normas pueden ser denunciados respondiendo a un mensaje con el comando `/report`.",
+            "captcha": "Acepto seguir las normas."
+        },
+        "error": {
+            "admin": "Sólo para administradores.",
+            "reply": "Debe utilizarse en la respuesta.",
+            "adminbot": "Necesito derechos de administrador para aplicar sanciones (1 día, 1 semana, 1 año).",
+            "topics": "Necesito permisos para gestionar temas.",
+            "txn": "¿La dirección del bot tiene fondos suficientes para pagar la transacción? Se ha producido un error inesperado",
+            "url": "URL inválido"
+        },
+        "report": {
+            "expired": "Vive y deja vivir. Este mensaje es de hace más de una semana. La próxima vez intenta hacer el informe antes.",
+            "anon": "El usuario es anónimo. Pide a los administradores que deshabiliten los administradores anónimos para moderar el comportamiento de los administradores.",
+            "bot": "Los bots no pueden ser denunciados.",
+            "admin": "Los informes de administración están desactivados. Los informes de administración pueden activarse con `/adminreportable`.",
+            "reported": "El mensaje ya está [notificado]",
+            "norules": "No se han encontrado reglas para este mensaje.",
+            "noallowance": "Ha agotado su asignación diaria de informes."
+        },
+        "socialConsensus" : {
+            "confirm": "confirmar",
+            "reportConfirm": "Usuario reportado",
+            "consensus2": "Ha infringido el usuario ",
+            "consensus3": "las [reglas]",
+            "consensus4": "mediante conductas relacionadas con el [mensaje]",
+            "consensus5": "backup"
+        },
+        "index": {
+            "supergroup": "Hola, soy Susie, un bot de moderación y gestión de grupos. Sólo puedo gestionar supergrupos. Para promover este grupo a un supergrupo, haz público el grupo o promueve a cualquier miembro a administrador completo e intenta /start me de nuevo.",
+            "channel": "El ID del canal es <code>${myChatMember.chat.id}</code>",
+            "topicMode": "Modo de tema iniciado",
+            "topicError": "Susie no puede gestionar grupos en modo tema si no tiene permiso para gestionar temas. Pide a un administrador que habilite este permiso para que Susie pueda seguir ayudando a moderar tu comunidad. A continuación, intente /start."
+        },
+        "start": {
+            "start1": "Hola! Mis herramientas de moderación comunitaria están a tu servicio. Envíame un [DM]",
+            "start2": " para saber más sobre cómo aprovechar todo mi potencial. : )\n\n        - /setrules para cambiar las [reglas]",
+            "start3": "\n        - /report mensajes por respuesta.\n\nInformo al grupo sobre los resultados de la moderación de contenidos y entrego una reccomendación para que el admin tome medidas.\n\nPromoverme a un admin para aplicar las sanciones reccomendadas automáticamente. Mis sanciones recomendadas (1 día, 1 semana, 1 año) pueden aplicarse automáticamente activando la opción /enforce.",
+            "private": "Hola, me llamo Susie, encantada de conocerte : )\n\nSoy una [Kleros Moderate](https://kleros.io/moderate) community manager a tu servicio. Utiliza /help para aprender a utilizarme en todo mi potencial.\n\nÚnete a mi canal de noticias @KlerosModerateNews para informarte de todas las últimas actualizaciones.",
+            "add": "Añádeme a tu grupo!"
+        },
+        "welcome": {
+            "welcome": "Hola, soy Susie, un bot [Kleros Moderate](https://kleros.io/moderate/). Necesito permiso de un administrador para /start. \n\n¿Cómo ayudo a resolver preguntas sobre moderación de contenidos?\n\n1.Pregunto \"¿Un usuario ha infringido las normas?\" en la plataforma de crowdsourcing [Reality.Eth](https://realityeth.github.io/).\n2. Cualquiera puede responder dejando un bono (xDai en Gnosis Chain).\n3. Cualquiera puede impugnar la respuesta y [Kleros](https://kleros.io/), el tribunal descentralizado, resuelve la pregunta.\n\nPara saber más, lee mi [documentación](https://shotaro.gitbook.io/kleros-moderate/products/moderate/susie), haz una pregunta en @SusieSupport, o [DM](https://t.me/${process.env.BOT_USERNAME}?start=help) para obtener ayuda."
+        },
+        "defaultRules": "https://ipfs.kleros.io/ipfs/QmSHAjfD1MYPtyopFoXcUQ5Ny3sfs5re1yz3h3TZ5qGDsp/Kleros%20Moderate%20Normas%20comunitarias.pdf",
+        "help": {
+            "DM": "Obtener ayuda (DM)",
+            "DM2": "DM de ayuda : )",
+            "help": "*Ayuda*\n\nHi! Me llamo Susie. Soy un [Kleros Moderate](https://kleros.io/moderate) bot, aquí para ayudarles a gestionar sus grupos!\n\nA medida que los grupos crecen, también lo hacen sus problemas de moderación. Todos estamos muy ocupados y no tenemos tiempo para supervisar los grupos 24 horas al día, 7 días a la semana. Los usuarios suelen quejarse de los abusos de los administradores y no tienen ningún recurso. ¿Quién modera al moderador? Presentamos [Kleros Moderate](https://kleros.io/moderate), una herramienta de moderación de contenidos de origen colectivo que utiliza  [Reality.eth](https://reality.eth.limo/) y [Kleros](https://kleros.gitbook.io/docs/) con [Gnosis Chain](https://www.gnosis.io/).\n\nCuando los usuarios son denunciados, se crea una pregunta en Reality.Eth preguntando \"¿el usuario rompió las reglas?\". La pregunta puede responderse sí/no con un bono (5 DAI). Cuando Susie es una admin, los reportes exitosos resultan en penalizaciones, de lo contrario Susie recomienda a los admins que tomen acción pero no banea a ningún usuario ella misma.\n\n- 1º Report: 1 día de prohibición\n- 2º Report: 1 semana de prohibición\n- 3º Report: 1 año de prohibición\n\nLas respuestas a los informes pueden impugnarse, creando un caso en el tribunal de Kleros.\n\nComandos útiles:\n    - /start: Empieza yo. Probablemente ya usaste esto.\n    - /help: Envía este mensaje para contarte más cosas sobre mí.\n\nSeleccione una función para obtener más información. Mi [documentación](https://shotaro.gitbook.io/kleros-moderate/products/moderate/susie-or-kleros-moderator) también es útil, o haz una pregunta en @SusieSupport."
+,            "back": "back",
+            "Greeting1": "👋 *Saludos* 👋\n\nDa la bienvenida a tus miembros con un saludo informándoles de las reglas del grupo.\n\n*Comandos de administrador:*\n- `/welcome` : Activa/desactiva los mensajes de bienvenida.\n- `/captcha` : Activa/desactiva el captcha de las reglas.\n\nDespués de 5 minutos, los mensajes de bienvenida anteriores se borrarán.\n\nLos captchas permanecen hasta 5 minutos. Si un usuario se olvida de responder en 5 minutos, debe volver a unirse al grupo para solicitar un nuevo captcha.",
+            "Language1": "🗣️ *Idiomas* 🗣️\n\nLas respuestas de Susie se pueden cambiar a uno de los siguientes idiomas.\n- EN (English)\n- ES (Español)\n\n*Comandos de administración*:    \n- `/lang` <language>: Establezca su idioma preferido.\n\nLa moderación de contenidos requiere una comprensión matizada del contexto y el lenguaje. Establecer un idioma no sólo cambia las respuestas de Susie, sino que también especifica el idioma de los jurados cualificados.\n\nPor favor, asegúrese de establecer el idioma apropiado para su comunidad para una moderación efectiva.",
+            "Topics1": "ℹ️ *Temas* ℹ️\n\nLos temas permiten a los grandes grupos centrar el debate en chats dedicados a **temas**. Susie es compatible con los temas. Cuando cambie un grupo a modo de tema, necesitará /iniciar Susie de nuevo.\n\n*Comandos de administrador*:\n- `/start`: Inicia el modo por temas.",
+            "Evidence1": "🔍 *Evidencia* 🔍\n\nPara evitar que se borren mensajes importantes, de forma preventiva, los mensajes pueden guardarse como pruebas.\nNNTen en cuenta que Susie utiliza un contrato proxy para procesar eficazmente los informes por lotes. En caso de disputa sobre la autenticidad, las pruebas presentadas por el bot Kleros Moderate llevan un sello de tiempo en el chat. Además, esta marca de tiempo debe ser coherente con cualquier evidencia presentada por la dirección bot a través del contrato de procesamiento por lotes de transacciones.\n\n*Comandos de usuario*:\n- `/evidence` <by reply> <evidencegroup>: Responde a un mensaje para añadirlo como evidencia.\n- `/getaccount`: Obtiene direcciones de bots y batchers de transacciones.",
+            "Report1": "🚨 *Report* 🚨\n\nCuando los usuarios son denunciados, se crea una pregunta en Reality.Eth preguntando \"¿el usuario rompió las reglas?\". La pregunta puede responderse sí/no con un bono (5 DAI). Los reportes exitosos resultan en penalizaciones,\n\n- 1er Reporte: 1 día de suspensión- 2º Informe: 1 semana de prohibición: 1 año de baneo\n\nCuando Susie no es admin, solo recomienda a los admins que tomen medidas.\n\nLas respuestas a los reportes pueden ser disputadas, creando un caso en la corte de Kleros.\n\n*Comandos de usuario*:\n- `/report` <por respuesta>: Responde a un mensaje para denunciarlo- `/info`: Devuelve los informes activos- `/info` <por respuesta>: Devuelve los informes activos del usuario",
+            "Rules1": "📄 *Reglas* 📄\n\nTodos los grupos empiezan con [reglas por defecto](https://ipfs.kleros.io/ipfs/QmSHAjfD1MYPtyopFoXcUQ5Ny3sfs5re1yz3h3TZ5qGDsp/Kleros%20Moderate%20Normas%20comunitarias.pdf). Elaborar políticas precisas puede ser todo un reto.\n\n*Consejos para redactar reglas***:\n\n- Empieza con un preámbulo que defina la cultura del grupo.\n- Numera cada regla.\n- Sé específico.\n\n*Mal ejemplo***:\n\n- Los usuarios no deben enviar mensajes inmorales\n- Los usuarios no deben enviar mensajes poco éticos.\n\nEstas reglas son demasiado abstractas y no describen la cultura ni el contexto del grupo.\n\n*Buen ejemplo***:\n\nComo comunidad vegana, adoptamos estas reglas con el objetivo de compartir consejos de estilo de vida (recetas, ropa sostenible, etc.) en un entorno de respeto mutuo.\n\n1. Los usuarios no deben fomentar comportamientos inmorales, por ejemplo, fomentar el consumo de carne.\n2. Los usuarios no deben tener un comportamiento poco ético, por ejemplo, robar el crédito por recetas veganas.\n\nEstas reglas incluyen una definición de la cultura del grupo en el preámbulo, están numeradas y son específicas\n\ncomandos útiles:\n- `/rules`: Devuelve las reglas actuales.\n*Comandos de administrador*:\n- `/setrules` <url>: Establece las reglas a la url\n- `/setrules` <by reply>: Establece las reglas a un mensaje respondido.",
+            "Court1": "`⚖️ *Corte* ⚖️\n\nLas cuestiones de moderación de contenidos las resuelve el [Kleros Court](https://kleros.gitbook.io/docs/) con un jurado de moderadores. Si el jurado cometió un error, el caso puede ser apelado, atrayendo a un grupo más grande de miembros del jurado y proporcionando la oportunidad de proporcionar más contexto, análisis y argumentos.\n\nSi desea tener la oportunidad de servir como miembro del jurado, obtenga PNK ([Gnosis Chain](https://swapr.eth.link/#/swap?chainId=100) o [Mainnet](https://app.uniswap.org/#/swap?outputCurrency=0x93ed3fbe21207ec2e8f2d3c3de6e058cb73bc04d&inputCurrency=ETH)) y [stake](https://court.kleros.io/) en el tribunal de Kleros.\n\nPara discutir el fondo de una disputa, consulte @klerosjuror.`",
+            "Lawyer1": "🧑‍⚖️ *Buscar un Abogado* 🧑‍⚖️\n\nLas disputas sobre el comportamiento denunciado pueden ser complicadas y llenas de matices. A menudo, las disputas se resuelven únicamente sobre el fondo del mensaje y las normas. En algunos casos, las disputas se resuelven mejor presentando al tribunal análisis y argumentos.\n\nSi desea ofrecer sus servicios como abogado o solicitar servicios, únase a este [grupo](https://t.me/+9fvGGkGfSZ1hZDBk).",
+            "Privacy1": "🕵️ *Privacidad* 🕵️\n\nUna moderación eficaz depende del acceso al contexto completo de un mensaje denunciado. Para proporcionar el contexto, los usuarios pueden solicitar a Susie que guarde los mensajes para presentarlos como pruebas en su nombre. Susie gestiona la moderación de los grupos privados y públicos de forma diferente,\n\n- En los grupos *privados*, los moderadores dependen únicamente del envío de pruebas.\n- En los grupos *públicos*, Susie invita a los moderadores a unirse al grupo e investigar el contexto del mensaje.",
+            "Notifications1": "🔔 *Notificaciones* 🔔\n\nSusie envía notificaciones sobre acciones de moderación y actualizaciones de informes. Estas notificaciones están restringidas a un chat separado en modo tema. En grupos regulares de Telegram, las notificaciones pueden ser enviadas a un canal de notificación para evitar saturar el chat principal.\n\nCómo habilitar canales de notificación:\n\n1. Crea un canal\n2. Añade a Susie\n3. Susie enviará un ID de canal\n4. Utiliza ese ID de canal para establecer notificaciones con /setchannel en el grupo original\n\n*Comandos de usuario*:\n- `/notificaciones`: Devuelve el canal de notificaciones actual\n*Comandos de administrador*:\n- `/setchannel` <channelID>: Establece el canal de notificaciones en el id de canal especificado\n- `/setfedchannel` <channelID>: Establece el canal de notificaciones para su federación en el id de canal especificado",
+            "Federations1": "🌐 *Federaciones*\n\nModerar un solo grupo es difícil, ¿pero gestionar varios lo es aún más? ¿Tienes que bloquear manualmente a los spammers en todos tus grupos? Con las federaciones, Susie puede aplicar una prohibición a un usuario en todos los grupos federados.\n\n*Comandos de usuario*:\n- `/fedinfo`: Devuelve la federación actual: Crea una federación- `/joinfed`: Une el grupo actual a una federación",
+            "Gnosis1": "⛓️ *Gnosis Chain* ⛓️\n\nSusie usa [xDAI](https://docs.gnosischain.com/about/tokens/xdai), una moneda estable, en [Gnosis Chain](https://www.gnosis.io/). ¿No sabes lo que eso significa? Significa que Susie utiliza un libro de contabilidad público barato y rápido para coordinar la moderación de forma justa y transparente. \n\n¿No tienes ningún xDAI en Gnosis Chain? No hay problema, hay un (barato, rápido) [puente](https://bridge.connext.network/?receivingChainId=100&receivingAssetId=0x0000000000000000000000000000000000000000) para eso. \n\n¿Qué es crypto? He oído hablar de eso en las noticias, no quiero tener nada que ver con crypto. No hay problema, puedes pedir ayuda a los moderadores independientes en @SusieSupport.\n\n¿No tienes ninguna criptodivisa? No hay problema, hay una conveniente [fiat on-ramp](https://www.mtpelerin.com/buy-xdai) (tarjeta de crédito o transferencia bancaria) para comprar DAI en Gnosis Chain.\n\n¿Necesitas ayuda para añadir la red Gnosis Chain a tu cartera? No te preocupes, hay una [guía](https://docs.gnosischain.com/tools/wallets/metamask#2-configure) para eso.\n\n¿Necesitas más ayuda? No te preocupes, hay un grupo @SusieSupport para eso.",
+            "Greeting": "👋 Saludos",
+            "Language": "🗣️ Idiomas",
+            "Topics": "ℹ️ Temas",
+            "Evidence": "🔍 Evidencia",
+            "Report": "🚨 Report",
+            "Rules": "📄 Reglas",
+            "Court": "⚖️ Corte",
+            "Lawyer": "🧑‍⚖️ Abogado",
+            "Privacy": "🕵️ Privacidad",
+            "Notifications": "🔔 Notificaciones",
+            "Federations": "🌐 Federaciones",
+            "Gnosis": "⛓️ Gnosis"
+        }
+    }
+}

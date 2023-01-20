@@ -91,6 +91,19 @@ const setInviteURL = (db: any, platform: string, groupId: string, inviteUrl: str
     }
 }
 
+const setMultilangGroup = (db: any, platform: string, groupId: string, inviteUrl: string, lang: string) => {
+    try{
+        const stmt = db.prepare(
+            `INSERT INTO groupsMultiLang (platform, group_id, invite_url, lang) 
+            VALUES (?, ?, ?, ?) 
+            ON CONFLICT (platform, group_id, lang) DO UPDATE SET 
+            invite_url = ?;`);
+        const info = stmt.run(platform, groupId, inviteUrl, lang, inviteUrl);
+    } catch(err) {
+        console.log("db error: setMultilangGroup, "+err);
+    }
+}
+
 const setInviteURLChannel = (db: any, platform: string, groupId: string, inviteUrlChannel: string) => {
     try{
         const stmt = db.prepare(
@@ -205,7 +218,6 @@ const setGreetingMode = (db: any, platform: string, groupId: string, greeting_mo
         console.log("db error: set setGreetingMode "+err);
     }
 }
-
 const setCaptchaMode = (db: any, platform: string, groupId: string, captcha_mode: number) => {
     try{
         const stmt = db.prepare(
@@ -214,6 +226,19 @@ const setCaptchaMode = (db: any, platform: string, groupId: string, captcha_mode
             ON CONFLICT (platform, group_id) DO UPDATE SET 
             captcha = ?;`);
         const info = stmt.run(platform, groupId, captcha_mode, captcha_mode);
+    } catch(err) {
+        console.log("db error: setCaptchaMode "+ err);
+    }
+}
+
+const setEnforcementMode = (db: any, platform: string, groupId: string, enforcement_mode: number) => {
+    try{
+        const stmt = db.prepare(
+            `INSERT INTO groups (platform, group_id, enforcement) 
+            VALUES (?, ?, ?) 
+            ON CONFLICT (platform, group_id) DO UPDATE SET 
+            enforcement = ?;`);
+        const info = stmt.run(platform, groupId, enforcement_mode, enforcement_mode);
     } catch(err) {
         console.log("db error: setCaptchaMode "+ err);
     }
@@ -318,6 +343,15 @@ const getInviteURL = (db: any, platform: string, groupId: string) => {
     }
 }
 
+const getMultilangGroup = (db: any, platform: string, groupId: string, lang: string) => {
+    try{
+        const stmt = db.prepare('SELECT invite_url FROM groupsMultiLang WHERE platform = ? AND group_id = ? AND lang = ?');
+        return stmt.get(platform, groupId, lang)?.invite_url || '';
+    } catch(err) {
+        console.log("db error: getMultilangGroup, "+err);
+    }
+}
+
 const getInviteURLChannel = (db: any, platform: string, groupId: string) => {
     try{
         const stmt = db.prepare('SELECT invite_url_channel FROM groups WHERE platform = ? AND group_id = ?');
@@ -391,7 +425,7 @@ const getGroupSettings = (db: any, platform: string, groupId: string): groupSett
             greeting_mode: result?.greeting_mode,
             captcha: result?.captcha,
             admin_reportable: result?.admins_reportable,
-            privacy_mode: result?.privacy_mode,
+            enforcement: result?.enforcement,
             federation_id: result?.federation_id,
             federation_id_following: result?.federation_id_following,
         }
@@ -568,8 +602,11 @@ const getLocalBanHistory = (db: any, platform: string, userId: string, group_id:
     const banLevel2 = getLocalBanHistoryInduction(db,platform,userId,group_id,banLevel1.timestamp, finalized)
     if(!banLevel2)
         return [base, banLevel1]
+    const banLevel3 = getLocalBanHistoryInduction(db,platform,userId,group_id,banLevel2.timestamp, finalized)
+    if(!banLevel3)
+        return [base, banLevel1, banLevel2]
 
-    return [base, banLevel1, banLevel2]
+    return [base, banLevel1, banLevel2, banLevel3]
 }
 
 const getLocalBanHistoryBase = (db: any, platform: string, userId: string, group_id: string, finalized: boolean) => {
@@ -613,8 +650,11 @@ const getFederatedBanHistory = (db: any, platform: string, userId: string, feder
     const banLevel2 = getFederatedBanHistoryInduction(db,platform,userId,federation_id,banLevel1.timestamp, finalized)
     if(!banLevel2)
         return [base, banLevel1]
-
+    const banLevel3 = getFederatedBanHistoryInduction(db,platform,userId,federation_id,banLevel2.timestamp, finalized)
+    if(!banLevel3)
         return [base, banLevel1, banLevel2]
+
+        return [base, banLevel1, banLevel2, banLevel3]
     }
 
 const getFederatedBanHistoryBase = (db: any, platform: string, userId: string, federation_id: string, finalized: boolean) => {
@@ -670,8 +710,10 @@ const getFederatedFollowingBanHistory = (db: any, platform: string, userId: stri
     const banLevel2 = getFederatedFollowingBanHistoryInduction(db,platform,userId,group_id,federation_id,banLevel1.timestamp, finalized)
     if(!banLevel2)
         return [base, banLevel1]
-
-    return [base, banLevel1, banLevel2]
+    const banLevel3 = getFederatedFollowingBanHistoryInduction(db,platform,userId,group_id,federation_id,banLevel1.timestamp, finalized)
+    if(!banLevel3)
+        return [base, banLevel1, banLevel2]
+    return [base, banLevel1, banLevel2, banLevel3]
     }
 
 const getFederatedFollowingBanHistoryBase = (db: any, platform: string, userId: string, group_id: string, federation_id: string, finalized: boolean) => {
@@ -836,14 +878,26 @@ const setRules = (db:any, platform: string, groupId: string, rules: string, time
     }
 }
 
-
-const getRule = (db:any, platform: string, groupId: string, timestamp: number): string => {
+const setRulesCustom = (db:any, platform: string, groupId: string, rules: string, timestamp: number, msg_id: string) => {
     try{
-        const stmt = db.prepare(`SELECT rules
+        const stmt = db.prepare(
+            `INSERT INTO rules (platform, group_id, rules, timestamp, msg_id)
+            VALUES (?, ?, ?, ?, ?);`);
+        const info = stmt.run(platform, groupId, rules, timestamp, msg_id);
+    } catch(err) {
+        console.log("db error: setRulesCustom");
+        console.log(err);
+    }
+}
+
+
+const getRule = (db:any, platform: string, groupId: string, timestamp: number): any => {
+    try{
+        const stmt = db.prepare(`SELECT *
         FROM rules 
         WHERE platform = ? and group_id = ? and timestamp < ?
         ORDER BY timestamp DESC;`);
-        return stmt.get(platform, groupId,timestamp)?.rules;
+        return stmt.get(platform, groupId,timestamp);
     } catch(err){
         console.log("db error: getRule " + err);
     }
@@ -911,10 +965,14 @@ export {
     setInviteURLChannel,
     getThreadIDWelcome,
     getGroupSettings,
+    getMultilangGroup,
+    setMultilangGroup,
     setThreadIDWelcome,
     setAllowance,
     getAllowance,
     getTitle,
+    setRulesCustom,
+    setEnforcementMode,
     setReport,
     setFederation,
     getFederatedBanHistoryBase,

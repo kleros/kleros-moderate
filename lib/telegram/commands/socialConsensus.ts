@@ -1,7 +1,7 @@
 import * as TelegramBot from "node-telegram-bot-api";
 import { getQuestionId } from "../../graph";
 import  {reportMsg} from "./report";
-import langJson from "../assets/lang.json";
+import langJson from "../assets/langNew.json";
 import { groupSettings } from "../../../types";
 const escape = require('markdown-escape')
 import {Wallet} from "@ethersproject/wallet";
@@ -19,11 +19,12 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: Teleg
     const calldata = rawCalldata.split('|');
     const match = callbackQuery.message.reply_markup.inline_keyboard[0][0].text;
     const msg: any = callbackQuery.message;
-    const newConfirmations = Number(match.substring(9,10)) + 1;
+    const newConfirmations = Number(match.substring(match.length - 4,match.length-3)) + 1;
+    console.log(newConfirmations)
 
-    if (callbackQuery.from.id == Number(calldata[3]))
+    if (callbackQuery.from.id == Number(calldata[4]))
         return;
-    //if (calldata.length > 4 && callbackQuery.from.id == Number(calldata[4]))
+    //if (calldata.length > 5 && callbackQuery.from.id == Number(calldata[5]))
     //    return;
 
     const markdown = {
@@ -44,6 +45,7 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: Teleg
           message_id: msg.message_id,
           message_thread_id: msg.message_thread_id
         }
+
         const optsFinal = msg.chat.is_forum? {
           chat_id: msg.chat.id,
           message_id: msg.message_id
@@ -55,11 +57,11 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: Teleg
     try{
       if (newConfirmations > 1){
         queue.add(async () => {try{await bot.editMessageReplyMarkup({ inline_keyboard: []}, optsFinal)}catch{}})
-        queue.add(async () => {try{await bot.editMessageText("User Reported.",optsFinal)}catch{}})
+        queue.add(async () => {try{await bot.editMessageText(settings.lang === "en"? "User reported." : "Usuario reportado.",optsFinal)}catch{}})
         const user = (await queue.add(async () => {try{const val = await bot.getChatMember(String(msg.chat.id), String(calldata[1]))
         return val}catch{}})).user;
         const fromUsername = user.username || user.first_name || `no-username-set`;
-        reportMsg(queue, settings, db, bot, msg, fromUsername, String(calldata[1]), msg.entities[1].url, String(calldata[2]), msg.entities[3].url, calldata[3],batchedSend);
+        reportMsg(queue, settings, db, bot, msg, fromUsername, String(calldata[1]), msg.entities[1].url, String(calldata[2]), msg.entities[3].url, calldata[4],calldata[3],batchedSend);
       } else{
         queue.add(async () => {try{await bot.editMessageReplyMarkup(markdown, opts)}catch{}})
       }

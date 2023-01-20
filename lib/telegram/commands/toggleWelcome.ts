@@ -14,18 +14,20 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
             await createWelcomeThread(queue, db, settings,bot,msg)
         }
         setGreetingMode(db, 'telegram', String(msg.chat.id),settings.greeting_mode? 0: 1)
-        queue.add(async () => {try{await bot.sendMessage(msg.chat.id, settings.greeting_mode? "Welcome messages are off." : "Welcome messages are on.", msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})}catch{}});
+        const msg_welcome = settings.lang === "en" ? settings.greeting_mode? "Welcome messages are off." : "Welcome messages are on." : settings.greeting_mode? "Los mensajes de bienvenida están desactivados." : "Los mensajes de bienvenida están encendidos."
+        queue.add(async () => {try{await bot.sendMessage(msg.chat.id, msg_welcome, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})}catch{}});
     } catch(e){
         console.log(e)
     }
 }
 
 const createWelcomeThread = async (queue:any, db: any, settings: groupSettings, bot: any, msg: any) => {
-    const topicWelcome = await queue.add(async () => {try{const val = await bot.createForumTopic(msg.chat.id, 'Welcome', {icon_custom_emoji_id: '4929292553544531969'})
+    const topicWelcome = await queue.add(async () => {try{const val = await bot.createForumTopic(msg.chat.id, settings.lang === "en" ? 'Bienvenidos' : 'Welcome', {icon_custom_emoji_id: '4929292553544531969'})
     return val}catch{}});
     if(!topicWelcome)
     return
-    const msg1: TelegramBot.Message = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].greeting1}[Kleros Moderate](https://kleros.io/moderate/).\n\nPlease treat this group with the same respect you would a public park. We, too, are a shared community resource — a place to share.`, {parse_mode: "Markdown", message_thread_id: topicWelcome.message_thread_id})
+    const msg_welcome = settings.lang === "en" ? `Welcome, this group is moderated with [Kleros Moderate](https://kleros.io/moderate/).` : "Bienvenido, este grupo está moderado con [Kleros Moderate](https://kleros.io/moderate/)."
+    const msg1: TelegramBot.Message = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, msg_welcome, {parse_mode: "Markdown", message_thread_id: topicWelcome.message_thread_id})
     return val}catch{}});
     if(!msg1)
     return

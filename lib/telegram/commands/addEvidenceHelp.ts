@@ -1,6 +1,6 @@
 import * as TelegramBot from "node-telegram-bot-api";
 import {getRule} from "../../db";
-import langJson from "../assets/lang.json";
+import langJson from "../assets/langNew.json";
 import { getUsersWithQuestionsNotFinalized } from "../../db";
 import { groupSettings } from "../../../types";
 
@@ -12,7 +12,7 @@ const regexp = /\/addevidencehelp/
 const callback = async (queue: any, db: any, settings: groupSettings, bot: any, botId: number, msg: any) => {
     const groupId = getUsersWithQuestionsNotFinalized(db, 'telegram', msg.text.substring(22))
     if (!groupId || groupId.length === 0){
-        queue.add(() => bot.sendMessage(msg.chat.id, `There are no reports to add evidence to in your group.`));      
+        queue.add(() => {try{bot.sendMessage(msg.chat.id, langJson[settings.lang].info.noevidence)}catch{}});      
         return  
     }
     var inline_keyboard_evidence = []
@@ -37,7 +37,7 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
             inline_keyboard: inline_keyboard_evidence
         }
     }
-    queue.add(() => bot.sendMessage(msg.chat.id, `Let me help you find the report you want to add evidence to. Which user is the report about?`,opts));        
+    queue.add(() => {try{bot.sendMessage(msg.chat.id, langJson[settings.lang].info.evidence,opts)}catch{}});      
 }
 
 export {regexp, callback};

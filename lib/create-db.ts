@@ -12,26 +12,42 @@ const Database = require('better-sqlite3');
      * `address` is the address of the bot assigned to this group.
      */
     await db.exec(
-    `CREATE TABLE groups (
-        platform TEXT, 
-        group_id TEXT, 
-        title TEXT,
-        channel_id TEXT,
-        thread_id_rules TEXT,
-        thread_id_notifications TEXT,
-        thread_id_welcome TEXT,
-        invite_url TEXT, 
-        invite_url_channel TEXT, 
-        federation_id TEXT,
-        federation_id_following TEXT,
-        greeting_mode BIT,
-        admins_reportable BIT,
-        captcha BIT,
-        privacy_mode BIT,
-        lang TEXT,
-        rules TEXT,
-        PRIMARY KEY (platform, group_id))`
-    );
+        `CREATE TABLE groups (
+            platform TEXT, 
+            group_id TEXT, 
+            title TEXT,
+            channel_id TEXT,
+            thread_id_rules TEXT,
+            thread_id_notifications TEXT,
+            thread_id_welcome TEXT,
+            invite_url TEXT, 
+            invite_url_channel TEXT, 
+            federation_id TEXT,
+            federation_id_following TEXT,
+            greeting_mode BIT,
+            admins_reportable BIT,
+            captcha BIT,
+            enforcement BIT,
+            lang TEXT,
+            rules TEXT,
+            PRIMARY KEY (platform, group_id))`
+        );
+
+    /**
+     * A group can be a telegram chat, a subreddit, etc.
+     *
+     * `platform` can be `telegram`, `reddit`, etc.
+     * `group_id` is the id of the telegram group or the name of the subreddit.
+     * `address` is the address of the bot assigned to this group.
+     */
+    await db.exec(
+        `CREATE TABLE groupsMultiLang (
+            platform TEXT, 
+            group_id TEXT, 
+            lang TEXT,
+            invite_url TEXT, 
+            PRIMARY KEY (platform, group_id, lang))`
+        );
 
     /**
      * `question_id` is the id of the question in reality.eth
@@ -67,6 +83,7 @@ const Database = require('better-sqlite3');
         group_id TEXT, 
         rules TEXT, 
         timestamp INTEGER, 
+        msg_id TEXT,
         PRIMARY KEY (platform, group_id, timestamp))`
     );
 

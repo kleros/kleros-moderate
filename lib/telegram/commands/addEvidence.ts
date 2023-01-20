@@ -6,7 +6,7 @@ import { setAllowance, getAllowance, getActiveEvidenceGroupId , existsQuestionId
 import fetch from 'node-fetch';
 import { getQuestionsNotFinalized } from "../../graph";
 import { groupSettings } from "../../../types";
-import langJson from "../assets/lang.json";
+import langJson from "../assets/langNew.json";
 const _contract = require('../../abi/Realitio_v2_1_ArbitratorWithAppeals.json')
 const Web3 = require('web3')
 const web3 = new Web3(process.env.WEB3_PROVIDER_URL)
@@ -35,7 +35,7 @@ const processCommand = async (queue: any, bot: any, settings: groupSettings, msg
     const evidenceJsonPath = await uploadEvidenceJson(settings.lang, msg, evidencePath,isPrivate);
     try{
         queue.add(async () => {try{
-            const resp = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].addevidence.submitted}(https://ipfs.kleros.io${evidencePath}).`, msg.chat.is_forum? {parse_mode: "Markdown", message_thread_id: msg.message_thread_id}:{parse_mode: "Markdown"})
+            const resp = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].addevidence.submitted}(https://ipfs.kleros.io${evidencePath}).`, msg.is_topic_message? {parse_mode: "Markdown", message_thread_id: msg.message_thread_id}:{parse_mode: "Markdown"})
             return resp.message_id}catch{}});
     } catch(e){
         console.log(e)
@@ -112,11 +112,12 @@ const uploadLocationEvidence = async (lang: string, msg: TelegramBot.Message, is
     const enc = new TextEncoder();
     var author = (msg.reply_to_message.from.username || msg.reply_to_message.from.first_name) + ' ID:'+msg.reply_to_message.from.id ;
     var chatmsg = `${msg.chat.title} (${langJson[lang].addevidence.Chat} ID: ${msg.chat.id})`
-    if(isPrivate){
-        const hashedUserID = web3.utils.sha3(String(msg.from.id)+process.env.secret);
-        author = ob.patp(hashedUserID.substring(0,8))
-        chatmsg = `Private Telegram Group`
-    }    const fileName = `${langJson[lang]["addevidence"].location}.txt`;
+    //if(isPrivate){
+    //    const hashedUserID = web3.utils.sha3(String(msg.reply_to_message.from.id)+process.env.secret);
+    //    author = ob.patp(hashedUserID.substring(0,8))
+    //    chatmsg = `Private Telegram Group`
+    //}
+    const fileName = `${langJson[lang].addevidence.location}.txt`;
     var chatHistory = `${chatmsg}
     
 ${langJson[lang].addevidence.Author}: ${author} (${(new Date(msg.reply_to_message.date*1000)).toISOString()})
@@ -129,7 +130,7 @@ if (match){
     var remainderMatch = match[1].split(' ')
     remainderMatch.shift();
     const reason = remainderMatch.join(' ')
-    textReason = reason.length > 0? `Evidence Submitted with explanation: ${reason}` : ''
+    textReason = reason.length > 0? `${langJson[lang].addevidence.explain}: ${reason}` : ''
 }
 
 chatHistory += `\n\n${textReason}`;
@@ -141,11 +142,11 @@ chatHistory += `\n\n${textReason}`;
 const uploadPollEvidence = async (lang: string, msg: TelegramBot.Message, isPrivate: boolean): Promise<string> => {
     var author = (msg.reply_to_message.from.username || msg.reply_to_message.from.first_name) + ' ID:'+msg.reply_to_message.from.id ;
     var chatmsg = `${msg.chat.title} (${langJson[lang].addevidence.Chat} ID: ${msg.chat.id})`
-    if(isPrivate){
-        const hashedUserID = web3.utils.sha3(String(msg.from.id)+process.env.secret);
+    /*if(isPrivate){
+        const hashedUserID = web3.utils.sha3(String(msg.reply_to_message.from.id)+process.env.secret);
         author = ob.patp(hashedUserID.substring(0,8))
         chatmsg = `Private Telegram Group`
-    }
+    }*/
     const enc = new TextEncoder();
     const fileName = `${langJson[lang].addevidence.Poll}.txt`;
     var chatHistory = `${chatmsg}
@@ -177,11 +178,11 @@ ${langJson[lang].addevidence.Message} (${langJson[lang].addevidence.Poll}): \n  
 const uploadTextEvidence = async (lang: string, msg: TelegramBot.Message, isPrivate: boolean): Promise<string> => {
     var author = (msg.reply_to_message.from.username || msg.reply_to_message.from.first_name) + ' ID:'+msg.reply_to_message.from.id ;
     var chatmsg = `${msg.chat.title} (${langJson[lang].addevidence.Chat} ID: ${msg.chat.id})`
-    if(isPrivate){
-        const hashedUserID = web3.utils.sha3(String(msg.from.id)+process.env.secret);
+    /*if(isPrivate){
+        const hashedUserID = web3.utils.sha3(String(msg.reply_to_message.from.id)+process.env.secret);
         author = ob.patp(hashedUserID.substring(0,8))
         chatmsg = `Private Telegram Group`
-    }
+    }*/
 
     const enc = new TextEncoder();
     const match = msg.text.match(regexpFull);
@@ -190,7 +191,7 @@ const uploadTextEvidence = async (lang: string, msg: TelegramBot.Message, isPriv
         var remainderMatch = match[1].split(' ')
         remainderMatch.shift();
         const reason = remainderMatch.join(' ')
-        textReason = reason.length > 0? `Evidence Submitted with explanation: ${reason}` : ''
+        textReason = reason.length > 0? `${langJson[lang].addevidence.explain}: ${reason}` : ''
     }
     const fileName = `${langJson[lang].addevidence.Message}.txt`;
     const chatHistory = `${chatmsg}
@@ -209,24 +210,24 @@ ${textReason}`;
 const uploadEvidenceJson = async (lang: string, msg: TelegramBot.Message, evidenceItem: string, isPrivate: boolean): Promise<string> => {
     var author = (msg.reply_to_message.from.username || msg.reply_to_message.from.first_name) + ' ID:'+msg.reply_to_message.from.id ;
     var chatmsg = `${msg.chat.title} (${langJson[lang].addevidence.Chat} ID: ${msg.chat.id})`
-    if(isPrivate){
-        const hashedUserID = web3.utils.sha3(String(msg.from.id)+process.env.secret);
+    /*if(isPrivate){
+        const hashedUserID = web3.utils.sha3(String(msg.reply_to_message.from.id)+process.env.secret);
         author = ob.patp(hashedUserID.substring(0,8))
         chatmsg = 'Private Telegram Group'
-    }
+    }*/
     const _name = `Kleros Moderator Bot: ${langJson[lang].addevidence.Chat} ${langJson[lang].addevidence.History}`;
     const match = msg.text.match(regexpFull);
     var remainderMatch = match[1].split(' ')
     remainderMatch.shift();
     const reason = remainderMatch.join(' ')
     console.log(reason)
-    const textReason = reason.length > 0? `Evidence Submitted with explanation: ${reason}` : ''
+    const textReason = reason.length > 0? `${langJson[lang].addevidence.explain}: ${reason}` : ''
     const enc = new TextEncoder();
     if (!botAddress)
         botAddress = process.env.TRANSACTION_BATCHER_CONTRACT_ADDRESS
     const _description = `${langJson[lang].addevidence.Desc1}. 
     
-    Chat: ${chatmsg}
+    ${langJson[lang].addevidence.Chat}: ${chatmsg}
     ${langJson[lang].addevidence.Author}: ${author}
     ${langJson[lang].addevidence.Date}: (${(new Date(msg.reply_to_message.date*1000)).toUTCString()}).
     ${textReason}`;
@@ -266,7 +267,7 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
     myQueue = queue
     if (!msg.reply_to_message) {
         try{
-            const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `/evidence ${langJson[settings.lang].errorReply}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}:{})
+            const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `/evidence ${langJson[settings.lang].error.reply}`, msg.is_topic_message? {message_thread_id: msg.message_thread_id}:{})
             return val}catch{}})
             if(!resp)
             return
@@ -278,7 +279,7 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
     }
 
     const match = msg.text.match(regexpFull);
-    const opts = msg.chat.is_forum? {
+    const opts = msg.is_topic_message? {
         parse_mode: 'Markdown',
         message_thread_id: msg.message_thread_id,
         reply_markup: {
@@ -307,7 +308,7 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
     //TODO Evidence IDs and button callback UX
     if (!match || match.length < 2){
         try{
-            const msgresponse = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `You did not specify an evidence group.`, opts)
+            const msgresponse = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, langJson[settings.lang].addevidence.ID, opts)
             return val}catch{}})            
             if(!msgresponse)
             return
@@ -317,7 +318,7 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
         }
         //const questions = await getQuestionsNotFinalized(botAddress)
         //bot.sendMessage(msg.chat.id, `Did you mean `+ JSON.stringify(questions));
-        //bot.sendMessage(msg.chat.id, `/addevidence ${langJson[settings.lang].addevidence.error1} ${langJson[settings.lang].addevidence.id}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}:{})
+        //bot.sendMessage(msg.chat.id, `/addevidence ${langJson[settings.lang].addevidence.error1} ${langJson[settings.lang].addevidence.id}`, msg.is_topic_message? {message_thread_id: msg.message_thread_id}:{})
         //const errorMsg = await errorMessage(db, lang, bot, msg);
         //await bot.sendMessage(msg.chat.id, errorMsg, {parse_mode: "Markdown", disable_web_page_preview: true});
         return; 
@@ -343,7 +344,7 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
         setAllowance(db, 'telegram', String(msg.chat.id), String(msg.from.id), 3, 14, Math.ceil( new Date().getTime() / 1000));
     } else if ((Math.ceil( new Date().getTime() / 1000) < reportAllowance.timestamp_refresh + 5760) && reportAllowance.evidence_allowance == 0 ){
         try{
-            const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, langJson[settings.lang].errorAllowance)
+            const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, langJson[settings.lang].addevidence.allowance)
                 return val}catch{}});
                 if(!resp)
                 return

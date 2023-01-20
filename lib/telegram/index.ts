@@ -8,6 +8,7 @@ import * as addEvidenceHelp from "../../lib/telegram/commands/addEvidenceHelp";
 import * as report from "../../lib/telegram/commands/report";
 import * as fedinfo from "../../lib/telegram/commands/fedinfo";
 import * as welcome from "../../lib/telegram/commands/welcome";
+import * as multilang from "../../lib/telegram/commands/multilang";
 import * as toggleWelcome from "../../lib/telegram/commands/toggleWelcome";
 import * as toggleAdminReportable from "../../lib/telegram/commands/toggleAdminReportable";
 import * as greeting from "../../lib/telegram/commands/greeting";
@@ -24,10 +25,9 @@ import * as setChannel from "../../lib/telegram/commands/setChannel";
 import * as setChannelFed from "../../lib/telegram/commands/setChannelFed";
 import * as getChannel from "../../lib/telegram/commands/getChannel";
 import * as getReports from "../../lib/telegram/commands/getReports";
-import langJson from "./assets/lang.json";
+import langJson from "./assets/langNew.json";
 import {groupSettings, groupSettingsUnderspecified} from "../../types";
 import {openDb, getGroupSettings, getRule, getReportsUserInfoActive,getFederatedBanHistory, getFederatedFollowingBanHistory, getLocalBanHistory, eraseThreadID} from "../db";
-import { calcPenalty } from "../cron";
 const Web3 = require('web3')
 const {default: PQueue} = require('p-queue');
 const queue = new PQueue({intervalCap: 20, interval: 1000,carryoverConcurrencyCount: true});
@@ -46,7 +46,7 @@ const batchedSend = _batchedSend(
     greeting_mode: false,
     captcha: false,
     admin_reportable: false,
-    privacy_mode: true,
+    enforcement: false,
     thread_id_rules: '',
     thread_id_welcome: '',
     thread_id_notifications: '',
@@ -60,6 +60,16 @@ const bot: any = new ModeratorBot(process.env.BOT_TOKEN, {polling: {params: {"al
 //bot.
 var botId: number; 
 const db = openDb();
+const exit = async () => {   
+    await db.close()
+    await bot.stopPolling({ cancel: true })
+}
+
+['SIGINT', 'SIGTERM', 'SIGQUIT','EXIT']
+  .forEach(signal => process.on(signal, async () => {
+    await exit()
+    process.exit();
+  }));
 const NodeCache = require( "node-cache" );
 const myCache = new NodeCache( { stdTTL: 900, checkperiod: 1200 } );
 // Throttling
@@ -77,15 +87,23 @@ const delay = (delayInms) => {
 
 bot.on("my_chat_member", async function(myChatMember: any) {
     try{
-        if(throttled(myChatMember.from.id) || myChatMember.chat.is_forum)
+        const lang_code = myChatMember?.from?.language_code
+        console.log(myChatMember)
+        if(throttled(myChatMember.from.id))
             return
-        const settings = validate(myChatMember.chat);
+        if(myChatMember.new_chat_member.status === "left"){
+            return;
+            // todo remove rules>?
+            // stop()?
+        }
 
+        const settings = validate(myChatMember.chat, lang_code);
+        console.log('HMMMMMM')
         if(myChatMember.chat.type === "channel"){
             await delay(2000);
             if( myChatMember.new_chat_member.status === "administrator"){
                 try{
-                    queue.add(async () => {try{await bot.sendMessage(myChatMember.chat.id, `The channel id is <code>${myChatMember.chat.id}</code>`, {parse_mode: "HTML"})}catch{}});
+                    queue.add(async () => {try{await bot.sendMessage(myChatMember.chat.id, langJson[lang_code].index.channel+`<code>${myChatMember.chat.id}</code>`, {parse_mode: "HTML"})}catch{}});
                 } catch(e) {
                     console.log('channel id msg error'+e);
                 }
@@ -98,7 +116,7 @@ bot.on("my_chat_member", async function(myChatMember: any) {
         else
             try{
                 const video = myChatMember.chat.is_forum? 'QmSdP3SDoHCdW739xLDBKM3gnLeeZug77RgwgxBJSchvYV/guide_topics.mp4' : 'QmbnEeVzBjcAnnDKGYJrRo1Lx2FFnG62hYfqx4fLTqYKC7/guide.mp4'
-                queue.add(async () => {try{await bot.sendVideo(myChatMember.chat.id, `https://ipfs.kleros.io/ipfs/${video}`, {caption: "Hi! I'm Susie, a moderation and group management bot. Please promote me to an admin then try to /start me to unlock my full potential."})}catch{}});
+                queue.add(async () => {try{await bot.sendVideo(myChatMember.chat.id, `https://ipfs.kleros.io/ipfs/${video}`, {caption: langJson[lang_code].index.supergroup})}catch{}});
             } catch(e){
                 console.log(e)
             }
@@ -128,7 +146,7 @@ bot.on("new_chat_members", async function (chatMemberUpdated: any) {
     if(!hasStarted(chatMemberUpdated.chat.id)||throttled(chatMemberUpdated.from.id)||chatMemberUpdated.chat.type !== "supergroup")
         return;    
         
-        const settings = validate(chatMemberUpdated.chat);
+    const settings = validate(chatMemberUpdated.chat);
     let calculateHistory = []
     if (settings.federation_id)
         calculateHistory = getFederatedBanHistory(db, 'telegram', String(chatMemberUpdated.new_chat_member.id),settings.federation_id,true)
@@ -139,6 +157,8 @@ bot.on("new_chat_members", async function (chatMemberUpdated: any) {
 
     console.log(calculateHistory)
 
+    // todo notify groups about federal outlaws when enforcement is false
+
     if (calculateHistory.length > 0){
         var max_timestamp = 0
         for (const ban of calculateHistory){
@@ -148,7 +168,7 @@ bot.on("new_chat_members", async function (chatMemberUpdated: any) {
                 max_timestamp = ban.timestamp_finalized
         }
         const parole_time = calcPenalty(calculateHistory.length, max_timestamp)
-        if (parole_time*1000 > Date.now()){
+        if (settings.enforcement && parole_time*1000 > Date.now()){
             queue.add(async () => {try{await bot.banChatMember(chatMemberUpdated.chat.id, chatMemberUpdated.new_chat_member.id, {until_date: parole_time})}catch{}})
             return
         }
@@ -171,7 +191,7 @@ bot.on("new_chat_members", async function (chatMemberUpdated: any) {
                 max_timestamp = ban.timestamp_finalized
         }
         const parole_time = calcPenalty(calculateHistoryActive.length, max_timestamp)
-        if (parole_time > Date.now()){
+        if (settings.enforcement && parole_time > Date.now()){
             const options = {can_send_messages: false, can_send_media_messages: false, can_send_polls: false, can_send_other_messages: false, can_add_web_page_previews: false, can_change_info: false, can_pin_messages: false, until_date: parole_time};
             queue.add(async () => {try{await bot.restrictChatMember(chatMemberUpdated.chat.id, chatMemberUpdated.new_chat_member.id, options)}catch{}})
             return;
@@ -179,8 +199,20 @@ bot.on("new_chat_members", async function (chatMemberUpdated: any) {
     } 
 
     if(settings.captcha || settings.greeting_mode)
-        greeting.callback(queue, bot, settings, chatMemberUpdated);        
+        greeting.callback(db, queue, bot, settings, chatMemberUpdated);        
 });
+
+
+const calcPenalty = (ban_level: number, timestamp_finalized: number): number => {
+    if(ban_level == 1)
+        return  timestamp_finalized + 86400
+    else if (ban_level == 2)
+        return  timestamp_finalized + 604800
+    else if (ban_level == 3)
+        return  timestamp_finalized + 2678400
+    else
+        return  timestamp_finalized + 31536000
+}
 
 // Handle callback queries
 bot.on('callback_query', async function onCallbackQuery(callbackQuery: TelegramBot.CallbackQuery) {
@@ -192,6 +224,7 @@ bot.on('callback_query', async function onCallbackQuery(callbackQuery: TelegramB
         if (callbackQuery.from.id !== Number(calldata[1]))
             return;
         setLanguage.setLanguageConfirm(queue, db, bot, settings, calldata[2], callbackQuery.message);
+        myCache.del(callbackQuery.message.chat.id)
     } else if (Number(calldata[0]) === 1){ // add evidence
         if (callbackQuery.from.id !== Number(calldata[1]))
             return;
@@ -254,6 +287,7 @@ const commands: {regexp: RegExp, callback: any}[] = [
     toggleAdminReportable,
     leaveFed,
     joinFed,
+    multilang,
     setChannel,
     setChannelFed,
     addEvidence,
@@ -261,7 +295,7 @@ const commands: {regexp: RegExp, callback: any}[] = [
     setLanguage,
 ];
 
-const adminOnlyCommands = [joinFed, leaveFed, newFed, toggleCaptcha, setLanguage, setChannelFed, setChannel, toggleWelcome, toggleAdminReportable, start, setRulesCommand ]
+const adminOnlyCommands = [joinFed, multilang, leaveFed, newFed, toggleCaptcha, setLanguage, setChannelFed, setChannel, toggleWelcome, toggleAdminReportable, start, setRulesCommand ]
 
 commands.forEach((command) => {
     bot.onText(
@@ -300,20 +334,7 @@ commands.forEach((command) => {
                     return
             } else if(msg.chat.type !== "supergroup" && !(msg.chat.type === "group" && msg.text === '/help'))
                 return
-            if (command === start){
-                if (hasStarted(msg.chat.id)){
-                    try{
-                        const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, "Susie is already moderating this community.", msg.chat.is_forum? {message_thread_id: msg.message_thread_id} : {})
-                        return val}catch{}});
-                        if(!resp)
-                        return
-                        myCacheGarbageCollection.set(resp.message_id, msg.chat.id)
-                        return
-                    } catch(e){
-                        console.log(e)
-                    }
-                }
-            } else if(!hasStarted(msg.chat.id) && command !== help){
+            if(!hasStarted(msg.chat.id) && (command !== help && command !== start)){
                 return;
             }
 
@@ -331,7 +352,8 @@ commands.forEach((command) => {
                 }
                 if (!(status === 'creator' || status === 'administrator')) {
                     try{
-                        const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, langJson[groupSettings.lang].errorAdminOnly, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})
+                        const lang_code = hasStarted(msg.chat.id)? groupSettings.lang : msg?.from?.language_code
+                        const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, langJson[lang_code].error.admin, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})
                         return val}catch{}})
                         if(!resp)
                         return
@@ -387,7 +409,7 @@ const validate = (chat: any, language_code?: string): groupSettings=> {
     if (!groupSettings){
         const rules = getRule(db, 'telegram', String(chat.id), Math.floor(Date.now()/1000))
         groupSettings = getGroupSettings(db, 'telegram', String(chat.id))
-        groupSettings.rules = rules
+        groupSettings.rules = rules.rules
         myCache.set(chat.id, groupSettings)
     }
     const fullSettings = {
@@ -397,7 +419,7 @@ const validate = (chat: any, language_code?: string): groupSettings=> {
         greeting_mode: groupSettings?.greeting_mode ?? defaultSettings.greeting_mode,
         admin_reportable: groupSettings?.admin_reportable ?? defaultSettings.admin_reportable,
         captcha: groupSettings?.captcha ?? defaultSettings.captcha,
-        privacy_mode: groupSettings?.privacy_mode ?? defaultSettings.privacy_mode,
+        enforcement: groupSettings?.enforcement ?? defaultSettings.enforcement,
         thread_id_rules: groupSettings?.thread_id_rules ?? defaultSettings.thread_id_rules,
         thread_id_welcome: groupSettings?.thread_id_welcome ?? defaultSettings.thread_id_rules,
         thread_id_notifications: groupSettings?.thread_id_notifications ?? defaultSettings.thread_id_notifications,
@@ -416,14 +438,14 @@ const checkMigration = async (groupSettings: groupSettings, chat: any): Promise<
             const threads = await start.topicMode(queue, db, bot, groupSettings, chat);
             if(!threads)
                 return;
-            queue.add(async () => {try{await bot.sendMessage(chat.id, "Started topic mode", {messsage_thread_id: groupSettings.thread_id_notifications})}catch{}})
+            queue.add(async () => {try{await bot.sendMessage(chat.id, langJson[groupSettings.lang].index.topic, {messsage_thread_id: groupSettings.thread_id_notifications})}catch{}})
             groupSettings.thread_id_rules = threads[0]
             groupSettings.thread_id_notifications = threads[1]
             groupSettings.channelID = String(chat.id)
             myCache.set(chat.id, groupSettings)
         } catch(e){
             try{
-                queue.add(async () => {try{await bot.sendMessage(chat.id, "Susie cannot manage groups in topic mode with out permission to manage topics. Please ask an admin to enable this permission to allow Susie to continue help moderating your community.", {messsage_thread_id: groupSettings.thread_id_notifications})}catch{}})
+                queue.add(async () => {try{await bot.sendMessage(chat.id, langJson[groupSettings.lang].index.topicError, {messsage_thread_id: groupSettings.thread_id_notifications})}catch{}})
             } catch(e){
                 console.log(e)
             }
