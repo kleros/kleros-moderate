@@ -10,6 +10,7 @@ import * as fedinfo from "../../lib/telegram/commands/fedinfo";
 import * as welcome from "../../lib/telegram/commands/welcome";
 import * as multilang from "../../lib/telegram/commands/multilang";
 import * as toggleWelcome from "../../lib/telegram/commands/toggleWelcome";
+import * as toggleEnforce from "../../lib/telegram/commands/toggleEnforcement";
 import * as toggleAdminReportable from "../../lib/telegram/commands/toggleAdminReportable";
 import * as greeting from "../../lib/telegram/commands/greeting";
 import * as toggleCaptcha from "../../lib/telegram/commands/toggleCaptcha";
@@ -46,7 +47,7 @@ const batchedSend = _batchedSend(
     greeting_mode: false,
     captcha: false,
     admin_reportable: false,
-    enforcement: false,
+    enforcement: true,
     thread_id_rules: '',
     thread_id_welcome: '',
     thread_id_notifications: '',
@@ -278,6 +279,7 @@ const commands: {regexp: RegExp, callback: any}[] = [
     getRules,    
     report,
     toggleWelcome,
+    toggleEnforce,
     start,
     fedinfo,
     toggleCaptcha,
@@ -295,7 +297,8 @@ const commands: {regexp: RegExp, callback: any}[] = [
     setLanguage,
 ];
 
-const adminOnlyCommands = [joinFed, multilang, leaveFed, newFed, toggleCaptcha, setLanguage, setChannelFed, setChannel, toggleWelcome, toggleAdminReportable, start, setRulesCommand ]
+const adminOnlyCommands = [joinFed, toggleEnforce, multilang, leaveFed, newFed, toggleCaptcha, setLanguage, setChannelFed, setChannel, toggleWelcome, toggleAdminReportable, start, setRulesCommand ]
+const settingUpateCommands = [setLanguage, toggleEnforce, setRulesCommand, joinFed, setChannel, toggleWelcome, toggleCaptcha, toggleAdminReportable]
 
 commands.forEach((command) => {
     bot.onText(
@@ -367,7 +370,7 @@ commands.forEach((command) => {
 
             // todo success bool return val, to not always delete settings
             command.callback(queue, db, groupSettings, bot, botId, msg, match,batchedSend);
-            if (command === setLanguage || command === setRulesCommand || command === joinFed || command === setChannel || command === toggleWelcome || command === toggleCaptcha || command === toggleAdminReportable)
+            if (settingUpateCommands.indexOf(command)!==-1)
                 myCache.del(msg.chat.id)
             if (command === start)
                 myCache.del("started"+msg.chat.id)

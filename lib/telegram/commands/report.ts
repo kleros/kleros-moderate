@@ -77,7 +77,7 @@ const callback = async (queue: any, db:any, settings: groupSettings, bot: any, b
             if (!report)
                 return
             if(report.status === "administrator" || report.status === "creator"){
-                const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].report.admin}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})
+                const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].report.admin}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id, parse_mode: "Markdown"}: {parse_mode: "Markdown"})
                 return val}catch(e){console.log(e)}});
                 if (!resp)
                 return resp
@@ -247,7 +247,7 @@ const reportMsg = async (queue: any, settings: groupSettings, db: any, bot: any,
             queue.add(async () => {try{bot.sendMessage(settings.channelID, `[${fromUsername}](tg://user?id=${reportedUserID})'s conduct due to this [message](${msgLink}) ([backup](${msgBackup})) is reported for breaking the [rules](${rules}).\n\nDid *${fromUsername}* break the rules? The [question](${appealUrl}) can be answered with a minimum bond of 5 DAI. Need assistance answering the question? [DM](https://t.me/${process.env.BOT_USERNAME}?start=helpgnosis) me for help : )\n\nTo save a record, reply to messages you want saved with \`/evidence ${evidenceIndex}\``, msg.chat.is_forum? {message_thread_id: settings.thread_id_notifications , parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
         else if (settings.lang === "es")
             queue.add(async () => {try{bot.sendMessage(settings.channelID, `La conducta de [${fromUsername}](tg://user?id=${reportedUserID}) a este [mensaje](${msgLink}) ([backup](${msgBackup})) es denunciada por infringir las [reglas](${rules}).\n\nHa infringido el usuario  *${fromUsername}* las reglas? La [pregunta](${appealUrl}) puede responderse con un bono mínimo de 5 DAI. Necesitas ayuda para responder a la pregunta? [DM](https://t.me/${process.env.BOT_USERNAME}?start=helpgnosis) me para obetener ayuda : )\n\nPara guardar un registro, responda a los mensajes que desee guardar con \`/evidence ${evidenceIndex}\``, msg.chat.is_forum? {message_thread_id: settings.thread_id_notifications , parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
-        return questionId;
+        return [appealUrl, evidenceIndex];
     } catch (e) {
         console.log(e);
         try{

@@ -12,9 +12,14 @@ const Web3 = require('web3')
 const web3 = new Web3(process.env.WEB3_PROVIDER_URL)
 const ob = require('urbit-ob')
 
-const contract = new web3.eth.Contract(
+const contract_en = new web3.eth.Contract(
     _contract,
-    process.env.REALITIO_ARBITRATOR
+    process.env.REALITIO_ARBITRATOR_EN
+  )
+
+  const contract_es = new web3.eth.Contract(
+    _contract,
+    process.env.REALITIO_ARBITRATOR_EN
   )
 var botAddress: string;
 const NodeCache = require( "node-cache" );
@@ -40,7 +45,7 @@ const processCommand = async (queue: any, bot: any, settings: groupSettings, msg
     } catch(e){
         console.log(e)
     }
-    submitEvidence(batchedSend, evidenceJsonPath, questionId);
+    submitEvidence(batchedSend, evidenceJsonPath, questionId, settings.lang);
 
     return evidenceJsonPath;
 }
@@ -110,8 +115,8 @@ const uploadFileEvidence = async (filePath: string, fileName: string): Promise<s
 
 const uploadLocationEvidence = async (lang: string, msg: TelegramBot.Message, isPrivate: boolean): Promise<string> => {
     const enc = new TextEncoder();
-    var author = (msg.reply_to_message.from.username || msg.reply_to_message.from.first_name) + ' ID:'+msg.reply_to_message.from.id ;
-    var chatmsg = `${msg.chat.title} (${langJson[lang].addevidence.Chat} ID: ${msg.chat.id})`
+    var author = (msg.reply_to_message.from.username || msg.reply_to_message.from.first_name) + ' (ID:'+msg.reply_to_message.from.id+')' ;
+    var chatmsg = `${msg.chat.title} (ID: ${msg.chat.id})`
     //if(isPrivate){
     //    const hashedUserID = web3.utils.sha3(String(msg.reply_to_message.from.id)+process.env.secret);
     //    author = ob.patp(hashedUserID.substring(0,8))
@@ -176,8 +181,8 @@ ${langJson[lang].addevidence.Message} (${langJson[lang].addevidence.Poll}): \n  
 }
 
 const uploadTextEvidence = async (lang: string, msg: TelegramBot.Message, isPrivate: boolean): Promise<string> => {
-    var author = (msg.reply_to_message.from.username || msg.reply_to_message.from.first_name) + ' ID:'+msg.reply_to_message.from.id ;
-    var chatmsg = `${msg.chat.title} (${langJson[lang].addevidence.Chat} ID: ${msg.chat.id})`
+    var author = (msg.reply_to_message.from.username || msg.reply_to_message.from.first_name) + ' (ID:'+msg.reply_to_message.from.id+')' ;
+    var chatmsg = `${msg.chat.title} ( ID: ${msg.chat.id})`
     /*if(isPrivate){
         const hashedUserID = web3.utils.sha3(String(msg.reply_to_message.from.id)+process.env.secret);
         author = ob.patp(hashedUserID.substring(0,8))
@@ -243,7 +248,8 @@ const uploadEvidenceJson = async (lang: string, msg: TelegramBot.Message, eviden
     return evidenceJsonPath;
 }
 
-const submitEvidence = async (batchedSend: any, evidencePath: string, questionId: number|string) => {
+const submitEvidence = async (batchedSend: any, evidencePath: string, questionId: number|string, lang: string) => {
+    const contract = lang === 'es' ? contract_es : contract_en
     batchedSend({
         args: [        
             questionId,

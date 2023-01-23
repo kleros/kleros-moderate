@@ -6,7 +6,7 @@ import {groupSettings} from "../../../types";
 /*
  * /welcome
  */
-const regexp = /\/enforcement/
+const regexp = /\/trial/
 
 const callback = async (queue: any, db: any, settings: groupSettings, bot: any, botId: number, msg: any) => {
     try{

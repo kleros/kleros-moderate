@@ -1,7 +1,7 @@
 import * as TelegramBot from "node-telegram-bot-api";
 import {setCaptchaMode, setGreetingMode} from "../../db";
 import * as toggleWelcome from "../../../lib/telegram/commands/toggleWelcome";
-import langJson from "../assets/lang.json";
+import langJson from "../assets/langNew.json";
 import {groupSettings} from "../../../types";
 
 /*

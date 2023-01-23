@@ -2,7 +2,7 @@ import * as TelegramBot from "node-telegram-bot-api";
 import { groupSettings } from "../../../types";
 import {setRulesCustom} from "../../db";
 import {ipfsPublish} from "../../ipfs-publish";
-import langJson from "../assets/lang.json";
+import langJson from "../assets/langNew.json";
 
 /*
  * /setrules [ipfs file path]
@@ -47,9 +47,11 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
                     await queue.add(async () => {try{await bot.closeForumTopic(msg.chat.id, settings.thread_id_rules)}catch{}})
             }
             queue.add(async () => {try{await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].rulesUpdated}(${match[1]})`, msg.chat.is_forum? {message_thread_id: settings.thread_id_rules, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
-        } else {
+        } else if (match[1]){
+            console.log(match[1])
             queue.add(async () => {try{await bot.sendMessage(msg.chat.id, langJson[settings.lang].error.url, msg.chat.is_forum? {message_thread_id: settings.thread_id_rules}: {})}catch{}});
-        }
+        } else
+            queue.add(async () => {try{await bot.sendMessage(msg.chat.id, langJson[settings.lang].error.setrules, msg.chat.is_forum? {message_thread_id: settings.thread_id_rules, parse_mode: "Markdown"}: {parse_mode: "Markdown"})}catch{}});
     } catch(e){
         console.log(e)
     }

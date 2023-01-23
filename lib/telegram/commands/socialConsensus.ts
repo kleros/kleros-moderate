@@ -56,12 +56,12 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: Teleg
         }
     try{
       if (newConfirmations > 1){
-        queue.add(async () => {try{await bot.editMessageReplyMarkup({ inline_keyboard: []}, optsFinal)}catch{}})
-        queue.add(async () => {try{await bot.editMessageText(settings.lang === "en"? "User reported." : "Usuario reportado.",optsFinal)}catch{}})
         const user = (await queue.add(async () => {try{const val = await bot.getChatMember(String(msg.chat.id), String(calldata[1]))
-        return val}catch{}})).user;
-        const fromUsername = user.username || user.first_name || `no-username-set`;
-        reportMsg(queue, settings, db, bot, msg, fromUsername, String(calldata[1]), msg.entities[1].url, String(calldata[2]), msg.entities[3].url, calldata[4],calldata[3],batchedSend);
+          return val}catch{}})).user;
+          const fromUsername = user.username || user.first_name || `no-username-set`;
+        const [appealURL, evidenceIndex] = await reportMsg(queue, settings, db, bot, msg, fromUsername, String(calldata[1]), msg.entities[1].url, String(calldata[2]), msg.entities[3].url, calldata[4],calldata[3],batchedSend);
+        queue.add(async () => {try{await bot.deleteMessage(msg.chat.id, msg.message_id)}catch{}})
+        queue.add(async () => {try{await bot.sendMessage(msg.chat.id, settings.lang === "en"? `User [reported](${appealURL}). Add evidence with \`/evidence ${evidenceIndex}\`` : `Usuario [reportado](${appealURL}). Añadir pruebas con \`/evidence ${evidenceIndex}\``,{disable_web_page_preview: true, parse_mode: "Markdown"})}catch{}})
       } else{
         queue.add(async () => {try{await bot.editMessageReplyMarkup(markdown, opts)}catch{}})
       }

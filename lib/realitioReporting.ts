@@ -1,7 +1,7 @@
 const _realitio = require('./assets/contracts/Realitio_v2_1.json')
 const _proxy = require('./assets/contracts/Realitio_v2_1_ArbitratorWithAppeals.json')
 
-module.exports = async (web3, lastBlock, realitioAddress, proxyAddress) => {
+module.exports = async (web3, lastBlock, toBlock,realitioAddress, proxyAddress) => {
   // Instantiate the contracts.
   const realitioInstance = new web3.eth.Contract(
     _realitio.abi,
@@ -12,11 +12,11 @@ module.exports = async (web3, lastBlock, realitioAddress, proxyAddress) => {
     proxyAddress
   )
   const block = await web3.eth.getBlockNumber()
-
+    
     // console.log(lastBlock)
     const ruleEvents = await proxyInstance.getPastEvents('Ruling', {
       fromBlock: lastBlock,
-      toBlock: lastBlock < block - 1000 ? lastBlock + 1000:'latest'
+      toBlock: toBlock
     })
 
     // A Ruling was made

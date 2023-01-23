@@ -228,6 +228,7 @@ const respond = (queue: any, settings: groupSettings, bot: any, helpType: string
                 break;
             }
             case 'court': {
+                //https://ipfs.kleros.io/ipfs/QmZwVBdfALRWbjCLtLNSq9YceADCtP96hfPkg3Y6f6xWJk/KlerosModerate.png
                 queue.add(async () => {try{await bot.editMessageText(langJson[lang_code].help.Court1,optsResponse)}catch{}})
                 break;
             }
