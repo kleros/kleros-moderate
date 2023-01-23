@@ -18,7 +18,7 @@ const regexpFull = /\/setchannel (.+)/
 
 const callback = async (queue: any, db: any, settings: groupSettings, bot: TelegramBot, botId: string, msg: any, match: string[], batchedSend: any) => {
     try {
-        if (msg.chat.is_fourm)
+        if (msg.chat.is_forum)
             return
         if (msg.text.substring(0,14) === "/setchannelfed")
             return
