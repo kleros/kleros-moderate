@@ -108,7 +108,7 @@ const callback = async (queue:any, db: any, settings: groupSettings, bot: any, b
         setTitle(db, 'telegram', String(msg.chat.id), msg.chat.title)
         setRules(db, 'telegram', String(msg.chat.id), langJson[lang_code].defaultRules, Math.floor(Date.now()/1000));
         setLang(db, 'telegram', String(msg.chat.id),lang_code);
-        const msg_start = `${langJson[lang_code].start.start1}(https://t.me/${process.env.BOT_USERNAME}?start=help)${langJson[lang_code].start.start2}(${langJson[lang_code].defaultRules}).${langJson[lang_code].start.start3}`
+        const msg_start = `${langJson[lang_code].start.start1}(https://t.me/${process.env.BOT_USERNAME}?start=help)${langJson[lang_code].start.start2}(${langJson[lang_code].defaultRules}).${msg.is_forum? langJson[lang_code].start.start3topic : langJson[lang_code].start.start3}`
         queue.add(async () => {try{await bot.sendMessage(msg.chat.id, msg_start, msg.chat.is_forum? {parse_mode: "Markdown", message_thread_id: msg.message_thread_id, disable_web_page_preview: true}: {parse_mode: "Markdown", disable_web_page_preview: true})}catch{}})
         return;
     } catch (e){
@@ -125,9 +125,9 @@ const callback = async (queue:any, db: any, settings: groupSettings, bot: any, b
 const topicMode = async (queue: any, db:any, bot: any, settings: groupSettings, msg: TelegramBot.Message): Promise<[string,string]> => {
         // tg bugging, won't display icon_color if set
         const lang_code = msg?.from?.language_code
-        const topicRules = await queue.add(async () => {try{const val = await bot.createForumTopic(msg.chat.id, lang_code == "en" ? 'Rules': 'Reglas')//, {icon_custom_emoji_id: '5357193964787081133'})
+        const topicRules = await queue.add(async () => {try{const val = await bot.createForumTopic(msg.chat.id, lang_code == "en" ? 'Rules': 'Reglas', {icon_custom_emoji_id: '5357193964787081133'})
                                     return val}catch(e){console.log(e)}});
-        const topicModeration = await queue.add(async () => {try{const val = await bot.createForumTopic(msg.chat.id, lang_code == "en" ? 'Notifications' : 'Notificaciones')//, {icon_custom_emoji_id: '5417915203100613993'})
+        const topicModeration = await queue.add(async () => {try{const val = await bot.createForumTopic(msg.chat.id, lang_code == "en" ? 'Notifications' : 'Notificaciones', {icon_custom_emoji_id: '5417915203100613993'})
                                     return val}catch(e){console.log(e)}});
         if(!topicRules || !topicModeration)
         return
