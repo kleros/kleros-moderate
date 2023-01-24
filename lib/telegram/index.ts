@@ -209,8 +209,6 @@ const calcPenalty = (ban_level: number, timestamp_finalized: number): number => 
         return  timestamp_finalized + 86400
     else if (ban_level == 2)
         return  timestamp_finalized + 604800
-    else if (ban_level == 3)
-        return  timestamp_finalized + 2678400
     else
         return  timestamp_finalized + 31536000
 }

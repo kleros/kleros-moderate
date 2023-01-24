@@ -466,9 +466,7 @@ const calcPenalty = (ban_level: number, timestamp_finalized: number): number => 
         return  timestamp_finalized + 86400
     else if (ban_level == 2)
         return  timestamp_finalized + 604800
-    else if (ban_level == 3)
-        return  timestamp_finalized + 2678400
-    else
+    else (ban_level == 3)
         return  timestamp_finalized + 31536000
 }
 
@@ -476,22 +474,18 @@ const calcPenaltyPhrase = (settings: groupSettings, ban_level: number, enforceme
 
     if (settings.lang === 'es'){
         if(ban_level == 1)
-        return finalize? enforcement? 'primera vez y está sujeta a un baneo de 1 día' : 'primera vez y se recomienda una prohibición de 1 día' : enforcement? 'primera vez y se silencia durante 1 día durante el resto del periodo del informe': 'primera vez y se le recomienda un silencio de 1 día por el resto del período del informe'
-    else if (ban_level == 2)
-        return finalize? enforcement? 'segunda vez y está sujeto a una prohibición de 1 semana' : 'segunda vez y se recomienda una prohibición de 1 semana': enforcement? 'segunda vez y se silencia durante 1 día durante el resto del periodo del informe': 'segunda vez y se le recomienda un silencio de 1 día para el resto del periodo del informe'
-    else if (ban_level == 3)
-        return finalize? enforcement? 'tercera vez y está sujeto a una prohibición de 1 mes' : 'tercera vez y se recomienda una prohibición de 1 mes' : enforcement? 'trecera vez y se silencia durante 1 día durante el resto del periodo del informe': 'tercera vez y se le recomienda un silencio de 1 día por el resto del período del informe'
-    else
-        return finalize? enforcement? 'al menos cuatro veces y está sujeto a una prohibición de 1 año' : 'al menos cuatro veces y se le recomienda una prohibición de 1 mes' : enforcement? 'cuarta vez y se silencia durante 1 día durante el resto del periodo del informe': 'al menos cuatro veces y se le recomienda un silencio de 1 día para el resto del período del informe.'
+            return finalize? enforcement? 'primera vez y está sujeta a un baneo de 1 día' : 'primera vez y se recomienda una prohibición de 1 día' : enforcement? 'primera vez y se silencia durante 1 día durante el resto del periodo del informe': 'primera vez y se le recomienda un silencio de 1 día por el resto del período del informe'
+        else if (ban_level == 2)
+            return finalize? enforcement? 'segunda vez y está sujeto a una prohibición de 1 semana' : 'segunda vez y se recomienda una prohibición de 1 semana': enforcement? 'segunda vez y se silencia durante 1 día durante el resto del periodo del informe': 'segunda vez y se le recomienda un silencio de 1 día para el resto del periodo del informe'
+        else
+            return finalize? enforcement? 'tercera vez y está sujeto a una prohibición de 1 mes' : 'tercera vez y se recomienda una prohibición de 1 mes' : enforcement? 'trecera vez y se silencia durante 1 día durante el resto del periodo del informe': 'tercera vez y se le recomienda un silencio de 1 día por el resto del período del informe'
     } else {
         if(ban_level == 1)
-        return finalize? enforcement? 'first time and is subject to a 1 day ban' : 'first time and is recommended a 1 day ban' : enforcement? 'first time and is muted for 1 day during the remainder of the report period': 'first time and is recommended a 1 day mute for the remainder of the report period'
-    else if (ban_level == 2)
-        return finalize? enforcement? 'second time and is subject to a 1 week ban' : 'second time and is recommended a 1 week ban': enforcement? 'second time and is muted for 1 day during the remainder of the report period': 'second time and is recommended a 1 day mute for the remainder of the report period'
-    else if (ban_level == 3)
-        return finalize? enforcement? 'third time and is subject to a 1 month ban' : 'third time and is recommended a 1 month ban' : enforcement? 'third time and is muted for 1 day during the remainder of the report period': 'third time and is recommended a 1 day mute for the remainder of the report period'
-    else
-        return finalize? enforcement? 'atleast four times and is subject to a 1 year ban' : 'atleast four times and is recommended a 1 year ban' : enforcement? 'four times and is muted for 1 day during the remainder of the report period': 'four times and is recommended a 1 day mute for the remainder of the report period'
+            return finalize? enforcement? 'first time and is subject to a 1 day ban' : 'first time and is recommended a 1 day ban' : enforcement? 'first time and is muted for 1 day during the remainder of the report period': 'first time and is recommended a 1 day mute for the remainder of the report period'
+        else if (ban_level == 2)
+            return finalize? enforcement? 'second time and is subject to a 1 week ban' : 'second time and is recommended a 1 week ban': enforcement? 'second time and is muted for 1 day during the remainder of the report period': 'second time and is recommended a 1 day mute for the remainder of the report period'
+        else
+            return finalize? enforcement? 'third time and is subject to a 1 month ban' : 'third time and is recommended a 1 month ban' : enforcement? 'third time and is muted for 1 day during the remainder of the report period': 'third time and is recommended a 1 day mute for the remainder of the report period'
     }
 }
 
