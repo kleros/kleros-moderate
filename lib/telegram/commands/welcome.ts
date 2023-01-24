@@ -10,9 +10,9 @@ import {getMultilangGroup} from "../../db";
 
 const callback = async (queue: any, settings: groupSettings, bot: any, msg: any) => {
     try {
-//        if (msg.old_chat_member.status !== "left")
-//            return;
-        console.log('yoyoyoyoy welcome')
+        if (msg.old_chat_member.status !== "left")
+            return;
+
         const lang_code = msg?.from?.language_code
         queue.add(async () => {try{await bot.sendMessage(msg.chat.id, langJson[lang_code].welcome.welcome, msg.chat.is_forum?  {message_thread_id: msg.message_thread_id, parse_mode: "Markdown"}: {parse_mode: "Markdown"})}catch{}});  
         //const options = msg.chat.is_forum? {message_thread_id: msg.message_thread_id, caption: "To get started, give Susie admin rights."} : {caption: "To get started, give Susie admin rights."}
