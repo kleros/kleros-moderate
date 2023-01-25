@@ -144,10 +144,14 @@ bot.on("chat_member", async function (msg: any) {
 */
 
 bot.on("new_chat_members", async function (chatMemberUpdated: any) {
+
+    console.log(chatMemberUpdated)
     if(!hasStarted(chatMemberUpdated.chat.id)||throttled(chatMemberUpdated.from.id)||chatMemberUpdated.chat.type !== "supergroup")
         return;    
         
+    console.log('hmmm1')
     const settings = validate(chatMemberUpdated.chat);
+    console.log('hmmm2')
     let calculateHistory = []
     if (settings.federation_id)
         calculateHistory = getFederatedBanHistory(db, 'telegram', String(chatMemberUpdated.new_chat_member.id),settings.federation_id,true)
@@ -156,6 +160,7 @@ bot.on("new_chat_members", async function (chatMemberUpdated: any) {
     else 
         calculateHistory = getLocalBanHistory(db, 'telegram', String(chatMemberUpdated.new_chat_member.id),String(chatMemberUpdated.chat.id),true)
 
+    console.log('wtf')
     console.log(calculateHistory)
 
     // todo notify groups about federal outlaws when enforcement is false
@@ -181,7 +186,10 @@ bot.on("new_chat_members", async function (chatMemberUpdated: any) {
     else 
         calculateHistoryActive = getLocalBanHistory(db, 'telegram', String(chatMemberUpdated.new_chat_member.id),String(chatMemberUpdated.chat.id),false)
 
-    if (calculateHistoryActive.length > calculateHistory.length ){
+    console.log('wtf')
+    console.log(calculateHistoryActive)
+
+    if (calculateHistoryActive.length > 0){
         var max_timestamp = 0
         for (const ban of calculateHistoryActive){
             if (ban.timestamp_active > max_timestamp)
@@ -250,11 +258,14 @@ bot.on('callback_query', async function onCallbackQuery(callbackQuery: TelegramB
             console.log(e)
         }
     } else if (Number(calldata[0]) === 5){
+        console.log(calldata)
+        console.log(callbackQuery.from.id)
         if (callbackQuery.from.id !== Number(calldata[1]))
             return;
-        const permissions = await queue.add(async () => {try{const val = await bot.getChat(callbackQuery.message.chat.id).permissions
-            return val}catch{}})
-            if(!permissions)
+        const permissions = await queue.add(async () => {try{const val = (await bot.getChat(callbackQuery.message.chat.id)).permissions
+            return val}catch (e){console.log(e)}})
+        console.log(permissions)
+        if(!permissions)
             return
         queue.add(async () => {try{await bot.restrictChatMember(callbackQuery.message.chat.id, callbackQuery.from.id, permissions)}catch{}});
         queue.add(async () => {try{await bot.deleteMessage(callbackQuery.message.chat.id, callbackQuery.message.message_id)}catch{}})

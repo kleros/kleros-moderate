@@ -564,7 +564,7 @@ const handleTelegramUpdate = async (db: any, bot: any, settings: groupSettings, 
                     if (settings.enforcement)
                         for (const group of groups){
                             if(group.group_id == moderationInfo.UserHistory.group.groupID){
-                                const permissions = await queue.add(async () => {try{const val = await bot.getChat(moderationInfo.UserHistory.group.groupID).permissions
+                                const permissions = await queue.add(async () => {try{const val = (await bot.getChat(moderationInfo.UserHistory.group.groupID)).permissions
                                     return val}catch{}})
                                     if(!permissions)
                                     return
