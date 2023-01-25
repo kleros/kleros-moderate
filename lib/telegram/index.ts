@@ -163,9 +163,7 @@ bot.on("new_chat_members", async function (chatMemberUpdated: any) {
     if (calculateHistory.length > 0){
         var max_timestamp = 0
         for (const ban of calculateHistory){
-            if (ban.timestamp_active > max_timestamp)
-                max_timestamp = ban.timestamp_active
-            else if (ban.timestamp_finalized > max_timestamp)
+            if (ban.timestamp_finalized > max_timestamp)
                 max_timestamp = ban.timestamp_finalized
         }
         const parole_time = calcPenalty(calculateHistory.length, max_timestamp)
@@ -188,8 +186,6 @@ bot.on("new_chat_members", async function (chatMemberUpdated: any) {
         for (const ban of calculateHistoryActive){
             if (ban.timestamp_active > max_timestamp)
                 max_timestamp = ban.timestamp_active
-            else if (ban.timestamp_finalized > max_timestamp)
-                max_timestamp = ban.timestamp_finalized
         }
         const parole_time = calcPenalty(calculateHistoryActive.length, max_timestamp)
         if (settings.enforcement && parole_time > Date.now()){
@@ -256,8 +252,11 @@ bot.on('callback_query', async function onCallbackQuery(callbackQuery: TelegramB
     } else if (Number(calldata[0]) === 5){
         if (callbackQuery.from.id !== Number(calldata[1]))
             return;
-        const options = {can_send_messages: true, can_send_media_messages: true, can_send_polls: true, can_send_other_messages: true, can_add_web_page_previews: false, can_change_info: false, can_pin_messages: false};
-        queue.add(async () => {try{await bot.restrictChatMember(callbackQuery.message.chat.id, callbackQuery.from.id, options)}catch{}});
+        const permissions = await queue.add(async () => {try{const val = await bot.getChat(callbackQuery.message.chat.id).permissions
+            return val}catch{}})
+            if(!permissions)
+            return
+        queue.add(async () => {try{await bot.restrictChatMember(callbackQuery.message.chat.id, callbackQuery.from.id, permissions)}catch{}});
         queue.add(async () => {try{await bot.deleteMessage(callbackQuery.message.chat.id, callbackQuery.message.message_id)}catch{}})
     } else if (Number(calldata[0]) === 6){
         const member = await queue.add(async () => {try{const val = await bot.getChatMember(callbackQuery.message.chat.id, callbackQuery.from.id)

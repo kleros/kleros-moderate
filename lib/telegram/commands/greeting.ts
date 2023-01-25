@@ -56,7 +56,7 @@ const callback = async (db: any, queue: any, bot: any, settings: groupSettings, 
                 ]
             }
         };
-        const msg_greeting_full = `${langJson[settings.lang].greeting.greeting0} [${msg.from.first_name}](tg://user?id=${msg.from.id}). ${msg_greeting} ${langJson[settings.lang].greeting.greeting1}(${settings.rules}). ${langJson[settings.lang].greeting.greeting2}`
+        const msg_greeting_full = `${langJson[settings.lang].greeting.greeting0} [${msg.from.first_name}](tg://user?id=${msg.from.id}). ${msg_greeting}${langJson[settings.lang].greeting.greeting1}(${settings.rules}). ${langJson[settings.lang].greeting.greeting2}`
         console.log('full')
         console.log(msg_greeting_full)
         let msg_welcome;
