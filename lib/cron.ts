@@ -385,8 +385,8 @@ const delay = (delayInms) => {
 
 const delayCheck = async (realityQuestions: string, lastPageUpdated: number, timestampNew: number, timestampLastUpdated: number, botaddress: string) => {
     const queryModeration = getQueryDelay(lastPageUpdated, realityQuestions, timestampLastUpdated, botaddress, timestampNew)
-    // 5 min delay
-    await delay(300000)
+    // 3 min delay
+    await delay(180000)
     //console.log(queryModeration);
     //console.log('graphtime');
     //console.log(queryModeration)
