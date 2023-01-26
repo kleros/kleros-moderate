@@ -42,7 +42,7 @@ const exit = async () => {
     let currentBlock = await web3.eth.getBlockNumber()
     if (!history)
         history = {
-            last_timestamp: currentTime -20,
+            last_timestamp: currentTime -30,
             last_block: currentBlock
         }
 
@@ -52,11 +52,11 @@ const exit = async () => {
                              
     //history.last_timestamp = 1674496352
     //history.last_block = 8362931
-    let timestampNew = Math.floor(Date.now()/1000)-20;
+    let timestampNew: number;
     let timestampLastUpdated = history.last_timestamp
     let realitio_bot_checkpoint = Math.floor(timestampNew / 1800) - 1
     while (1){
-        timestampNew = Math.floor(Date.now()/1000)-20
+        timestampNew = Math.floor(Date.now()/1000)-30
         const questionDelay = await update(timestampNew, timestampLastUpdated, botaddress);
         if(questionDelay)
             delayCheck(questionDelay, 0,timestampNew,timestampLastUpdated,botaddress)
@@ -75,7 +75,7 @@ const exit = async () => {
         }
         timestampLastUpdated = timestampNew
         setCron(db, history.last_block,timestampNew)
-        await delay(20000)
+        await delay(30000)
     }
 })()
 
@@ -559,7 +559,7 @@ const handleTelegramUpdate = async (db: any, bot: any, settings: groupSettings, 
                                 queue.add(async () => {try{await bot.restrictChatMember(moderationInfo.UserHistory.group.groupID, moderationInfo.UserHistory.user.userID, permissions)}catch{}});
                             }
                         }
-                    const msg_update = settings.lang === "en" ? `*${moderationInfo.UserHistory.user.username}* has no other active reports. All bans should be lifted.` : `*${moderationInfo.UserHistory.user.username}* no tiene otros informes activos. Todas las prohibiciones deben ser levantadas.`
+                    const msg_update = settings.lang === "en" ? `*${moderationInfo.UserHistory.user.username}*'s has no other active reports. All bans should be lifted.` : `*${moderationInfo.UserHistory.user.username}* no tiene otros informes activos. Todas las prohibiciones deben ser levantadas.`
                     queue.add(async () => {try{await bot.sendMessage(settings.channelID, msg_update,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
                 } else {
                     const msg_update = settings.lang === "en" ? `*${moderationInfo.UserHistory.user.username}* has other active reports and should remain restricted.` : `*${moderationInfo.UserHistory.user.username}* tiene otros informes activos y debe permanecer restringido.`
@@ -592,26 +592,26 @@ const getQuery = (lastPageUpdated: number, timestampLastUpdated: number, botaddr
         ${moderationInfoContent}
             }`;
 return `{
-        disputesFinal: moderationDisputes(first: 1000, skip: ${lastPageUpdated*1000}, where: {timestampLastUpdated_gt: ${timestampLastUpdated}, finalRuling_not: null, moderationInfo_: {askedBy: "${botaddress}"}}) {
+        disputesFinal: moderationDisputes(first: 1000, skip: ${lastPageUpdated*1000}, where: {timestampLastUpdated_gt: ${timestampLastUpdated}, timestampLastUpdated_lt: ${timestampNew}, finalRuling_not: null, moderationInfo_: {askedBy: "${botaddress}"}}) {
             id
             finalRuling
             ${moderationInfo}
         }
-        disputesAppealPossible: moderationDisputes(first: 1000, skip: ${lastPageUpdated*1000}, where: {timestampLastAppealPossible_gt: ${timestampLastUpdated}, finalRuling: null, moderationInfo_: {askedBy: "${botaddress}"}}) {
+        disputesAppealPossible: moderationDisputes(first: 1000, skip: ${lastPageUpdated*1000}, where: {timestampLastAppealPossible_gt: ${timestampLastUpdated}, timestampLastAppealPossible_lt: ${timestampNew}, finalRuling: null, moderationInfo_: {askedBy: "${botaddress}"}}) {
             id
             currentRuling
             ${moderationInfo}
         }
-        disputesAppeal: moderationDisputes(first: 1000, skip: ${lastPageUpdated*1000}, where: {timestampLastAppeal_gt: ${timestampLastUpdated}, finalRuling: null, moderationInfo_: {askedBy: "${botaddress}"}}) {
+        disputesAppeal: moderationDisputes(first: 1000, skip: ${lastPageUpdated*1000}, where: {timestampLastAppeal_gt: ${timestampLastUpdated}, timestampLastAppeal_lt: ${timestampNew}, finalRuling: null, moderationInfo_: {askedBy: "${botaddress}"}}) {
             id
             currentRuling
             ${moderationInfo}
         }
-        disputesCreated: moderationDisputes(first: 1000, skip: ${lastPageUpdated*1000}, where: {timestampLastUpdated_gt: ${timestampLastUpdated}, finalRuling: null, currentRuling: null, rulingFunded: null, moderationInfo_: {askedBy: "${botaddress}"}}) {
+        disputesCreated: moderationDisputes(first: 1000, skip: ${lastPageUpdated*1000}, where: {timestampLastUpdated_gt: ${timestampLastUpdated}, timestampLastUpdated_lt: ${timestampNew}, finalRuling: null, currentRuling: null, rulingFunded: null, moderationInfo_: {askedBy: "${botaddress}"}}) {
             id
             ${moderationInfo}
         }
-        disputesAppealFunded: moderationDisputes(first: 1000, skip: ${lastPageUpdated*1000}, where: {timestampLastAppealPossible_gt: ${timestampLastUpdated}, rulingFunded_not: null, moderationInfo_: {askedBy: "${botaddress}"}}) {
+        disputesAppealFunded: moderationDisputes(first: 1000, skip: ${lastPageUpdated*1000}, where: {timestampLastAppealPossible_gt: ${timestampLastUpdated}, , timestampLastAppealPossible_lt: ${timestampNew}, rulingFunded_not: null, moderationInfo_: {askedBy: "${botaddress}"}}) {
             id
             rulingFunded
             currentRuling
@@ -655,7 +655,7 @@ return `{
                 }
             }
         }
-        ranks: userHistories(first: 1000, skip: ${lastPageUpdated*1000}, where: {timestampStatusUpdated_gt: ${timestampLastUpdated}, group_: {botAddress: "${botaddress}", platform: "Telegram"}}) {
+        ranks: userHistories(first: 1000, skip: ${lastPageUpdated*1000}, where: {timestampStatusUpdated_gt: ${timestampLastUpdated}, timestampStatusUpdated_lt: ${timestampNew}, group_: {botAddress: "${botaddress}", platform: "Telegram"}}) {
                 status
                 user{
                 userID
