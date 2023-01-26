@@ -1,5 +1,5 @@
 require('dotenv').config()
-import {openDb, getGroupSettings, getRule, getCron, getFederationChannel, getInviteURL, getFederatedFollowingBanHistory, getLocalBanHistory, getFederatedBanHistory, setCron, getGroupsInAndFollowingFederation, getReportMessageTimestampAndActive, setReport} from "./db";
+import {openDb, getGroupSettings, getRule, getCron, getMultilangGroup, getFederationChannel, getInviteURL, getFederatedFollowingBanHistory, getLocalBanHistory, getFederatedBanHistory, setCron, getGroupsInAndFollowingFederation, getReportMessageTimestampAndActive, setReport} from "./db";
 import request from "graphql-request";
 import {BigNumber} from "ethers";
 import TelegramBot from "node-telegram-bot-api";
@@ -42,7 +42,7 @@ const exit = async () => {
     let currentBlock = await web3.eth.getBlockNumber()
     if (!history)
         history = {
-            last_timestamp: currentTime,
+            last_timestamp: currentTime -20,
             last_block: currentBlock
         }
 
@@ -52,11 +52,11 @@ const exit = async () => {
                              
     //history.last_timestamp = 1674496352
     //history.last_block = 8362931
-    let timestampNew = Math.floor(Date.now()/1000);
+    let timestampNew = Math.floor(Date.now()/1000)-20;
     let timestampLastUpdated = history.last_timestamp
     let realitio_bot_checkpoint = Math.floor(timestampNew / 1800) - 1
     while (1){
-        timestampNew = Math.floor(Date.now()/1000)
+        timestampNew = Math.floor(Date.now()/1000)-20
         const questionDelay = await update(timestampNew, timestampLastUpdated, botaddress);
         if(questionDelay)
             delayCheck(questionDelay, 0,timestampNew,timestampLastUpdated,botaddress)
@@ -74,8 +74,8 @@ const exit = async () => {
             history.last_block = updateBlock
         }
         timestampLastUpdated = timestampNew
-        setCron(db, currentBlock,timestampNew)
-        await delay(60000)
+        setCron(db, history.last_block,timestampNew)
+        await delay(20000)
     }
 })()
 

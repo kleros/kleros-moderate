@@ -26,7 +26,7 @@ const createWelcomeThread = async (queue:any, db: any, settings: groupSettings, 
     return val}catch{}});
     if(!topicWelcome)
     return
-    const msg_welcome = settings.lang === "en" ? `Welcome, this group is moderated with [Kleros Moderate](https://kleros.io/moderate/).` : "Bienvenido, este grupo está moderado con [Kleros Moderate](https://kleros.io/moderate/)."
+    const msg_welcome = settings.lang === "en" ? `This group is moderated with [Kleros Moderate](https://kleros.io/moderate/).` : "Este grupo está moderado con [Kleros Moderate](https://kleros.io/moderate/)."
     const msg1: TelegramBot.Message = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, msg_welcome, {parse_mode: "Markdown", message_thread_id: topicWelcome.message_thread_id})
     return val}catch{}});
     if(!msg1)

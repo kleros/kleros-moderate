@@ -55,7 +55,7 @@ const batchedSend = _batchedSend(
     federation_id_following: ''
 }
 const ModeratorBot = require('node-telegram-bot-api');
-const bot: any = new ModeratorBot(process.env.BOT_TOKEN, {polling: {params: {"allowed_updates": JSON.stringify(["my_chat_member", "chat_member", "message","callback_query", "new_chat_members", "inline_query"])}}, testEnvironment: false});
+const bot: any = new ModeratorBot(process.env.BOT_TOKEN, {polling: {params: {"allowed_updates": JSON.stringify(["my_chat_member","callback_query", "new_chat_members"])}}, testEnvironment: false});
 //const bot: any = new ModeratorBot(process.env.BOT_TOKEN, {polling: true, testEnvironment: true});
 
 //bot.
@@ -126,8 +126,17 @@ bot.on("my_chat_member", async function(myChatMember: any) {
     }
 });
 
+/*  Forward messages to Susie for appeal
+// include "member" in allowed updates to work
 
+bot.on("message", async function (msg: TelegramBot.Message) {
+    if (msg.chat.type !== "private")
+        return;
+    console.log(msg)
+})
+*/
 //invite_url only present in private groups
+// include "chat_member" in allowed updates to work
 /*
 bot.on("chat_member", async function (msg: any) {
     if (msg.new_chat_member){
