@@ -457,22 +457,22 @@ const calcPenalty = (ban_level: number, timestamp_finalized: number): number => 
         return  timestamp_finalized + 31536000
 }
 
-const calcPenaltyPhrase = (settings: groupSettings, ban_level: number, enforcement: boolean, finalize: boolean): string => {
+const calcPenaltyPhrase = (settings: groupSettings, ban_level: number, enforcement: boolean, finalize: boolean, realityURL: string): string => {
 
     if (settings.lang === 'es'){
         if(ban_level == 1)
-            return finalize? enforcement? 'primera vez y está sujeta a un baneo de 1 día' : 'primera vez y se recomienda una prohibición de 1 día' : enforcement? 'primera vez y se silencia durante 1 día durante el resto del periodo del informe': 'primera vez y se le recomienda un silencio de 1 día por el resto del período del informe'
+            return finalize? enforcement? 'primera vez y está sujeta a un baneo de 1 día' : 'primera vez y se recomienda una prohibición de 1 día' : enforcement? `primera vez y se silencia durante 1 día durante el resto del periodo del [informe]${realityURL}`: `primera vez y se le recomienda un silencio de 1 día por el resto del período del [informe]${realityURL}`
         else if (ban_level == 2)
-            return finalize? enforcement? 'segunda vez y está sujeto a una prohibición de 1 semana' : 'segunda vez y se recomienda una prohibición de 1 semana': enforcement? 'segunda vez y se silencia durante 1 día durante el resto del periodo del informe': 'segunda vez y se le recomienda un silencio de 1 día para el resto del periodo del informe'
+            return finalize? enforcement? 'segunda vez y está sujeto a una prohibición de 1 semana' : 'segunda vez y se recomienda una prohibición de 1 semana': enforcement? `segunda vez y se silencia durante 1 día durante el resto del periodo del [informe]${realityURL}`: `segunda vez y se le recomienda un silencio de 1 día para el resto del periodo del [informe]${realityURL}`
         else
-            return finalize? enforcement? 'tercera vez y está sujeto a una prohibición de 1 mes' : 'tercera vez y se recomienda una prohibición de 1 mes' : enforcement? 'trecera vez y se silencia durante 1 día durante el resto del periodo del informe': 'tercera vez y se le recomienda un silencio de 1 día por el resto del período del informe'
+            return finalize? enforcement? 'tercera vez y está sujeto a una prohibición de 1 mes' : 'tercera vez y se recomienda una prohibición de 1 mes' : enforcement? `trecera vez y se silencia durante 1 día durante el resto del periodo del [informe]${realityURL}`: `tercera vez y se le recomienda un silencio de 1 día por el resto del período del [informe]${realityURL}`
     } else {
         if(ban_level == 1)
-            return finalize? enforcement? 'first time and is subject to a 1 day ban' : 'first time and is recommended a 1 day ban' : enforcement? 'first time and is muted for 1 day during the remainder of the report period': 'first time and is recommended a 1 day mute for the remainder of the report period'
+            return finalize? enforcement? 'first time and is subject to a 1 day ban' : 'first time and is recommended a 1 day ban' : enforcement? `first time and is muted for 1 day during the remainder of the [report]${realityURL}`: `first time and is recommended a 1 day mute for the remainder of the [report]${realityURL}`
         else if (ban_level == 2)
-            return finalize? enforcement? 'second time and is subject to a 1 week ban' : 'second time and is recommended a 1 week ban': enforcement? 'second time and is muted for 1 day during the remainder of the report period': 'second time and is recommended a 1 day mute for the remainder of the report period'
+            return finalize? enforcement? 'second time and is subject to a 1 week ban' : 'second time and is recommended a 1 week ban': enforcement? `second time and is muted for 1 day during the remainder of the [report]${realityURL}`: `second time and is recommended a 1 day mute for the remainder of the [report]${realityURL}`
         else
-            return finalize? enforcement? 'third time and is subject to a 1 month ban' : 'third time and is recommended a 1 month ban' : enforcement? 'third time and is muted for 1 day during the remainder of the report period': 'third time and is recommended a 1 day mute for the remainder of the report period'
+            return finalize? enforcement? 'third time and is subject to a 1 month ban' : 'third time and is recommended a 1 month ban' : enforcement? `third time and is muted for 1 day during the remainder of the [report]${realityURL}`: `third time and is recommended a 1 day mute for the remainder of the [report]${realityURL}`
     }
 }
 
@@ -528,12 +528,13 @@ const handleTelegramUpdate = async (db: any, bot: any, settings: groupSettings, 
                         }
                     }
                 }
-                const msg_enforcement = settings.lang === 'es'? `la conducta de *${moderationInfo.UserHistory.user.username}* por este [mensaje](${moderationInfo.message}) ([backup](${moderationInfo.messageBackup})) mensaje viola las [reglas](${moderationInfo.rulesUrl}) por ${calcPenaltyPhrase(settings, ban_level_current, settings.enforcement, finalize)}.` : `*${moderationInfo.UserHistory.user.username}*'s conduct due to this [message](${moderationInfo.message}) ([backup](${moderationInfo.messageBackup})) violated the [rules](${moderationInfo.rulesUrl}) for the ${calcPenaltyPhrase(settings, ban_level_current, settings.enforcement, finalize)}.`
+                const realityURL = `https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${moderationInfo.id}`;
+                const msg_enforcement = settings.lang === 'es'? `la conducta de *${moderationInfo.UserHistory.user.username}* por este [mensaje](${moderationInfo.message}) ([backup](${moderationInfo.messageBackup})) mensaje viola las [reglas](${moderationInfo.rulesUrl}) por ${calcPenaltyPhrase(settings, ban_level_current, settings.enforcement, finalize, realityURL)}.` : `*${moderationInfo.UserHistory.user.username}*'s conduct due to this [message](${moderationInfo.message}) ([backup](${moderationInfo.messageBackup})) violated the [rules](${moderationInfo.rulesUrl}) for the ${calcPenaltyPhrase(settings, ban_level_current, settings.enforcement, finalize, realityURL)}.`
                 queue.add(async () => {try{await bot.sendMessage(settings.channelID, msg_enforcement, settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown',disable_web_page_preview: true}: {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
             } else{
                 const i = calculateHistory.findIndex(e => e.question_id === moderationInfo.id);
                 if (i > -1) {
-                    queue.add(async () => {try{await bot.sendMessage(settings.channelID, `*${moderationInfo.UserHistory.user.username}*'s conduct due to this [message](${moderationInfo.message}) ([backup](${moderationInfo.messageBackup})) violated the [rules](${moderationInfo.rulesUrl}) for the ${calcPenaltyPhrase(settings, ban_level_current, settings.enforcement, finalize)}.`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown', disable_web_page_preview: true}: {parse_mode: 'Markdown', disable_web_page_preview: true})}catch{}});
+                    queue.add(async () => {try{await bot.sendMessage(settings.channelID, `*${moderationInfo.UserHistory.user.username}*'s conduct due to this [message](${moderationInfo.message}) ([backup](${moderationInfo.messageBackup})) violated the [rules](${moderationInfo.rulesUrl}) for the ${calcPenaltyPhrase(settings, ban_level_current, settings.enforcement, finalize, realityURL)}.`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown', disable_web_page_preview: true}: {parse_mode: 'Markdown', disable_web_page_preview: true})}catch{}});
                 } else
                     queue.add(async () => {try{await bot.sendMessage(settings.channelID, `*${moderationInfo.UserHistory.user.username}*'s conduct due to this [message](${moderationInfo.message}) ([backup](${moderationInfo.messageBackup})) violated the [rules](${moderationInfo.rulesUrl}). The conduct occured before *${moderationInfo.UserHistory.user.username}*'s latest confirmed report, so the user is recommended to get a second chance --- they should have been penalized already.`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown', disable_web_page_preview: true}: {parse_mode: 'Markdown', disable_web_page_preview: true})}catch{}});
             }
