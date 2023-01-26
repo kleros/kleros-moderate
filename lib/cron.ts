@@ -315,23 +315,6 @@ for(const data of moderationActions.realityQuestionAnsweredNotFinalized){
         console.log(e)
     }
 }
-
-for(const data of moderationActions.realityQuestionAnsweredFinalized){
-    const settings = validate(data.moderationInfo.UserHistory.group.groupID);
-    // settings[1] language
-    try{
-        //bot.sendMessage(settings[0], `The reality question ${data.id} is finalized with ${data.currentAnswer}`);
-        //const realityURL = `https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${data.moderationInfo.id}`;
-        //bot.sendMessage(settings.channelID, `The [report](${realityURL}) is finalized.`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'});
-        //bot.sendMessage(process.env.JUSTICE_LEAGUE,  `The [report](${realityURL}) is finalized.`, {parse_mode: 'Markdown'});
-        // finalize
-        handleTelegramUpdate(db, bot, settings, data.moderationInfo, timestampNew, data.currentAnswer === "0x0000000000000000000000000000000000000000000000000000000000000001", true, false);
-    } catch(e){
-        console.log(e)
-    }
-}
-
-
     // promise queue example
     for(const data of moderationActions.sheriffs){
         const settings = validate(data.group.groupID);
@@ -550,9 +533,9 @@ const handleTelegramUpdate = async (db: any, bot: any, settings: groupSettings, 
             } else{
                 const i = calculateHistory.findIndex(e => e.question_id === moderationInfo.id);
                 if (i > -1) {
-                    queue.add(async () => {try{await bot.sendMessage(settings.channelID, `*${moderationInfo.UserHistory.user.username}*'s conduct due to this [message](${moderationInfo.message}) ([backup](${moderationInfo.messsageBackup})) violated the [rules](${moderationInfo.rulesUrl}) for the ${calcPenaltyPhrase(settings, ban_level_current, settings.enforcement, finalize)}.`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown', disable_web_page_preview: true}: {parse_mode: 'Markdown', disable_web_page_preview: true})}catch{}});
+                    queue.add(async () => {try{await bot.sendMessage(settings.channelID, `*${moderationInfo.UserHistory.user.username}*'s conduct due to this [message](${moderationInfo.message}) ([backup](${moderationInfo.messageBackup})) violated the [rules](${moderationInfo.rulesUrl}) for the ${calcPenaltyPhrase(settings, ban_level_current, settings.enforcement, finalize)}.`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown', disable_web_page_preview: true}: {parse_mode: 'Markdown', disable_web_page_preview: true})}catch{}});
                 } else
-                    queue.add(async () => {try{await bot.sendMessage(settings.channelID, `*${moderationInfo.UserHistory.user.username}*'s conduct due to this [message](${moderationInfo.message}) ([backup](${moderationInfo.messsageBackup})) violated the [rules](${moderationInfo.rulesUrl}). The conduct occured before *${moderationInfo.UserHistory.user.username}*'s latest confirmed report, so the user is recommended to get a second chance --- they should have been penalized already.`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown', disable_web_page_preview: true}: {parse_mode: 'Markdown', disable_web_page_preview: true})}catch{}});
+                    queue.add(async () => {try{await bot.sendMessage(settings.channelID, `*${moderationInfo.UserHistory.user.username}*'s conduct due to this [message](${moderationInfo.message}) ([backup](${moderationInfo.messageBackup})) violated the [rules](${moderationInfo.rulesUrl}). The conduct occured before *${moderationInfo.UserHistory.user.username}*'s latest confirmed report, so the user is recommended to get a second chance --- they should have been penalized already.`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown', disable_web_page_preview: true}: {parse_mode: 'Markdown', disable_web_page_preview: true})}catch{}});
             }
         } else if (ban_level_current < ban_level_history){
                 let liftbans = true;
@@ -649,7 +632,7 @@ return `{
             timestampLastUpdated
             ${moderationInfo}
         }
-        sheriffs: jannies(first: 1000, skip: ${lastPageUpdated*1000}, where: {timestampLastUpdatedSheriff_gt: ${timestampLastUpdated}, group_: {botAddress: "${botaddress}"}}) {
+        sheriffs: jannies(first: 1000, skip: ${lastPageUpdated*1000}, where: {timestampLastUpdatedSheriff_gt: ${timestampLastUpdated}, timestampLastUpdatedSheriff_lt: ${timestampNew}, group_: {botAddress: "${botaddress}"}}) {
             id
             group{
                 groupID
@@ -660,7 +643,7 @@ return `{
                 }
             }
         }
-        deputySheriffs: jannies(first: 1000, skip: ${lastPageUpdated*1000}, where: {timestampLastUpdatedDeputySheriff_gt: ${timestampLastUpdated}, group_: {botAddress: "${botaddress}"}}) {
+        deputySheriffs: jannies(first: 1000, skip: ${lastPageUpdated*1000}, where: {timestampLastUpdatedDeputySheriff_gt: ${timestampLastUpdated}, timestampLastUpdatedDeputySheriff_lt: ${timestampNew}, group_: {botAddress: "${botaddress}"}}) {
             id
             group{
                 groupID
