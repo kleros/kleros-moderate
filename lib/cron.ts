@@ -98,7 +98,7 @@ const update = async (timestampNew: number, timestampLastUpdated: number,botaddr
 
     //console.log(queryModeration);
     //console.log('graphtime');
-    console.log(queryModeration)
+    //console.log(queryModeration)
     const moderationActions = await request(
         process.env.MODERATE_SUBGRAPH,
         queryModeration
