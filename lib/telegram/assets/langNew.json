@@ -313,7 +313,7 @@
             "Option": "Opción",
             "Evidence": "Evidencia",
             "MessageSent": "Mensaje enviado",
-            "Desc1": "Envío de evidencia automatizado por el bot Kleros Moderate. Por favor, compruebe la autenticidad. El archivo adjunto es un registro de copia de seguridad de un mensaje enviado en el chat."
+            "Desc1": "Envío de evidencia automatizado por el bot Kleros Moderate. Por favor, compruebe la autenticidad. El archivo adjunto es un mensaje de copia de seguridad de un mensaje enviado en el chat."
         },
         "multilang": {
             "en": "Grupo inglés conectado",

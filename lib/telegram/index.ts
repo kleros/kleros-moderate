@@ -250,7 +250,7 @@ bot.on('callback_query', async function onCallbackQuery(callbackQuery: TelegramB
         var reportMessage: string = `To add evidence, reply to the message you want saved in the original chat with the evidence index.\n\n`
         reports.forEach( (report) => {
             const MsgLink = 'https://t.me/c/' + calldata[1].substring(4) + '/' + report.msg_id;
-            reportMessage += `- [Message](${MsgLink}) ([${langJson[settings.lang].socialConsensus.consensus5}](${report.msgBackup})) [${langJson[settings.lang].getReports.reportMessage3}](https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${report.question_id}), \`/addevidence ${report.evidenceIndex}\` <context (optional)>\n`;
+            reportMessage += `- [Message](${MsgLink}) ([${langJson[settings.lang].socialConsensus.consensus5}](${report.msgBackup})) [${langJson[settings.lang].getReports.reportMessage3}](https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${report.question_id}), \`/evidence ${report.evidenceIndex}\` <context (optional)>\n`;
         });
 
         reportMessage +='\n eg. \`/evidence\` 1 This message breaks the rules because xyz.'
