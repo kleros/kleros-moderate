@@ -260,7 +260,7 @@
         "getAccount": "Bot dirección",
         "info": {
             "evidence": "¿De qué usuario trata el informe?",
-            "noevidence": "No hay informes a los que añadir pruebas en tu grupo.",
+            "noevidence": "No hay informes a los que añadir evidencia en tu grupo.",
             "get": "Obtener información del informe",
             "DM": "DM mí para información de informe : )",
             "report1": "rompió las reglas al menos",
@@ -295,10 +295,10 @@
             "setrules": "Puedes establecer nuevas reglas con /setrules. Elaborar reglas precisas es un reto, puedes pedirme /help"
         },
         "addevidence" : {
-            "allowance": "Se han agotado las pruebas diarias.",
-            "ID": "pruebas ID sin especificar.",
-            "submitted": "Pruebas [cargadas]",
-            "explain": "Pruebas presentadas con explicaciones",
+            "allowance": "Se han agotado las evidencia diarias.",
+            "ID": "evidencia ID sin especificar.",
+            "submitted": "Evidencia [cargadas]",
+            "explain": "Evidencia presentadas con explicaciones",
             "errorId": "El ID no está activo o no existe.",
             "Chat": "Charla",
             "Author": "Autor",
@@ -311,9 +311,9 @@
             "Poll": "Encuesta",
             "Question": "Pregunta",
             "Option": "Opción",
-            "Evidence": "Pruebas",
+            "Evidence": "Evidencia",
             "MessageSent": "Mensaje enviado",
-            "Desc1": "Envío de pruebas automatizado por el bot Kleros Moderate. Por favor, compruebe la autenticidad. El archivo adjunto es un registro de copia de seguridad de un mensaje enviado en el chat."
+            "Desc1": "Envío de evidencia automatizado por el bot Kleros Moderate. Por favor, compruebe la autenticidad. El archivo adjunto es un registro de copia de seguridad de un mensaje enviado en el chat."
         },
         "multilang": {
             "en": "Grupo inglés conectado",
@@ -384,7 +384,7 @@
             "Rules1": "📄 *Reglas* 📄\n\nTodos los grupos empiezan con [reglas por defecto](https://ipfs.kleros.io/ipfs/QmSHAjfD1MYPtyopFoXcUQ5Ny3sfs5re1yz3h3TZ5qGDsp/Kleros%20Moderate%20Normas%20comunitarias.pdf). \n\n***Consejos para la redacción de reglas***:\n\n -Enuncie la cultura del grupo en un preámbulo.\n -Numere cada regla.\nSea específico.\n\n*Comandos de usuario*:\n-`/rules`: Devuelve las reglas.\n*Comandos de administrador*:\n- `/setrules` <by reply> o <url>: Establece las reglas a la url o mensaje.",
             "Court1": "⚖️ *Corte* ⚖️\n\nLas preguntas de moderación las resuelve el [Kleros Court](https://kleros.gitbook.io/docs/) con un jurado de moderadores. Si el jurado cometió un error, el caso puede ser apelado, atrayendo a un grupo más grande de miembros del jurado y proporcionando la oportunidad de proporcionar más contexto, análisis y argumentos.\n\nSi desea tener la oportunidad de servir como miembro del jurado, obtenga PNK ([Gnosis Chain](https://swapr.eth.link/#/swap?chainId=100) o [Mainnet](https://app.uniswap.org/#/swap?outputCurrency=0x93ed3fbe21207ec2e8f2d3c3de6e058cb73bc04d&inputCurrency=ETH)) y [stake](https://court.kleros.io/) en el tribunal de Kleros.\n\nPara discutir el fondo de una disputa, consulte @klerosjuror.",
             "Lawyer1": "🧑‍⚖️  *Busque un abogado* 🧑‍⚖️ \n\nLas disputas sobre informes pueden ser complicadas.\n\nSi necesita ayuda para defender su caso ante el tribunal kleros, considere pedir ayuda a un [abogado] kleros(https://t.me/+9fvGGkGfSZ1hZDBk).",
-            "Privacy1": "🕵️ *Privacidad* 🕵️\n\nPara proporcionar contexto, los usuarios pueden solicitar a Susie que guarde mensajes para presentarlos como pruebas en su nombre. Susie gestiona la moderación de grupos privados y públicos de forma diferente,\n\n- *** Grupos Privados ***: Los moderadores dependen únicamente de las pruebas presentadas\n\n- *** Grupos Públicos ***: Los moderadores tienen acceso a todo el historial del chat público.",
+            "Privacy1": "🕵️ *Privacidad* 🕵️\n\nPara proporcionar contexto, los usuarios pueden solicitar a Susie que guarde mensajes para presentarlos como evidencia en su nombre. Susie gestiona la moderación de grupos privados y públicos de forma diferente,\n\n- *** Grupos Privados ***: Los moderadores dependen únicamente de las evidencia presentadas\n\n- *** Grupos Públicos ***: Los moderadores tienen acceso a todo el historial del chat público.",
             "Notifications1": "🔔 *Notificaciones* 🔔\n\nLas notificaciones pueden enviarse a un canal independiente para no saturar el grupo principal.\n\nCómo habilitar canales de notificación:\n\n1. Crea un canal\n2. Añade a Susie\n3. Susie enviará un ID de canal\n4. Utiliza ese ID de canal para establecer notificaciones con /setchannel en el grupo original\n\n*Comandos de usuario*:\n- `/notificaciones`: Devuelve el canal de notificaciones actual\n*Comandos de administrador*:\n- `/setchannel` <channelID>: Establece el canal de notificaciones en el id de canal especificado\n- `/setfedchannel` <channelID>: Establece el canal de notificaciones para su federación en el id de canal especificado",
             "Federations1": "🌐 *Federaciones*\n\nModerar un solo grupo es difícil, ¿pero gestionar varios lo es aún más? ¿Tienes que bloquear manualmente a los spammers en todos tus grupos? Con las federaciones, Susie puede aplicar una prohibición a un usuario en todos los grupos federados.\n\n*Comandos de usuario*:\n- `/fedinfo`: Devuelve la federación actual: Crea una federación- `/joinfed`: Une el grupo actual a una federación",
             "Gnosis1": "⛓️ *Gnosis Chain* ⛓️\n\nSusie usa [xDAI](https://docs.gnosischain.com/about/tokens/xdai), una moneda estable, en [Gnosis Chain](https://www.gnosis.io/). ¿No sabes lo que eso significa? Significa que Susie utiliza un libro de contabilidad público barato y rápido para coordinar la moderación de forma justa y transparente. \n\n¿No tienes ningún xDAI en Gnosis Chain? No hay problema, hay un (barato, rápido) [puente](https://bridge.connext.network/?receivingChainId=100&receivingAssetId=0x0000000000000000000000000000000000000000) para eso. \n\n¿Qué es crypto? He oído hablar de eso en las noticias, no quiero tener nada que ver con crypto. No hay problema, puedes pedir ayuda a los moderadores independientes en @SusieSupport.\n\n¿No tienes ninguna criptodivisa? No hay problema, hay una conveniente [fiat on-ramp](https://www.mtpelerin.com/buy-xdai) (tarjeta de crédito o transferencia bancaria) para comprar xDAI en Gnosis Chain.\n\n¿Necesitas ayuda para añadir la red Gnosis Chain a tu cartera? No te preocupes, hay una [guía](https://docs.gnosischain.com/tools/wallets/metamask#2-configure) para eso.\n\n¿Necesitas más ayuda? No te preocupes, hay un grupo @SusieSupport para eso.",
