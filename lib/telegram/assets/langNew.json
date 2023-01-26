@@ -173,7 +173,7 @@
             "already": "Already started."
         },
         "welcome": {
-            "welcome": "Hi, I'm Susie, a [Kleros Moderate](https://kleros.io/moderate/) bot.\n\nI need permission from an admin to /start.\n\nHow do I help with moderation?\n\n1. I ask \"Did a user break the rules?\" on the crowdsourcing platform [Reality.Eth](https://realityeth.github.io/).\n2. The question is answered with an escalation game using xDai on [Gnosis Chain](https://www.gnosis.io/).\n3. The answer can be disputed in the [Kleros](https://kleros.io/) court.\n\nTo learn more, [DM](https://t.me/KlerosModeratorBot?start=help) me, read my [docs](https://shotaro.gitbook.io/kleros-moderate/products/moderate/susie), or ask a question in @SusieSupport."
+            "welcome": "Hi, I'm Susie, a [Kleros Moderate](https://kleros.io/moderate/) bot.\n\nI need permission from an admin to /start.\n\nHow do I help with moderation?\n\n1. I ask \"Did a user break the rules?\" on the crowdsourcing platform [Reality.Eth](https://realityeth.github.io/).\n2. The question is answered with an escalation game using xDai on [Gnosis Chain](https://www.gnosis.io/).\n3. The answer can be disputed in the [Kleros](https://kleros.io/) court.\n\nTo learn more, [DM](https://t.me/SusieTheKlerosModeratorBot?start=help) me, read my [docs](https://kleros.gitbook.io/docs/products/moderate/susie), or ask a question in @SusieSupport."
         },
         "defaultRules": "https://ipfs.kleros.io/ipfs/Qme3Qbj9rKUNHUe9vj9rqCLnTVUCWKy2YfveQF8HiuWQSu/Kleros%20Moderate%20Community%20Rules.pdf",
         "index": {
@@ -185,7 +185,7 @@
         "help": {
             "DM": "Get Help (DM)",
             "DM2": "DM me for help : )",
-            "help": "*Help*\n\nHi! My name is Susie. I'm a [Kleros Moderate](https://kleros.io/moderate) bot, here to help you manage your groups!\n\nI crowdsource moderation using [Reality.eth](https://reality.eth.limo/) and [Kleros](https://kleros.gitbook.io/docs/) on [Gnosis Chain](https://www.gnosis.io/).\n\nModeration is resolved with an escalation game and the outcome can be disptued in the Kleros Court.\n\nHelpful commands:\n    - /start: Starts me.\n    - /help: Sends this help message.\n\nSelect a feature to learn more. Ask questions in @SusieSupport or read the [docs](https://shotaro.gitbook.io/kleros-moderate/products/moderate/susie-or-kleros-moderator)."
+            "help": "*Help*\n\nHi! My name is Susie. I'm a [Kleros Moderate](https://kleros.io/moderate) bot, here to help you manage your groups!\n\nI crowdsource moderation using [Reality.eth](https://reality.eth.limo/) and [Kleros](https://kleros.gitbook.io/docs/) on [Gnosis Chain](https://www.gnosis.io/).\n\nModeration is resolved with an escalation game and the outcome can be disptued in the Kleros Court.\n\nHelpful commands:\n    - /start: Starts me.\n    - /help: Sends this help message.\n\nSelect a feature to learn more. Ask questions in @SusieSupport or read the [docs](https://kleros.gitbook.io/docs/products/moderate/susie)."
 ,            "back": "back",
             "Greeting1": "👋 *Greeting* 👋\n\nWelcome your members with a greeting informing them of the group rules.\n\nAfter 5 minutes, the previous welcome message or captcha will get deleted\n\n*Admin commands:*\n- `/welcome` : Toggles on/off welcomes messages.\n- `/captcha` : Toggles on/off captcha.",
             "Language1": "🗣️ *Languages* 🗣️\n\nSusie's replies can be changed to one of the languages below.\n\n- EN (English)\n- ES (Español)\n\nContent moderation requires a nuanced understanding of context and language. Please make sure to set the appropriate language for your community for effective moderation.\n\n*Admin commands*:    \n- `/lang`: Set your preferred language.",
@@ -292,7 +292,7 @@
             "select" : "Seleccione un idioma compatible",
             "confirm": "Language changed to english.",
             "rules": "Se aplican por defecto las Directrices de la Comunidad Moderada de Kleros [normas]",
-            "setrules": "Puedes establecer nuevas reglas con /setrules. Elaborar reglas precisas es un reto, puedes pedirme ayuda (/help)."
+            "setrules": "Puedes establecer nuevas reglas con /setrules. Elaborar reglas precisas es un reto, puedes pedirme /help"
         },
         "addevidence" : {
             "allowance": "Se han agotado las pruebas diarias.",
@@ -368,13 +368,13 @@
             "already": "Ya comenzó."
         },
         "welcome": {
-            "welcome": "Hola, soy Susie, un bot [Kleros Moderate](https://kleros.io/moderate/). Necesito permiso de un administrador para /start. ¿Cómo puedo ayudar con la moderación? Pregunto '¿Un usuario ha infringido las normas?' en la plataforma de crowdsourcing [Reality.Eth](https://realityeth.github.io/).n2. La pregunta se responde con un juego de escalada usando xDai en [Gnosis Chain](https://www.gnosis.io/).\n3. La respuesta se puede disputar en el tribunal [Kleros](https://kleros.io/).\n\nPara saber más, [DM](https://t.me/KlerosModeratorBot?start=help) mío, lee mis [docs](https://shotaro.gitbook.io/kleros-moderate/products/moderate/susie), o haz una pregunta en @SusieSupport."
+            "welcome": "Hola, soy Susie, un bot [Kleros Moderate](https://kleros.io/moderate/). Necesito permiso de un administrador para /start. ¿Cómo puedo ayudar con la moderación? Pregunto '¿Un usuario ha infringido las normas?' en la plataforma de crowdsourcing [Reality.Eth](https://realityeth.github.io/).n2. La pregunta se responde con un juego de escalada usando xDai en [Gnosis Chain](https://www.gnosis.io/).\n3. La respuesta se puede disputar en el tribunal [Kleros](https://kleros.io/).\n\nPara saber más, [DM](https://t.me/SusieTheKlerosModeratorBot?start=help) mío, lee mis [docs](https://kleros.gitbook.io/docs/products/moderate/susie), o haz una pregunta en @SusieSupport."
         },
         "defaultRules": "https://ipfs.kleros.io/ipfs/QmSHAjfD1MYPtyopFoXcUQ5Ny3sfs5re1yz3h3TZ5qGDsp/Kleros%20Moderate%20Normas%20comunitarias.pdf",
         "help": {
             "DM": "Obtener ayuda (DM)",
             "DM2": "DM de ayuda : )",
-            "help": "*Ayuda*\n\n¡Hola! Me llamo Susie. Soy un bot [Kleros Moderate](https://kleros.io/moderate), ¡aquí para ayudarte a gestionar tus grupos!\n\n¡Modero en grupo usando [Reality.eth](https://reality.eth.limo/) y [Kleros](https://kleros.gitbook.io/docs/) en [Gnosis Chain](https://www.gnosis.io/).\n\nLa moderación se resuelve con un juego de escalada y el resultado se puede disputar en el Tribunal Kleros.\n\nComandos útiles:\n - /start: Me inicia.\n - /help: Envía este mensaje de ayuda.\n\nSelecciona una función para saber más. Haz preguntas en @SusieSupport o lee los [docs](https://shotaro.gitbook.io/kleros-moderate/products/moderate/susie-or-kleros-moderator)."
+            "help": "*Ayuda*\n\n¡Hola! Me llamo Susie. Soy un bot [Kleros Moderate](https://kleros.io/moderate), ¡aquí para ayudarte a gestionar tus grupos!\n\n¡Modero en grupo usando [Reality.eth](https://reality.eth.limo/) y [Kleros](https://kleros.gitbook.io/docs/) en [Gnosis Chain](https://www.gnosis.io/).\n\nLa moderación se resuelve con un juego de escalada y el resultado se puede disputar en el Tribunal Kleros.\n\nComandos útiles:\n - /start: Me inicia.\n - /help: Envía este mensaje de ayuda.\n\nSelecciona una función para saber más. Haz preguntas en @SusieSupport o lee los [docs](https://kleros.gitbook.io/docs/products/moderate/susie)."
 ,            "back": "back",
             "Greeting1": "👋 *Saludos* 👋 Bienvenida a tus miembros con un saludo informándoles de las reglas del grupo. Después de 5 minutos, los mensajes de bienvenida o captcha anteriores se borrarán.\n\n*Comandos de administrador:*\n- `/welcome` : Activa / desactiva los mensajes de bienvenida.\n- `/captcha` : Activa / desactiva las reglas captcha.",
             "Language1": "🗣️ *Idiomas* 🗣️\n\nLas respuestas de Susie pueden cambiarse a uno de los siguientes idiomas.\n\n- EN (English)\n- ES (Español)\n\nLa moderación de contenidos requiere una comprensión matizada del contexto y del lenguaje. Por favor, asegúrese de establecer el idioma apropiado para su comunidad para una moderación efectiva. \n\n*Comandos de administración*:\n`/lang`: Establezca su idioma preferido.",
