@@ -342,7 +342,8 @@ for(const data of moderationActions.realityQuestionAnsweredFinalized){
                 if(!sherrif)
                 continue
             //console.log(sherrif)
-            queue.add(async () => {try{await bot.sendMessage(data.group.groupID, `${langJson[settings.lang].reputation.sheriff} 🥇🤠[${sherrif.user.username}](tg://user?id=${sherrif.user.id})🤠🥇`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
+            const fromUsername = (sherrif.user.username || sherrif.user.first_name || `no-username-set`);
+            queue.add(async () => {try{await bot.sendMessage(data.group.groupID, `${langJson[settings.lang].reputation.sheriff} 🥇🤠[${fromUsername}](tg://user?id=${sherrif.user.id})🤠🥇`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
         } catch(e){
             console.log(e)
         }
@@ -356,7 +357,8 @@ for(const data of moderationActions.realityQuestionAnsweredFinalized){
                 return val}catch{}})
                 if(!deputysherrif)
                 continue
-            queue.add(async () => {try{await bot.sendMessage(data.group.groupID, `${langJson[settings.lang].reputation.deputy} 🥈[${deputysherrif.user.username}](tg://user?id=${deputysherrif.user.id})🥈`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
+            const fromUsername = (deputysherrif.user.username || deputysherrif.user.first_name || `no-username-set`);
+            queue.add(async () => {try{await bot.sendMessage(data.group.groupID, `${langJson[settings.lang].reputation.deputy} 🥈[${fromUsername}](tg://user?id=${deputysherrif.user.id})🥈`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
         } catch(e){
             console.log(e)
         }
@@ -370,6 +372,8 @@ for(const data of moderationActions.realityQuestionAnsweredFinalized){
                 return val}catch{}})
                 if(!userUpdate)
                 continue
+
+            const fromUsername = (userUpdate.user.username || userUpdate.user.first_name || `no-username-set`);
             let message = ""
             if (data.status === "GoodSamaritan"){
                 message = langJson[settings.lang].reputation.samaritan
@@ -379,7 +383,7 @@ for(const data of moderationActions.realityQuestionAnsweredFinalized){
                 message = langJson[settings.lang].reputation.BoyWhoCriedWolf
             }
             if(data.status !== "CommunityMember")
-                queue.add(async () => {try{await bot.sendMessage(data.group.groupID, `${message} [${userUpdate.user.username}](tg://user?id=${userUpdate.user.id})`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
+                queue.add(async () => {try{await bot.sendMessage(data.group.groupID, `${message} [${fromUsername}](tg://user?id=${userUpdate.user.id})`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
         } catch(e){
             console.log(e)
         }
