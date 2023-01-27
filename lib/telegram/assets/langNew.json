@@ -313,7 +313,7 @@
             "Option": "Opción",
             "Evidence": "Evidencia",
             "MessageSent": "Mensaje enviado",
-            "Desc1": "Envío de evidencia automatizado por el bot Kleros Moderate. Por favor, compruebe la autenticidad. El archivo adjunto es un mensaje de copia de seguridad de un mensaje enviado en el chat."
+            "Desc1": "Envío de evidencia automatizado por el bot Kleros Moderate. Por favor, compruebe la autenticidad. El archivo adjunto es un mensaje de copia de seguridad de un mensaje enviado en el chat"
         },
         "multilang": {
             "en": "Grupo inglés conectado",
@@ -340,7 +340,7 @@
             "anon": "El usuario es anónimo. Pide a los administradores que deshabiliten los administradores anónimos para moderar el comportamiento de los administradores.",
             "bot": "Los bots no pueden ser denunciados.",
             "admin": "Los informes de administración están desactivados. Los informes de administración pueden activarse con `/adminreportable`.",
-            "reported": "El mensaje ya está [notificado]",
+            "reported": "El mensaje ya está [reportado]",
             "norules": "No se han encontrado reglas para este mensaje.",
             "noallowance": "Ha agotado su asignación diaria de informes."
         },
@@ -368,7 +368,7 @@
             "already": "Ya comenzó."
         },
         "welcome": {
-            "welcome": "Hola, soy Susie, un bot [Kleros Moderate](https://kleros.io/moderate/). Necesito permiso de un administrador para /start. ¿Cómo puedo ayudar con la moderación? Pregunto '¿Un usuario ha infringido las normas?' en la plataforma de crowdsourcing [Reality.Eth](https://realityeth.github.io/).n2. La pregunta se responde con un juego de escalada usando xDai en [Gnosis Chain](https://www.gnosis.io/).\n3. La respuesta se puede disputar en el tribunal [Kleros](https://kleros.io/).\n\nPara saber más, [DM](https://t.me/SusieTheKlerosModeratorBot?start=help) mío, lee mis [docs](https://kleros.gitbook.io/docs/products/moderate/susie), o haz una pregunta en @SusieSupport."
+            "welcome": "Hola, soy Susie, un bot [Kleros Moderate](https://kleros.io/moderate/). Necesito permiso de un administrador para /start. ¿Cómo puedo ayudar con la moderación?\n\n 1. Pregunto\n\n'¿Un usuario ha infringido las normas?'n\n\nen la plataforma de crowdsourcing [Reality.Eth](https://realityeth.github.io/).\n2. La pregunta se responde con un juego de escalada usando xDai en [Gnosis Chain](https://www.gnosis.io/).\n3. La respuesta se puede disputar en el tribunal [Kleros](https://kleros.io/).\n\nPara saber más, [DM](https://t.me/SusieTheKlerosModeratorBot?start=help) mío, lee mis [docs](https://kleros.gitbook.io/docs/products/moderate/susie), o haz una pregunta en @SusieSupport."
         },
         "defaultRules": "https://ipfs.kleros.io/ipfs/QmSHAjfD1MYPtyopFoXcUQ5Ny3sfs5re1yz3h3TZ5qGDsp/Kleros%20Moderate%20Normas%20comunitarias.pdf",
         "help": {
