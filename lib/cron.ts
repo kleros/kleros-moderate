@@ -397,6 +397,9 @@ const delayCheck = async (realityQuestions: string, lastPageUpdated: number, tim
 
     for(const data of moderationActionsDelay.realityQuestionAnsweredNotFinalizedDelayed){
         //console.log(data.moderationInfo.UserHistory.group)
+        if (!data.moderationInfo.dispute.id || data.moderationInfo.dispute.id === "null" )
+            continue;
+
         const settings = validate(data.moderationInfo.UserHistory.group.groupID);
         // settings[1] language
         try{
@@ -576,6 +579,9 @@ message
 messageBackup
 moderationType
 rulesUrl
+dispute{
+    id
+  }
 UserHistory{
     countBrokeRulesArbitrated
     group {
