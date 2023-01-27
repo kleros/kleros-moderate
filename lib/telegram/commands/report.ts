@@ -177,7 +177,7 @@ const callback = async (queue: any, db:any, settings: groupSettings, bot: any, b
         if (!reportRequestMsg)
             return
         myCache.set([msg.chat.id, msg.reply_to_message.message_id].toString(),`${msg.chat.is_forum? `${msg.message_thread_id}/${reportRequestMsg.message_id}`:''}${reportRequestMsg.message_id}`) ; 
-        myCacheGarbageCollectionSlow.set(reportRequestMsg.message_id, msg.chat.id)
+        //myCacheGarbageCollectionSlow.set(reportRequestMsg.message_id, msg.chat.id)
         return;
     } catch(e){
         console.log(e)       
