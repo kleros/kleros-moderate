@@ -24,8 +24,8 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: Teleg
 
     if (callbackQuery.from.id == Number(calldata[4]))
         return;
-    //if (calldata.length > 5 && callbackQuery.from.id == Number(calldata[5]))
-    //    return;
+    if (calldata.length > 5 && callbackQuery.from.id == Number(calldata[5]))
+        return;
 
     const markdown = {
           inline_keyboard: [
@@ -55,7 +55,7 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: Teleg
           message_thread_id: msg.message_thread_id
         }
     try{
-      if (newConfirmations > 1){
+      if (newConfirmations > 2){
         const user = (await queue.add(async () => {try{const val = await bot.getChatMember(String(msg.chat.id), String(calldata[1]))
           return val}catch{}})).user;
           const fromUsername = user.username || user.first_name || `no-username-set`;
