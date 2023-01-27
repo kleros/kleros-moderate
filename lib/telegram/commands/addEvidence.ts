@@ -19,7 +19,7 @@ const contract_en = new web3.eth.Contract(
 
   const contract_es = new web3.eth.Contract(
     _contract,
-    process.env.REALITIO_ARBITRATOR_EN
+    process.env.REALITIO_ARBITRATOR_ES
   )
 var botAddress: string;
 const NodeCache = require( "node-cache" );
