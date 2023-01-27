@@ -153,9 +153,10 @@ bot.on("chat_member", async function (msg: any) {
 */
 
 bot.on("new_chat_members", async function (chatMemberUpdated: any) {
-
+    if(!chatMemberUpdated.new_chat_member?.id)
+        return;
     console.log(chatMemberUpdated)
-    if(!hasStarted(chatMemberUpdated.chat.id)||throttled(chatMemberUpdated.from.id)||chatMemberUpdated.chat.type !== "supergroup")
+    if(!hasStarted(chatMemberUpdated.chat.id)||throttled(chatMemberUpdated.new_chat_member?.id)||chatMemberUpdated.chat.type !== "supergroup")
         return;    
         
     console.log('hmmm1')

@@ -18,6 +18,8 @@ const callback = async (db: any, queue: any, bot: any, settings: groupSettings, 
     if (!myQueue)
         myQueue = queue
 
+    if(!msg.new_chat_member)
+        return
     console.log('WELCOME!')
     const lang_code = msg?.from?.language_code
     let msg_greeting = ''
@@ -35,7 +37,7 @@ const callback = async (db: any, queue: any, bot: any, settings: groupSettings, 
                 [
                     {
                     text: langJson[settings.lang].greeting.captcha,
-                    callback_data: '5|'+String(msg.from.id)
+                    callback_data: '5|'+String(msg.new_chat_member?.id)
                     }
                 ]
                 ]
@@ -50,19 +52,20 @@ const callback = async (db: any, queue: any, bot: any, settings: groupSettings, 
                 [
                     {
                         text: langJson[settings.lang].greeting.captcha,
-                        callback_data: '5|'+String(msg.from.id)
+                        callback_data: '5|'+String(msg.new_chat_member?.id)
                     }
                 ]
                 ]
             }
         };
-        const msg_greeting_full = `${langJson[settings.lang].greeting.greeting0} [${msg.from.first_name}](tg://user?id=${msg.from.id}). ${msg_greeting}${langJson[settings.lang].greeting.greeting1}(${settings.rules}). ${langJson[settings.lang].greeting.greeting2}`
+        const new_member_name = (msg.new_chat_member?.username || msg.new_chat_member?.first_name || `no-username-set`);
+        const msg_greeting_full = `${langJson[settings.lang].greeting.greeting0} [${new_member_name}](tg://user?id=${msg.new_chat_member?.id}). ${msg_greeting}${langJson[settings.lang].greeting.greeting1}(${settings.rules}). ${langJson[settings.lang].greeting.greeting2}`
         console.log('full')
         console.log(msg_greeting_full)
         let msg_welcome;
         if(settings.captcha){
             const options = {can_send_messages: false, can_send_media_messages: false, can_send_polls: false, can_send_other_messages: false, can_add_web_page_previews: false, can_change_info: false, can_pin_messages: false};
-            queue.add(async () => {try{await bot.restrictChatMember(msg.chat.id, msg.from.id, options)}catch (e){console.log(e)}});
+            queue.add(async () => {try{await bot.restrictChatMember(msg.chat.id, msg.new_chat_member?.id, options)}catch (e){console.log(e)}});
             msg_welcome = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, msg_greeting_full, msg.chat.is_forum? optsThread: opts)
             return val}catch(e){console.log(e)}});
         } else if (settings.greeting_mode){
