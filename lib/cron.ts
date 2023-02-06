@@ -37,49 +37,33 @@ const exit = async () => {
     const privateKey = process.env.PRIVATE_KEY
     const account = web3.eth.accounts.privateKeyToAccount(privateKey)
     web3.eth.accounts.wallet.add(account)
-    console.log(history)
     const currentTime = Math.floor(Date.now()/1000)
     let currentBlock = await web3.eth.getBlockNumber()
     if (!history)
         history = {
-            last_timestamp: currentTime -30,
+            last_timestamp: currentTime,
             last_block: currentBlock
         }
 
-        console.log(history.last_timestamp)
-        console.log(history.last_block)
-        // hardcode values for tests
-                             
-    //history.last_timestamp = 1674496352
-    //history.last_block = 8362931
-    let timestampNew: number;
+    console.log(history.last_timestamp)
+    console.log(history.last_block)
+
     let timestampLastUpdated = history.last_timestamp
-    let realitio_bot_checkpoint = Math.floor(timestampNew / 1800) - 1
-    while (1){
-        timestampNew = Math.floor(Date.now()/1000)-30
-        const questionDelay = await update(timestampNew, timestampLastUpdated, botaddress);
-        if(questionDelay)
-            delayCheck(questionDelay, 0,timestampNew,timestampLastUpdated,botaddress)
-        // every 30 min
-        if (Math.floor(timestampNew / 1800) > realitio_bot_checkpoint){
-            realitio_bot_checkpoint = Math.floor(timestampNew / 1800)
-            const currentBlock = await web3.eth.getBlockNumber()
-            const updateBlock = Math.min(history.last_block+1000, currentBlock)
-            try{
-                await realitio_bot(web3, history.last_block, updateBlock, process.env.REALITY_ETH_V30, process.env.REALITIO_ARBITRATOR_EN);
-                await realitio_bot(web3, history.last_block, updateBlock, process.env.REALITY_ETH_V30, process.env.REALITIO_ARBITRATOR_ES);
-            } catch (e){
-                console.log(e)
-            }
-            history.last_block = updateBlock
-        }
-        timestampLastUpdated = timestampNew
-        setCron(db, history.last_block,timestampNew)
-        await delay(30000)
+    const isUpdated = await update(currentTime, timestampLastUpdated, botaddress);
+    const updateBlock = Math.min(history.last_block+1000, currentBlock)
+    try{
+        await realitio_bot(web3, history.last_block, updateBlock, process.env.REALITY_ETH_V30, process.env.REALITIO_ARBITRATOR_EN);
+        await realitio_bot(web3, history.last_block, updateBlock, process.env.REALITY_ETH_V30, process.env.REALITIO_ARBITRATOR_ES);
+    } catch (e){
+        console.log(e)
     }
+    history.last_block = updateBlock
+    if (isUpdated)
+        timestampLastUpdated = currentTime
+    setCron(db, history.last_block,timestampLastUpdated)
 })()
 
-const update = async (timestampNew: number, timestampLastUpdated: number,botaddress: string): Promise<string> =>{
+const update = async (timestampNew: number, timestampLastUpdated: number,botaddress: string): Promise<boolean> =>{
 
     const reports = {};
     let delayQuestions = ""
@@ -104,8 +88,9 @@ const update = async (timestampNew: number, timestampLastUpdated: number,botaddr
         queryModeration
     );
     console.log(JSON.stringify(moderationActions))
-    
+    var isUpdated = false;
     for (const data of moderationActions.disputesFinal) {
+        isUpdated = true
         const settings = validate(data.moderationInfo.UserHistory.group.groupID);
         // settings[1] language
         try{
@@ -132,6 +117,7 @@ const update = async (timestampNew: number, timestampLastUpdated: number,botaddr
     }
 
     for (const data of moderationActions.disputesAppealPossible) {
+        isUpdated = true
         const settings = validate(data.moderationInfo.UserHistory.group.groupID);
         const msgLink = data.moderationInfo.message;
         const realityURL = `https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${data.moderationInfo.id}`;
@@ -168,6 +154,7 @@ const update = async (timestampNew: number, timestampLastUpdated: number,botaddr
     }
 
     for (const data of moderationActions.disputesCreated) {
+        isUpdated = true
         const settings = validate(data.moderationInfo.UserHistory.group.groupID);
         // settings[1] language
         const realityURL = `https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${data.moderationInfo.id}`;
@@ -209,6 +196,7 @@ const update = async (timestampNew: number, timestampLastUpdated: number,botaddr
     }
 
     for (const data of moderationActions.disputesAppealFunded) {
+        isUpdated = true
         const settings = validate(data.moderationInfo.UserHistory.group.groupID);
         const msgLink = data.moderationInfo.message;
         const realityURL = `https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${data.moderationInfo.id}`;
@@ -256,6 +244,7 @@ const update = async (timestampNew: number, timestampLastUpdated: number,botaddr
 */
 
 for(const data of moderationActions.realityQuestionAnsweredFinalized){
+    isUpdated = true
     const settings = validate(data.moderationInfo.UserHistory.group.groupID);
     // settings[1] language
     try{
@@ -270,6 +259,7 @@ for(const data of moderationActions.realityQuestionAnsweredFinalized){
     }
 }
 for(const data of moderationActions.realityQuestionAnsweredNotFinalized){
+    isUpdated = true
     //console.log(data.moderationInfo.UserHistory.group)
     const settings = validate(data.moderationInfo.UserHistory.group.groupID);
     // settings[1] language
@@ -306,17 +296,14 @@ for(const data of moderationActions.realityQuestionAnsweredNotFinalized){
                 }
             }
         }
-        if(settings.enforcement){
-            delayQuestions += `"${data.id}",`
-        } else {
-            handleTelegramUpdate(db, bot, settings, data.moderationInfo, timestampNew, data.currentAnswer === "0x0000000000000000000000000000000000000000000000000000000000000001", false, false);
-        }
+        handleTelegramUpdate(db, bot, settings, data.moderationInfo, timestampNew, data.currentAnswer === "0x0000000000000000000000000000000000000000000000000000000000000001", false, false);
     } catch(e){
         console.log(e)
     }
 }
     // promise queue example
     for(const data of moderationActions.sheriffs){
+        isUpdated = true
         const settings = validate(data.group.groupID);
         // settings[1] language
         try{
@@ -333,6 +320,7 @@ for(const data of moderationActions.realityQuestionAnsweredNotFinalized){
     }
 
     for(const data of moderationActions.deputySheriffs){
+        isUpdated = true
         const settings = validate(data.group.groupID);
         // settings[1] language
         try{
@@ -348,6 +336,7 @@ for(const data of moderationActions.realityQuestionAnsweredNotFinalized){
     }
 
     for(const data of moderationActions.ranks){
+        isUpdated = true
         const settings = validate(data.group.groupID);
         // settings[1] language
         try{
@@ -372,11 +361,7 @@ for(const data of moderationActions.realityQuestionAnsweredNotFinalized){
         }
     }
     await queue.onIdle()
-
-    if (delayQuestions.length > 0)
-        return delayQuestions.substring(0,delayQuestions.length-1);
-    else
-        return ""
+    return isUpdated
 }
 
 const delay = (delayInms) => {
