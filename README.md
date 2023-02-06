@@ -41,7 +41,7 @@ Command | Description | Group Admin | Normal user
 /setrules | `[by reply/username/id]`  Set chat rules from the quoted message | ✅ | ❌
 /setrules [url] | Set chat rules from the specified url | ✅ | ❌
 /rules | Get chat rules | ✅ | ✅
-/report | `[by reply/username/id]`  Reports a user | ✅ | ❌
+/report | `[by reply/username/id]`  Reports a user | ✅ | ✅
 /evidence [questionId] | `[by reply/username/id]` Adds the quoted message as evidence to the arbitrator of `questionId` | ✅ | ✅
 
 ### Attribution
