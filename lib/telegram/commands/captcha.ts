@@ -16,8 +16,8 @@ const callback = async (queue: any, bot: any, settings: groupSettings, msg: any)
     if (!myQueue)
         myQueue = queue
     try{
-
-
+        if (!msg.new_chat_participant?.id)
+            return;
         const opts = {
             parse_mode: 'Markdown',
             disable_web_page_preview: true,
@@ -26,8 +26,8 @@ const callback = async (queue: any, bot: any, settings: groupSettings, msg: any)
                 [
                     {
                     text: 'I agree to follow the rules.',
-                    callback_data: '5|'+String(msg.from.id)
-                    }
+                    callback_data: '5|'+String(msg.new_chat_participant?.id)
+                }
                 ]
                 ]
             }
@@ -42,13 +42,13 @@ const callback = async (queue: any, bot: any, settings: groupSettings, msg: any)
                 [
                     {
                         text: 'I agree to follow the rules.',
-                        callback_data: '5|'+String(msg.from.id)
+                        callback_data: '5|'+String(msg.new_chat_participant?.id)
                     }
                 ]
                 ]
             }
         };
-        const msg_welcome = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `Welcome [${msg.from.first_name}](tg://user?id=${msg.from.id}) ${langJson[settings.lang].greeting2}(${settings.rules}). ${langJson[settings.lang].greeting3}`, msg.chat.is_forum? optsThread: opts)
+        const msg_welcome = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `Welcome [${msg.from.first_name}](tg://user?id=${msg.new_chat_participant?.id}) ${langJson[settings.lang].greeting2}(${settings.rules}). ${langJson[settings.lang].greeting3}`, msg.chat.is_forum? optsThread: opts)
         return val}catch{}});
         if(!msg_welcome)
         return
