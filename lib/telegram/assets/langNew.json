@@ -1,5 +1,6 @@
 {
     "en":{
+        "answer": "answer",
         "reputation": {
             "sheriff": "There's a new sheriff in town",
             "deputy": "There's a new deputy sheriff in town",
@@ -214,6 +215,7 @@
         }
     },
     "es":{
+        "answer": "respuesta",
         "reputation": {
             "sheriff": "Hay un nuevo sheriff en la ciudad",
             "deputy": "Hay un nuevo ayudante del sheriff en la ciudad",
