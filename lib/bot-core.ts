@@ -16,7 +16,7 @@ interface RealityBanResult {
 }
 
 export const reportUser = (batchedSend:any, lang: string, hasBanningPermission: boolean, fromUsername: string, UserID: string, platform: string, group: string, inviteURL: string, groupID: string, rules: string, message: string, messageBackup: string, reportedBy: string, isPrivate: boolean): RealityBanResult => {
-    const minBond = utils.parseUnits('5', 18); // 5 DAI
+    const minBond = utils.parseUnits('1', 18); // 5 DAI
     const delim = '\u241f';
     const question = fromUsername+delim+UserID+delim+platform+delim+group+delim+inviteURL+delim+groupID+delim+rules+delim+message+delim+messageBackup+delim+reportedBy ;
     const template_id = lang === 'es'? Number(process.env.TEMPLATE_ID_ES): Number(process.env.TEMPLATE_ID_EN)
