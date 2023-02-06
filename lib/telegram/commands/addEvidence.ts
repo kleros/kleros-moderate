@@ -347,8 +347,8 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
     }
     const reportAllowance = getAllowance(db, 'telegram', String(msg.chat.id), String(msg.from.id));
     if (!reportAllowance){
-        setAllowance(db, 'telegram', String(msg.chat.id), String(msg.from.id), 3, 14, Math.ceil( new Date().getTime() / 1000));
-    } else if ((Math.ceil( new Date().getTime() / 1000) < reportAllowance.timestamp_refresh + 5760) && reportAllowance.evidence_allowance == 0 ){
+        setAllowance(db, 'telegram', String(msg.chat.id), String(msg.from.id), 9, 29, Math.ceil( new Date().getTime() / 1000));
+    } else if ((Math.ceil( new Date().getTime() / 1000) < reportAllowance.timestamp_refresh + 5760) && reportAllowance.evidence_allowance < 1 ){
         try{
             const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, langJson[settings.lang].addevidence.allowance)
                 return val}catch{}});
@@ -359,10 +359,10 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
             console.log(e)
         }
     } else{
-        const newReportAllowance = reportAllowance.report_allowance + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/28800);
-        const newEvidenceAllowance = reportAllowance.evidence_allowance + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/28800)*5 - 1;
+        const newReportAllowance = reportAllowance.report_allowance + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/28800)*3;
+        const newEvidenceAllowance = reportAllowance.evidence_allowance + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/28800)*10 - 1;
         const newRefreshTimestamp = reportAllowance.timestamp_refresh + Math.floor((Math.ceil( new Date().getTime() / 1000) - reportAllowance.timestamp_refresh)/28800)*28800;
-        setAllowance(db, 'telegram', String(msg.chat.id), String(msg.from.id), Math.min(newReportAllowance,3), Math.min(newEvidenceAllowance,15), newRefreshTimestamp);
+        setAllowance(db, 'telegram', String(msg.chat.id), String(msg.from.id), Math.min(newReportAllowance,9), Math.min(newEvidenceAllowance,30), newRefreshTimestamp);
     }
 
     try {
