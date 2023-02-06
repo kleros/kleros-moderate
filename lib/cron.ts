@@ -435,12 +435,12 @@ const validate = (chatId: string): groupSettings=> {
 }
 
 const calcPenalty = (ban_level: number, timestamp_finalized: number): number => {
-    if(ban_level == 1)
-        return  timestamp_finalized + 86400
+    if(ban_level == 3)
+        return  timestamp_finalized + 31536000
     else if (ban_level == 2)
         return  timestamp_finalized + 604800
-    else (ban_level == 3)
-        return  timestamp_finalized + 31536000
+    else
+        return  timestamp_finalized + 86400
 }
 
 const calcPenaltyPhrase = (settings: groupSettings, ban_level: number, enforcement: boolean, finalize: boolean, realityURL: string): string => {
@@ -530,7 +530,7 @@ const handleTelegramUpdate = async (db: any, bot: any, settings: groupSettings, 
 
                 for (const ban_level of calculateHistory)
                     if (timestamp_most_recent< ban_level.timestamp_active)
-                        timestamp_most_recent = ban_level. timestamp_active
+                        timestamp_most_recent = ban_level.timestamp_active
 
                 if (calcPenalty(calculateHistory.length, timestamp_most_recent) > timestampNew)
                     liftbans = false      
