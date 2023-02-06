@@ -98,7 +98,7 @@
         "greeting": {
             "multilang": "Este grupo representa a la comunidad de lengua inglesa. La comunidad de lengua española se encuentra en este [grupo]",
             "greeting0": "Hi 👋 Welcome",
-            "greeting1": "Welcome, this group is moderated with [Kleros Moderate](https://kleros.io/moderate/). Please make sure to follow the [community rules]",
+            "greeting1": "This group is moderated with [Kleros Moderate](https://kleros.io/moderate/). Please make sure to follow the [community rules]",
             "greeting2": "Users who break the rules can be reported by replying to a message with the command `/report`.",
             "captcha": "I agree to follow the rules."
         },
