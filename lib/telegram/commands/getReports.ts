@@ -63,8 +63,8 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
             group_id = msg.text.substring(16,30)
             user_id = msg.text.substring(30,40)
             federation_id = msg.text.substring(40)
-        } else if (msg.text.length > 39){
-            user_id = msg.text.substring(30,40)
+        } else if (msg.text.length >= 39){
+            user_id = msg.text.substring(30)
             group_id = msg.text.substring(16,30)
         } else if (msg.text.length > 29){
             group_id = msg.text.substring(16,30)
