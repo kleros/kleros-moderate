@@ -11,7 +11,7 @@ const ModeratorBot = require('node-telegram-bot-api');
 const Web3 = require('web3')
 const realitio_bot = require('./realitioReporting')
 const db = openDb();
-const bot: any = new ModeratorBot(process.env.BOT_TOKEN, {polling: false, testEnvironment: true});  
+const bot: any = new ModeratorBot(process.env.BOT_TOKEN, {polling: false, testEnvironment: false});  
 const queue = new PQueue({intervalCap: 10, interval: 1000,carryoverConcurrencyCount: true});
 // Only need DB for
 // - channelID

@@ -57,7 +57,7 @@ const batchedSend = _batchedSend(
     federation_id_following: ''
 }
 const ModeratorBot = require('node-telegram-bot-api');
-const bot: any = new ModeratorBot(process.env.BOT_TOKEN, {polling: {params: {"allowed_updates": JSON.stringify(["my_chat_member","message","callback_query", "new_chat_members"])}}, testEnvironment: true});
+const bot: any = new ModeratorBot(process.env.BOT_TOKEN, {polling: {params: {"allowed_updates": JSON.stringify(["my_chat_member","message","callback_query", "new_chat_members"])}}, testEnvironment: false});
 //const bot: any = new ModeratorBot(process.env.BOT_TOKEN, {polling: true, testEnvironment: true});
 
 //bot.
