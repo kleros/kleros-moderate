@@ -25,7 +25,7 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
     if (ruleObj?.msg_id){
         const MsgLink = 'https://t.me/c/' + String(msg.chat.id).substring(4) + '/' + ruleObj.msg_id;
         console.log(MsgLink)
-        msgresponse = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].rules}(${MsgLink}).`,msg.chat.is_forum? {parse_mode: "Markdown", message_thread_id: msg.message_thread_id, disable_web_page_preview: false}:{parse_mode: "Markdown", disable_web_page_preview: false})
+        msgresponse = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].rules}(${MsgLink}) ([backup](${settings.rules})).`,msg.chat.is_forum? {parse_mode: "Markdown", message_thread_id: msg.message_thread_id, disable_web_page_preview: false}:{parse_mode: "Markdown", disable_web_page_preview: false})
         return val}catch{}}); 
         if(!msgresponse)
             return;
