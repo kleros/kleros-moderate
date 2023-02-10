@@ -5,7 +5,7 @@ import { groupSettings } from "../../../types";
 /*
  * /help
  */
-const regexp = /\/help/
+const regexp = /^\/help/
 
 const helpgnosis = (queue: any, db: any, settings: groupSettings, bot: any, botId: number, msg: any) => {
     const lang_code = msg?.from?.language_code

@@ -262,7 +262,7 @@ const submitEvidence = async (batchedSend: any, evidencePath: string, questionId
 /*
  * /evidence [questionId]
  */
-const regexp = /\/evidence/
+const regexp = /^\/evidence/
 const regexpFull = /\/evidence (.+)/
 const regexpFullReason = /\/evidence (.+) (.+)/
 

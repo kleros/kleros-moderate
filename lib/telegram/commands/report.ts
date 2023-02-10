@@ -8,7 +8,7 @@ import langJson from "../assets/langNew.json";
 /*
  * /report
  */
-const regexp = /\/report\s?(.+)?/
+const regexp = /^\/report\s?(.+)?/
 // cacheIndex => groupID,reported message id => [pending report message id]
 const NodeCache = require( "node-cache" );
 const myCache = new NodeCache( { stdTTL: 900, checkperiod: 1200 } );

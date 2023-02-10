@@ -13,7 +13,7 @@ myCache.on("expired",function(key,value){
 /*
  * /notifications
  */
-const regexp = /\/notifications/
+const regexp = /^\/notifications/
 
 const callback = async (queue: any, db: any, settings: groupSettings, bot: any, botId: number, msg: any) => {
     if (!myBot)
