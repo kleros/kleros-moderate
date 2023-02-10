@@ -11,7 +11,7 @@ const ModeratorBot = require('node-telegram-bot-api');
 const Web3 = require('web3')
 const realitio_bot = require('./realitioReporting')
 const db = openDb();
-const bot: any = new ModeratorBot(process.env.BOT_TOKEN, {polling: false, testEnvironment: false});  
+const bot: any = new ModeratorBot(process.env.BOT_TOKEN, {polling: false, testEnvironment: true});  
 const queue = new PQueue({intervalCap: 10, interval: 1000,carryoverConcurrencyCount: true});
 // Only need DB for
 // - channelID
@@ -559,7 +559,7 @@ const handleTelegramUpdate = async (db: any, bot: any, settings: groupSettings, 
                 return val}catch(e){console.log(e)}});
             }
         }
-        else if (!finalize && ban_level_current <= warnings){
+        else if (!finalize && ban_level_current <= warnings && warnings != 0){
             // no optimistic warning
         }
         else if (restrict){
