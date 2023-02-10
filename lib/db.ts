@@ -21,6 +21,20 @@ const setLang = (db: any, platform: string, groupId: string, lang: string) => {
     }
 }
 
+const setWarn = (db: any, platform: string, groupId: string, warnmode: number) => {
+    try{
+        const stmt = db.prepare(
+            `INSERT INTO groups (platform, group_id, warn_mode) 
+            VALUES (?, ?, ?) 
+            ON CONFLICT(platform, group_id) DO UPDATE SET 
+            warn_mode=?;`);
+        const info = stmt.run(platform, groupId, warnmode, warnmode);
+    } catch(err) {
+        console.log("db error: setWarn");
+        console.log(err);
+    }
+}
+
 const joinFederation = (db: any, platform: string, groupId: string, federation_id: string) => {
     try{
         const stmt = db.prepare(
@@ -588,8 +602,8 @@ const getGroupsInAndFollowingFederation = (db: any, platform: string, federation
     }
 }
 
-const getLocalBanHistory = (db: any, platform: string, userId: string, group_id: string, finalized: boolean) => {
-    const base = getLocalBanHistoryBase(db, platform, userId, group_id, finalized)
+const getLocalBanHistory = (db: any, platform: string, userId: string, group_id: string, finalized: boolean, timestamp_forgiven: number) => {
+    const base = getLocalBanHistoryBase(db, platform, userId, group_id, finalized, timestamp_forgiven)
     if (!base)
         return [];
 
@@ -606,14 +620,14 @@ const getLocalBanHistory = (db: any, platform: string, userId: string, group_id:
     return [base, banLevel1, banLevel2]
 }
 
-const getLocalBanHistoryBase = (db: any, platform: string, userId: string, group_id: string, finalized: boolean) => {
+const getLocalBanHistoryBase = (db: any, platform: string, userId: string, group_id: string, finalized: boolean, timestamp_forgiven: number) => {
     try{
         const stmt = db.prepare(`
         SELECT question_id, timestamp_active, timestamp_finalized, timestamp_report as timestamp
         FROM reports
-        WHERE platform = ? AND user_id = ? ${finalized? 'AND finalized = 1': ''} AND active = 1 AND group_id = ?
+        WHERE platform = ? AND user_id = ? ${finalized? 'AND finalized = 1': ''} AND active = 1 AND timestamp_msg > ? AND group_id = ?
         ORDER BY timestamp_report ASC`)
-        return stmt.get(platform, userId, group_id);
+        return stmt.get(platform, userId, timestamp_forgiven, group_id);
     } catch (err){
         console.log("db error: getLocalBanHistoryBase" + err);
     }
@@ -632,8 +646,8 @@ const getLocalBanHistoryInduction = (db: any, platform: string, userId: string, 
     }
 }
 
-const getFederatedBanHistory = (db: any, platform: string, userId: string, federation_id: string, finalized: boolean) => {
-    const base = getFederatedBanHistoryBase(db, platform, userId, federation_id, finalized)
+const getFederatedBanHistory = (db: any, platform: string, userId: string, federation_id: string, finalized: boolean, timestamp_forgiven: number) => {
+    const base = getFederatedBanHistoryBase(db, platform, userId, federation_id, finalized, timestamp_forgiven)
     if (!base)
         return [];
 
@@ -651,7 +665,7 @@ const getFederatedBanHistory = (db: any, platform: string, userId: string, feder
     return [base, banLevel1, banLevel2]
     }
 
-const getFederatedBanHistoryBase = (db: any, platform: string, userId: string, federation_id: string, finalized: boolean) => {
+const getFederatedBanHistoryBase = (db: any, platform: string, userId: string, federation_id: string, finalized: boolean, timestamp_forgiven: number) => {
     try{
         /*
         SELECT question_id, timestamp_active, timestamp_report as timestamp
@@ -661,13 +675,13 @@ const getFederatedBanHistoryBase = (db: any, platform: string, userId: string, f
         const stmt = db.prepare(`
         SELECT question_id, timestamp_active, timestamp_finalized, timestamp_report as timestamp
         FROM reports
-        WHERE platform = ? AND user_id = ? ${finalized? 'AND finalized = 1': ''} AND active = 1 AND group_id IN (
+        WHERE platform = ? AND user_id = ? ${finalized? 'AND finalized = 1': ''} AND active = 1 AND timestamp_msg > ? AND group_id IN (
             SELECT group_id
             FROM groups
             WHERE federation_id = ? AND platform = ?
         )
         order by timestamp_report asc;`);
-        return stmt.get(platform, userId, federation_id, platform);
+        return stmt.get(platform, userId, timestamp_forgiven, federation_id, platform);
     } catch (err){
         console.log("db error: getFederatedBanHistoryBase" + err);
     }
@@ -690,8 +704,8 @@ const getFederatedBanHistoryInduction = (db: any, platform: string, userId: stri
     }
 }
 
-const getFederatedFollowingBanHistory = (db: any, platform: string, userId: string, group_id: string, federation_id: string, finalized: boolean) => {
-    const base = getFederatedFollowingBanHistoryBase(db, platform, userId, group_id, federation_id, finalized)
+const getFederatedFollowingBanHistory = (db: any, platform: string, userId: string, group_id: string, federation_id: string, finalized: boolean, timestamp_forgiven: number) => {
+    const base = getFederatedFollowingBanHistoryBase(db, platform, userId, group_id, federation_id, finalized, timestamp_forgiven)
     if (!base)
         return [];
 
@@ -708,18 +722,18 @@ const getFederatedFollowingBanHistory = (db: any, platform: string, userId: stri
     return [base, banLevel1, banLevel2]
     }
 
-const getFederatedFollowingBanHistoryBase = (db: any, platform: string, userId: string, group_id: string, federation_id: string, finalized: boolean) => {
+const getFederatedFollowingBanHistoryBase = (db: any, platform: string, userId: string, group_id: string, federation_id: string, finalized: boolean, timestamp_forgiven: number) => {
     try{
         const stmt = db.prepare(`
         SELECT question_id, timestamp_active, timestamp_finalized, timestamp_report as timestamp
         FROM reports
-        WHERE platform = ? AND user_id = ? ${finalized? 'AND finalized = 1': ''} AND active = 1 AND (group_id = ? OR group_id IN (
+        WHERE platform = ? AND user_id = ? ${finalized? 'AND finalized = 1': ''} AND active = 1 AND timestamp_msg > ? AND (group_id = ? OR group_id IN (
             SELECT group_id
             FROM groups
             WHERE federation_id = ? AND platform = ?
         ))
         order by timestamp_report asc;`);
-        return stmt.get(platform, userId, group_id, federation_id, platform);
+        return stmt.get(platform, userId, timestamp_forgiven, group_id, federation_id, platform);
     } catch (err){
         console.log("db error: getFederatedBanHistoryBase" + err);
     }
@@ -838,6 +852,16 @@ const getLang = (db:any, platform: string, groupId: string): string => {
     }
 }
 
+const getWarn = (db:any, platform: string, groupId: string): number => {
+    try{
+        const stmt = db.prepare('SELECT warn_mode FROM groups WHERE platform = ? AND group_id = ?');
+        return stmt.get(platform, groupId)?.warn_mode || 0;
+    } catch(err){
+        console.log("db error: getWarn");
+        console.log(err);
+    }
+}
+
 const getReportMessageTimestampAndActive = (db:any, question_id: string):  {timestamp_report: number, active: number, timestamp_msg: number} | undefined => {
     try{
         const stmt = db.prepare('SELECT timestamp_msg, active, timestamp_report FROM reports WHERE question_id = ?');
@@ -870,6 +894,31 @@ const setRules = (db:any, platform: string, groupId: string, rules: string, time
     }
 }
 
+const getForgiveness = (db:any, platform: string, groupId: string, userId: string): any => {
+    try{
+        const stmt = db.prepare(`
+        SELECT * FROM forgiveness 
+        WHERE platform = ? AND group_id = ? AND user_id = ?`);
+        return stmt.get(platform, groupId, userId)?.timestamp || 0;
+    } catch(err){
+        console.log("db error: getForgiveness " + err);
+    }
+}
+
+const setForgiveness = (db:any, platform: string, groupId: string, userId: string, timestamp: number) => {
+    try{
+        const stmt = db.prepare(
+            `INSERT INTO forgiveness (platform, group_id, user_id, timestamp)
+            VALUES (?, ?, ?, ?)
+            ON CONFLICT(platform, group_id, user_id) DO UPDATE SET 
+            timestamp=?;`);
+        const info = stmt.run(platform, groupId, userId, timestamp, timestamp);
+    } catch(err) {
+        console.log("db error: setRules");
+        console.log(err);
+    }
+}
+
 const setRulesCustom = (db:any, platform: string, groupId: string, rules: string, timestamp: number, msg_id: string) => {
     try{
         const stmt = db.prepare(
@@ -894,7 +943,6 @@ const getRule = (db:any, platform: string, groupId: string, timestamp: number): 
         console.log("db error: getRule " + err);
     }
 }
-
 
 const addReport = (
     db: any,
@@ -953,6 +1001,8 @@ export {
     getInviteURL,
     existsQuestionId,
     setInviteURL,
+    getWarn,
+    setWarn,
     getInviteURLChannel,
     setInviteURLChannel,
     getThreadIDWelcome,
@@ -986,6 +1036,8 @@ export {
     setFederationInviteURLChannel,
     getChannelID,
     getActiveReportsInfo,
+    setForgiveness,
+    getForgiveness,
     leaveFederation,
     getGroupFederation,
     getFederationChannel,

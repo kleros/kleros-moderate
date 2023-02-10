@@ -1,5 +1,5 @@
 import * as TelegramBot from "node-telegram-bot-api";
-import {setInviteURL, getInviteURL, getRule,getAllowance, setAllowance, addReport, getRecordCount, getQuestionId} from "../../db";
+import {setInviteURL,getInviteURL, getRule,getAllowance, setAllowance, addReport, getRecordCount, getQuestionId, getForgiveness} from "../../db";
 import { groupSettings } from "../../../types";
 import {upload} from "./addEvidence"
 import {reportUser} from "../../bot-core";
@@ -53,6 +53,13 @@ const callback = async (queue: any, db:any, settings: groupSettings, bot: any, b
             return resp
             myCacheGarbageCollection.set(resp.message_id, msg.chat.id)
             return;
+        }
+
+        const forgiveness = getForgiveness(db,'telegram', String(msg.chat.id),String(msg.reply_to_message.from.id))
+        const msg_date = new Date(forgiveness*1000).toUTCString()
+        if (forgiveness > msg.reply_to_message.date){
+            queue.add(async () => {try{await bot.sendMessage(msg.chat.id, langJson[settings.lang].forgiven+msg_date, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})}catch{}});
+            return
         }
 
         // WHO WATCHES THE WATCHMEN??
@@ -246,7 +253,7 @@ const reportMsg = async (queue: any, settings: groupSettings, db: any, bot: any,
         if (settings.lang === "en")
             queue.add(async () => {try{bot.sendMessage(settings.channelID, `[${fromUsername}](tg://user?id=${reportedUserID})'s conduct due to this [message](${msgLink}) ([backup](${msgBackup})) is reported for breaking the [rules](${rules}).\n\nDid *${fromUsername}* break the rules? The [question](${appealUrl}) can be answered with a minimum bond of 1 DAI. Need assistance answering the question? [DM](https://t.me/${process.env.BOT_USERNAME}?start=helpgnosis) me for help : )\n\nTo save a record, reply to messages you want saved with \`/evidence ${evidenceIndex}\``, msg.chat.is_forum? {message_thread_id: settings.thread_id_notifications , parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
         else if (settings.lang === "es")
-            queue.add(async () => {try{bot.sendMessage(settings.channelID, `La conducta de [${fromUsername}](tg://user?id=${reportedUserID}) a este [mensaje](${msgLink}) ([backup](${msgBackup})) es denunciada por infringir las [reglas](${rules}).\n\nHa infringido el usuario  *${fromUsername}* las reglas? La [pregunta](${appealUrl}) puede responderse con un bono mínimo de 1 DAI. Necesitas ayuda para responder a la pregunta? [DM](https://t.me/${process.env.BOT_USERNAME}?start=helpgnosis) me para obetener ayuda : )\n\nPara guardar un mensaje, responda a los mensajes que desee guardar con \`/evidence ${evidenceIndex}\``, msg.chat.is_forum? {message_thread_id: settings.thread_id_notifications , parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
+            queue.add(async () => {try{bot.sendMessage(settings.channelID, `La conducta de [${fromUsername}](tg://user?id=${reportedUserID}) a este [mensaje](${msgLink}) ([backup](${msgBackup})) es denunciada por infringir las [reglas](${rules}).\n\nHa infringido el usuario  *${fromUsername}* las reglas? La [pregunta](${appealUrl}) puede responderse con un bono mínimo de 1 DAI. Necesitas ayuda para responder a la pregunta? [DM](https://t.me/${process.env.BOT_USERNAME}?start=helpgnosis) para obetener ayuda : )\n\nPara guardar un mensaje, responda a los mensajes que desee guardar con \`/evidence ${evidenceIndex}\``, msg.chat.is_forum? {message_thread_id: settings.thread_id_notifications , parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
         return [appealUrl, evidenceIndex];
     } catch (e) {
         console.log(e);

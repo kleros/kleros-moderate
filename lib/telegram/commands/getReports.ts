@@ -1,7 +1,7 @@
 import * as TelegramBot from "node-telegram-bot-api";
 const escape = require('markdown-escape')
 import langJson from "../assets/langNew.json";
-import {getReportsUserInfo ,getActiveReportsInfo,getReportsUserInfoFederation, getInviteURL,getLocalBanHistory, getFederatedBanHistory, getFederatedFollowingBanHistory, getTitle} from "../../db";
+import {getReportsUserInfo ,getActiveReportsInfo,getForgiveness, getReportsUserInfoFederation, getInviteURL,getLocalBanHistory, getFederatedBanHistory, getFederatedFollowingBanHistory, getTitle} from "../../db";
 import { groupSettings } from "../../../types";
 const NodeCache = require( "node-cache" );
 const myCache = new NodeCache( { stdTTL: 90, checkperiod: 120 } );
@@ -72,7 +72,8 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
             return;
         
         if(user_id){
-            const banHistory = federation_id? (msg.text.length > 55 ? getFederatedFollowingBanHistory(db,'telegram',user_id,group_id,federation_id,false) : getFederatedBanHistory(db, 'telegram',user_id,federation_id,false)): getLocalBanHistory(db,'telegram',user_id,group_id,false)
+            const timestamp_forgiven = getForgiveness(db, 'telegram',group_id, user_id)
+            const banHistory = federation_id? (msg.text.length > 55 ? getFederatedFollowingBanHistory(db,'telegram',user_id,group_id,federation_id,false,timestamp_forgiven) : getFederatedBanHistory(db, 'telegram',user_id,federation_id,false,timestamp_forgiven)): getLocalBanHistory(db,'telegram',user_id,group_id,false,timestamp_forgiven)
             const reports = getReportsUserInfo(db, 'telegram', group_id, user_id);
             const user = await queue.add(async () => {try{const val = await bot.getChatMember(group_id, user_id)
                 return val}catch{}})

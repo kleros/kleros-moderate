@@ -5,6 +5,7 @@ import * as setRulesCommand from "../../lib/telegram/commands/setRules";
 import * as getRules from "../../lib/telegram/commands/getRules";
 import * as getLeaderboard from "../../lib/telegram/commands/getLeaderboard";
 import * as addEvidenceHelp from "../../lib/telegram/commands/addEvidenceHelp";
+import * as forgive from "../../lib/telegram/commands/forgive";
 import * as report from "../../lib/telegram/commands/report";
 import * as fedinfo from "../../lib/telegram/commands/fedinfo";
 import * as welcome from "../../lib/telegram/commands/welcome";
@@ -22,13 +23,14 @@ import * as newFed from "../../lib/telegram/commands/newfed";
 import * as joinFed from "../../lib/telegram/commands/joinfed";
 import * as start from "../../lib/telegram/commands/start";
 import * as setLanguage from "../../lib/telegram/commands/setLanguage";
+import * as setWarnmode from "../../lib/telegram/commands/setWarnmode";
 import * as setChannel from "../../lib/telegram/commands/setChannel";
 import * as setChannelFed from "../../lib/telegram/commands/setChannelFed";
 import * as getChannel from "../../lib/telegram/commands/getChannel";
 import * as getReports from "../../lib/telegram/commands/getReports";
 import langJson from "./assets/langNew.json";
 import {groupSettings, groupSettingsUnderspecified} from "../../types";
-import {openDb, getGroupSettings, getRule, getReportsUserInfoActive,getFederatedBanHistory, getFederatedFollowingBanHistory, getLocalBanHistory, eraseThreadID} from "../db";
+import {openDb, getGroupSettings, getForgiveness, setWarn, getWarn, getRule, getReportsUserInfoActive,getFederatedBanHistory, getFederatedFollowingBanHistory, getLocalBanHistory, eraseThreadID} from "../db";
 const Web3 = require('web3')
 const {default: PQueue} = require('p-queue');
 const queue = new PQueue({intervalCap: 20, interval: 1000,carryoverConcurrencyCount: true});
@@ -55,7 +57,7 @@ const batchedSend = _batchedSend(
     federation_id_following: ''
 }
 const ModeratorBot = require('node-telegram-bot-api');
-const bot: any = new ModeratorBot(process.env.BOT_TOKEN, {polling: {params: {"allowed_updates": JSON.stringify(["my_chat_member","message","callback_query", "new_chat_members"])}}, testEnvironment: false});
+const bot: any = new ModeratorBot(process.env.BOT_TOKEN, {polling: {params: {"allowed_updates": JSON.stringify(["my_chat_member","message","callback_query", "new_chat_members"])}}, testEnvironment: true});
 //const bot: any = new ModeratorBot(process.env.BOT_TOKEN, {polling: true, testEnvironment: true});
 
 //bot.
@@ -152,67 +154,19 @@ bot.on("chat_member", async function (msg: any) {
 })
 */
 
+
 bot.on("new_chat_members", async function (chatMemberUpdated: any) {
     if(!chatMemberUpdated.new_chat_member?.id)
         return;
     console.log(chatMemberUpdated)
     if(!hasStarted(chatMemberUpdated.chat.id)||throttled(chatMemberUpdated.new_chat_member?.id)||chatMemberUpdated.chat.type !== "supergroup")
         return;    
-        
-    console.log('hmmm1')
+
     const settings = validate(chatMemberUpdated.chat);
-    console.log('hmmm2')
-    let calculateHistory = []
-    if (settings.federation_id)
-        calculateHistory = getFederatedBanHistory(db, 'telegram', String(chatMemberUpdated.new_chat_member.id),settings.federation_id,true)
-    else if (settings.federation_id_following)
-        calculateHistory = getFederatedFollowingBanHistory(db, 'telegram', String(chatMemberUpdated.new_chat_member.id),String(chatMemberUpdated.chat.id),settings.federation_id_following,true)
-    else 
-        calculateHistory = getLocalBanHistory(db, 'telegram', String(chatMemberUpdated.new_chat_member.id),String(chatMemberUpdated.chat.id),true)
-
-    console.log('wtf')
-    console.log(calculateHistory)
-
-    // todo notify groups about federal outlaws when enforcement is false
-
-    if (calculateHistory.length > 0){
-        var max_timestamp = 0
-        for (const ban of calculateHistory){
-            if (ban.timestamp_finalized > max_timestamp)
-                max_timestamp = ban.timestamp_finalized
-        }
-        const parole_time = calcPenalty(calculateHistory.length, max_timestamp)
-        if (settings.enforcement && parole_time*1000 > Date.now()){
-            queue.add(async () => {try{await bot.banChatMember(chatMemberUpdated.chat.id, chatMemberUpdated.new_chat_member.id, {until_date: parole_time})}catch{}})
-            return
-        }
-    }
-
-    let calculateHistoryActive = []
-    if (settings.federation_id)
-        calculateHistoryActive = getFederatedBanHistory(db, 'telegram', String(chatMemberUpdated.new_chat_member.id),settings.federation_id,false)
-    else if (settings.federation_id_following)
-        calculateHistoryActive = getFederatedFollowingBanHistory(db, 'telegram', String(chatMemberUpdated.new_chat_member.id),String(chatMemberUpdated.chat.id),settings.federation_id_following,false)
-    else 
-        calculateHistoryActive = getLocalBanHistory(db, 'telegram', String(chatMemberUpdated.new_chat_member.id),String(chatMemberUpdated.chat.id),false)
-
-    console.log('wtf')
-    console.log(calculateHistoryActive)
-
-    if (calculateHistoryActive.length > 0){
-        var max_timestamp = 0
-        for (const ban of calculateHistoryActive){
-            if (ban.timestamp_active > max_timestamp)
-                max_timestamp = ban.timestamp_active
-        }
-        const parole_time = calcPenalty(calculateHistoryActive.length, max_timestamp)
-        if (settings.enforcement && parole_time > Date.now()){
-            const options = {can_send_messages: false, can_send_media_messages: false, can_send_polls: false, can_send_other_messages: false, can_add_web_page_previews: false, can_change_info: false, can_pin_messages: false, until_date: parole_time};
-            queue.add(async () => {try{await bot.restrictChatMember(chatMemberUpdated.chat.id, chatMemberUpdated.new_chat_member.id, options)}catch{}})
-            return;
-        }
-    } 
-
+    const penalized = checkHistory(chatMemberUpdated.chat, chatMemberUpdated.new_chat_member?.id)
+    // no captcha or greeting replay for penalized users, means they already joined once before.
+    if(penalized)
+        return
     if(settings.captcha || settings.greeting_mode)
         greeting.callback(db, queue, bot, settings, chatMemberUpdated);        
 });
@@ -272,12 +226,14 @@ bot.on('callback_query', async function onCallbackQuery(callbackQuery: TelegramB
         console.log(callbackQuery.from.id)
         if (callbackQuery.from.id !== Number(calldata[1]))
             return;
+        const penalized = checkHistory(callbackQuery.message.chat, callbackQuery.from.id)
         const permissions = await queue.add(async () => {try{const val = (await bot.getChat(callbackQuery.message.chat.id)).permissions
             return val}catch (e){console.log(e)}})
         console.log(permissions)
         if(!permissions)
             return
-        queue.add(async () => {try{await bot.restrictChatMember(callbackQuery.message.chat.id, callbackQuery.from.id, permissions)}catch{}});
+        if (!penalized)
+            queue.add(async () => {try{await bot.restrictChatMember(callbackQuery.message.chat.id, callbackQuery.from.id, permissions)}catch{}});
         queue.add(async () => {try{await bot.deleteMessage(callbackQuery.message.chat.id, callbackQuery.message.message_id)}catch{}})
     } else if (Number(calldata[0]) === 6){
         const member = await queue.add(async () => {try{const val = await bot.getChatMember(callbackQuery.message.chat.id, callbackQuery.from.id)
@@ -288,8 +244,17 @@ bot.on('callback_query', async function onCallbackQuery(callbackQuery: TelegramB
             queue.add(async () => {try{await bot.deleteMessage(callbackQuery.message.chat.id, callbackQuery.message.message_id)}catch{}})
             start.callback(queue, db, settings,bot,String(botId),callbackQuery.message,[],batchedSend, true)
         }
+    } else if (Number(calldata[0]) === 7){
+        console.log(callbackQuery.from.id)
+        console.log(Number(calldata[1]))
+        if (callbackQuery.from.id !== Number(calldata[1]))
+            return;
+        setWarn(db, 'telegram', String(callbackQuery.message.chat.id), Number(calldata[2]))
+        queue.add(async () => {try{await bot.deleteMessage(callbackQuery.message.chat.id, callbackQuery.message.message_id)}catch{}})
+        queue.add(async () => {try{await bot.sendMessage(callbackQuery.message.chat.id,langJson[settings.lang].warnConfirm)}catch(e){console.log(e)}})
+
     }
-    });
+});
 
 const commands: {regexp: RegExp, callback: any}[] = [
     getAccount,
@@ -303,6 +268,7 @@ const commands: {regexp: RegExp, callback: any}[] = [
     toggleCaptcha,
     help,
     newFed,
+    forgive,
     getChannel,
     toggleAdminReportable,
     leaveFed,
@@ -313,9 +279,10 @@ const commands: {regexp: RegExp, callback: any}[] = [
     addEvidence,
     getReports,
     setLanguage,
+    setWarnmode
 ];
 
-const adminOnlyCommands = [joinFed, toggleEnforce, multilang, leaveFed, newFed, toggleCaptcha, setLanguage, setChannelFed, setChannel, toggleWelcome, toggleAdminReportable, start, setRulesCommand ]
+const adminOnlyCommands = [joinFed, setWarnmode, forgive, toggleEnforce, multilang, leaveFed, newFed, toggleCaptcha, setLanguage, setChannelFed, setChannel, toggleWelcome, toggleAdminReportable, start, setRulesCommand ]
 const settingUpateCommands = [setLanguage, toggleEnforce, setRulesCommand, joinFed, setChannel, toggleWelcome, toggleCaptcha, toggleAdminReportable]
 
 commands.forEach((command) => {
@@ -474,6 +441,66 @@ const checkMigration = async (groupSettings: groupSettings, chat: any): Promise<
         }
     }
     return groupSettings
+}
+
+
+const checkHistory = (chat: TelegramBot.Chat, userid: number): boolean => {
+    
+    const timestamp_forgiven = getForgiveness(db, 'telegram',String(chat.id), String(userid))
+    const warnings = getWarn(db,'telegram',String(chat.id))
+    console.log('hmmm1')
+    const settings = validate(chat);
+    console.log('hmmm2')
+    let calculateHistory = []
+    if (settings.federation_id)
+        calculateHistory = getFederatedBanHistory(db, 'telegram', String(userid),settings.federation_id,true,timestamp_forgiven)
+    else if (settings.federation_id_following)
+        calculateHistory = getFederatedFollowingBanHistory(db, 'telegram', String(userid),String(chat.id),settings.federation_id_following,true,timestamp_forgiven)
+    else 
+        calculateHistory = getLocalBanHistory(db, 'telegram', String(userid),String(chat.id),true,timestamp_forgiven)
+
+    // todo notify groups about federal outlaws when enforcement is false
+    let ban_level = Math.max(calculateHistory.length - warnings, 0)
+
+    if (ban_level > 0){
+        var max_timestamp = 0
+        for (const ban of calculateHistory){
+            if (ban.timestamp_finalized > max_timestamp)
+                max_timestamp = ban.timestamp_finalized
+        }
+        const parole_time = calcPenalty(ban_level, max_timestamp)
+        if (settings.enforcement && parole_time*1000 > Date.now()){
+            queue.add(async () => {try{await bot.banChatMember(chat.id, userid, {until_date: parole_time})}catch{}})
+            return true
+        }
+    }
+
+    let calculateHistoryActive = []
+    if (settings.federation_id)
+        calculateHistoryActive = getFederatedBanHistory(db, 'telegram', String(userid),settings.federation_id,false,timestamp_forgiven)
+    else if (settings.federation_id_following)
+        calculateHistoryActive = getFederatedFollowingBanHistory(db, 'telegram', String(userid),String(chat.id),settings.federation_id_following,false,timestamp_forgiven)
+    else 
+        calculateHistoryActive = getLocalBanHistory(db, 'telegram', String(userid),String(chat.id),false,timestamp_forgiven)
+
+    console.log('wtf')
+    console.log(calculateHistoryActive)
+    ban_level = Math.max(calculateHistoryActive.length - warnings, 0)
+    if (ban_level > 0){
+        var max_timestamp = 0
+        for (const ban of calculateHistoryActive){
+            if (ban.timestamp_active > max_timestamp)
+                max_timestamp = ban.timestamp_active
+        }
+        const parole_time = calcPenalty(ban_level, max_timestamp)
+        if (settings.enforcement && parole_time > Date.now()){
+            const options = {can_send_messages: false, can_send_media_messages: false, can_send_polls: false, can_send_other_messages: false, can_add_web_page_previews: false, can_change_info: false, can_pin_messages: false, until_date: parole_time};
+            queue.add(async () => {try{await bot.restrictChatMember(chat.id, userid, options)}catch{}})
+            return true;
+        }
+    } 
+    if (calculateHistoryActive.length > 0)
+        return true
 }
 
 console.log('Telegram bot ready...');

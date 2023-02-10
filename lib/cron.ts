@@ -1,5 +1,5 @@
 require('dotenv').config()
-import {openDb, getGroupSettings, getRule, getCron, getMultilangGroup, getFederationChannel, getInviteURL, getFederatedFollowingBanHistory, getLocalBanHistory, getFederatedBanHistory, setCron, getGroupsInAndFollowingFederation, getReportMessageTimestampAndActive, setReport} from "./db";
+import {openDb, getGroupSettings, getRule, getCron, getWarn, getForgiveness, getFederationChannel, getInviteURL, getFederatedFollowingBanHistory, getLocalBanHistory, getFederatedBanHistory, setCron, getGroupsInAndFollowingFederation, getReportMessageTimestampAndActive, setReport} from "./db";
 import request from "graphql-request";
 import {BigNumber} from "ethers";
 import TelegramBot from "node-telegram-bot-api";
@@ -11,7 +11,7 @@ const ModeratorBot = require('node-telegram-bot-api');
 const Web3 = require('web3')
 const realitio_bot = require('./realitioReporting')
 const db = openDb();
-const bot: any = new ModeratorBot(process.env.BOT_TOKEN, {polling: false, testEnvironment: false});  
+const bot: any = new ModeratorBot(process.env.BOT_TOKEN, {polling: false, testEnvironment: true});  
 const queue = new PQueue({intervalCap: 10, interval: 1000,carryoverConcurrencyCount: true});
 // Only need DB for
 // - channelID
@@ -49,7 +49,11 @@ const exit = async () => {
     console.log(history.last_block)
 
     let timestampLastUpdated = history.last_timestamp
-    const isUpdated = await update(currentTime, timestampLastUpdated, botaddress);
+    console.log('##LASTUPDATED')
+    console.log(timestampLastUpdated)
+    timestampLastUpdated = await update(currentTime, timestampLastUpdated, botaddress);
+    console.log('##LASTUPDATED')
+    console.log(timestampLastUpdated)
     const updateBlock = Math.min(history.last_block+1000, currentBlock)
     try{
         await realitio_bot(web3, history.last_block, updateBlock, process.env.REALITY_ETH_V30, process.env.REALITIO_ARBITRATOR_EN);
@@ -58,12 +62,10 @@ const exit = async () => {
         console.log(e)
     }
     history.last_block = updateBlock
-    if (isUpdated)
-        timestampLastUpdated = currentTime
     setCron(db, history.last_block,timestampLastUpdated)
 })()
 
-const update = async (timestampNew: number, timestampLastUpdated: number,botaddress: string): Promise<boolean> =>{
+const update = async (timestampNew: number, timestampLastUpdated: number,botaddress: string): Promise<number> =>{
 
     const reports = {};
     let delayQuestions = ""
@@ -79,10 +81,10 @@ const update = async (timestampNew: number, timestampLastUpdated: number,botaddr
     // jannies deputysheriff
     const lastPageUpdated = 0;
     const queryModeration = getQuery(lastPageUpdated, timestampLastUpdated, botaddress, timestampNew)
-
+    let timestampUpdated = timestampLastUpdated
     //console.log(queryModeration);
     //console.log('graphtime');
-    //console.log(queryModeration)
+    console.log(queryModeration)
     const moderationActions = await request(
         process.env.MODERATE_SUBGRAPH,
         queryModeration
@@ -91,6 +93,8 @@ const update = async (timestampNew: number, timestampLastUpdated: number,botaddr
     var isUpdated = false;
     for (const data of moderationActions.disputesFinal) {
         isUpdated = true
+        if (data.timestampLastUpdated > timestampUpdated)
+            timestampUpdated = data.timestampLastUpdated
         const settings = validate(data.moderationInfo.UserHistory.group.groupID);
         // settings[1] language
         try{
@@ -118,6 +122,8 @@ const update = async (timestampNew: number, timestampLastUpdated: number,botaddr
 
     for (const data of moderationActions.disputesAppealPossible) {
         isUpdated = true
+        if (data.timestampLastAppealPossible > timestampUpdated)
+            timestampUpdated = data.timestampLastAppealPossible
         const settings = validate(data.moderationInfo.UserHistory.group.groupID);
         const msgLink = data.moderationInfo.message;
         const realityURL = `https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${data.moderationInfo.id}`;
@@ -155,6 +161,8 @@ const update = async (timestampNew: number, timestampLastUpdated: number,botaddr
 
     for (const data of moderationActions.disputesCreated) {
         isUpdated = true
+        if (data.timestampLastUpdated > timestampUpdated)
+            timestampUpdated = data.timestampLastUpdated
         const settings = validate(data.moderationInfo.UserHistory.group.groupID);
         // settings[1] language
         const realityURL = `https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${data.moderationInfo.id}`;
@@ -197,6 +205,8 @@ const update = async (timestampNew: number, timestampLastUpdated: number,botaddr
 
     for (const data of moderationActions.disputesAppealFunded) {
         isUpdated = true
+        if (data.timestampLastUpdated > timestampUpdated)
+            timestampUpdated = data.timestampLastUpdated
         const settings = validate(data.moderationInfo.UserHistory.group.groupID);
         const msgLink = data.moderationInfo.message;
         const realityURL = `https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${data.moderationInfo.id}`;
@@ -245,6 +255,10 @@ const update = async (timestampNew: number, timestampLastUpdated: number,botaddr
 
 for(const data of moderationActions.realityQuestionAnsweredFinalized){
     isUpdated = true
+    console.log("DDDDDDATA")
+    console.log(data)
+    if (data.deadline > timestampUpdated)
+            timestampUpdated = data.deadline
     const settings = validate(data.moderationInfo.UserHistory.group.groupID);
     // settings[1] language
     try{
@@ -260,6 +274,8 @@ for(const data of moderationActions.realityQuestionAnsweredFinalized){
 }
 for(const data of moderationActions.realityQuestionAnsweredNotFinalized){
     isUpdated = true
+    if (data.timestampLastUpdated > timestampUpdated)
+            timestampUpdated = data.timestampLastUpdated
     //console.log(data.moderationInfo.UserHistory.group)
     const settings = validate(data.moderationInfo.UserHistory.group.groupID);
     // settings[1] language
@@ -304,6 +320,8 @@ for(const data of moderationActions.realityQuestionAnsweredNotFinalized){
     // promise queue example
     for(const data of moderationActions.sheriffs){
         isUpdated = true
+        if (data.timestampLastUpdatedSheriff > timestampUpdated)
+            timestampUpdated = data.timestampLastUpdatedSheriff
         const settings = validate(data.group.groupID);
         // settings[1] language
         try{
@@ -321,6 +339,8 @@ for(const data of moderationActions.realityQuestionAnsweredNotFinalized){
 
     for(const data of moderationActions.deputySheriffs){
         isUpdated = true
+        if (data.timestampLastUpdatedDeputySheriff > timestampUpdated)
+            timestampUpdated = data.timestampLastUpdatedDeputySheriff
         const settings = validate(data.group.groupID);
         // settings[1] language
         try{
@@ -337,6 +357,8 @@ for(const data of moderationActions.realityQuestionAnsweredNotFinalized){
 
     for(const data of moderationActions.ranks){
         isUpdated = true
+        if (data.timestampStatusUpdated > timestampUpdated)
+            timestampUpdated = data.timestampStatusUpdated
         const settings = validate(data.group.groupID);
         // settings[1] language
         try{
@@ -361,7 +383,7 @@ for(const data of moderationActions.realityQuestionAnsweredNotFinalized){
         }
     }
     await queue.onIdle()
-    return isUpdated
+    return timestampUpdated
 }
 
 const delay = (delayInms) => {
@@ -435,12 +457,12 @@ const validate = (chatId: string): groupSettings=> {
 }
 
 const calcPenalty = (ban_level: number, timestamp_finalized: number): number => {
-    if(ban_level == 3)
-        return  timestamp_finalized + 31536000
+    if(ban_level == 1)
+        return  timestamp_finalized + 86400
     else if (ban_level == 2)
         return  timestamp_finalized + 604800
     else
-        return  timestamp_finalized + 86400
+        return  timestamp_finalized + 31536000
 }
 
 const calcPenaltyPhrase = (settings: groupSettings, ban_level: number, enforcement: boolean, finalize: boolean, realityURL: string): string => {
@@ -451,16 +473,17 @@ const calcPenaltyPhrase = (settings: groupSettings, ban_level: number, enforceme
         else if (ban_level == 2)
             return finalize? enforcement? 'segunda vez y está sujeto a una prohibición de 1 semana' : 'segunda vez y se recomienda una prohibición de 1 semana': enforcement? `segunda vez y se silencia durante 1 día durante el resto del periodo del [informe](${realityURL})`: `segunda vez y se le recomienda un silencio de 1 día para el resto del periodo del [informe](${realityURL})`
         else
-            return finalize? enforcement? 'tercera vez y está sujeto a una prohibición de 1 mes' : 'tercera vez y se recomienda una prohibición de 1 mes' : enforcement? `trecera vez y se silencia durante 1 día durante el resto del periodo del [informe](${realityURL})`: `tercera vez y se le recomienda un silencio de 1 día por el resto del período del [informe](${realityURL})`
+            return finalize? enforcement? 'tercera vez y está sujeto a una prohibición de 1 año' : 'tercera vez y se recomienda una prohibición de 1 año' : enforcement? `trecera vez y se silencia durante 1 día durante el resto del periodo del [informe](${realityURL})`: `tercera vez y se le recomienda un silencio de 1 día por el resto del período del [informe](${realityURL})`
     } else {
         if(ban_level == 1)
             return finalize? enforcement? 'first time and is subject to a 1 day ban' : 'first time and is recommended a 1 day ban' : enforcement? `first time and is muted for 1 day during the remainder of the [report](${realityURL})`: `first time and is recommended a 1 day mute for the remainder of the [report](${realityURL})`
         else if (ban_level == 2)
             return finalize? enforcement? 'second time and is subject to a 1 week ban' : 'second time and is recommended a 1 week ban': enforcement? `second time and is muted for 1 day during the remainder of the [report](${realityURL})`: `second time and is recommended a 1 day mute for the remainder of the [report](${realityURL})`
         else
-            return finalize? enforcement? 'third time and is subject to a 1 month ban' : 'third time and is recommended a 1 month ban' : enforcement? `third time and is muted for 1 day during the remainder of the [report](${realityURL})`: `third time and is recommended a 1 day mute for the remainder of the [report](${realityURL})`
+            return finalize? enforcement? 'third time and is subject to a 1 year ban' : 'third time and is recommended a 1 year ban' : enforcement? `third time and is muted for 1 day during the remainder of the [report](${realityURL})`: `third time and is recommended a 1 day mute for the remainder of the [report](${realityURL})`
     }
 }
+
 
 const handleTelegramUpdate = async (db: any, bot: any, settings: groupSettings, moderationInfo: any, timestampNew: number, restrict: boolean, finalize: boolean, disputed: boolean) => {
     try{
@@ -468,39 +491,85 @@ const handleTelegramUpdate = async (db: any, bot: any, settings: groupSettings, 
         console.log(settings)
         const reportInfo = getReportMessageTimestampAndActive(db, moderationInfo.id)
         if (!reportInfo) return;
+
+        const timestamp_forgiven = getForgiveness(db, 'telegram',moderationInfo.UserHistory.group.groupID,moderationInfo.UserHistory.user.userID)
+        const warnings = getWarn(db,'telegram',String(moderationInfo.UserHistory.group.groupID))
+
         let calculateHistory = []
         if (settings.federation_id){
-            calculateHistory = getFederatedBanHistory(db, 'telegram', moderationInfo.UserHistory.user.userID,settings.federation_id,finalize)
+            calculateHistory = getFederatedBanHistory(db, 'telegram', moderationInfo.UserHistory.user.userID,settings.federation_id,finalize, timestamp_forgiven)
         }
         else if (settings.federation_id_following){
-            calculateHistory = getFederatedFollowingBanHistory(db, 'telegram', moderationInfo.UserHistory.user.userID,moderationInfo.UserHistory.group.groupID,settings.federation_id_following,finalize)
+            calculateHistory = getFederatedFollowingBanHistory(db, 'telegram', moderationInfo.UserHistory.user.userID,moderationInfo.UserHistory.group.groupID,settings.federation_id_following,finalize, timestamp_forgiven)
         } else 
-            calculateHistory = getLocalBanHistory(db, 'telegram', moderationInfo.UserHistory.user.userID,moderationInfo.UserHistory.group.groupID,finalize)
+            calculateHistory = getLocalBanHistory(db, 'telegram', moderationInfo.UserHistory.user.userID,moderationInfo.UserHistory.group.groupID,finalize, timestamp_forgiven)
 
         const ban_level_history = calculateHistory.length
         setReport(db, moderationInfo.id,restrict,true,finalize,disputed, finalize? 0 : (restrict? timestampNew: 0), finalize? timestampNew: 0)
 
         if (settings.federation_id){
-            calculateHistory = getFederatedBanHistory(db, 'telegram', moderationInfo.UserHistory.user.userID,settings.federation_id,finalize)
+            calculateHistory = getFederatedBanHistory(db, 'telegram', moderationInfo.UserHistory.user.userID,settings.federation_id,finalize, timestamp_forgiven)
         } else {
             if (settings.federation_id_following){
-                calculateHistory = getFederatedFollowingBanHistory(db, 'telegram', moderationInfo.UserHistory.user.userID,moderationInfo.UserHistory.group.groupID,settings.federation_id_following,finalize)
+                calculateHistory = getFederatedFollowingBanHistory(db, 'telegram', moderationInfo.UserHistory.user.userID,moderationInfo.UserHistory.group.groupID,settings.federation_id_following,finalize, timestamp_forgiven)
             } else 
-                calculateHistory = getLocalBanHistory(db, 'telegram', moderationInfo.UserHistory.user.userID,moderationInfo.UserHistory.group.groupID,finalize)
+                calculateHistory = getLocalBanHistory(db, 'telegram', moderationInfo.UserHistory.user.userID,moderationInfo.UserHistory.group.groupID,finalize, timestamp_forgiven)
         }
 
-        const ban_level_current = calculateHistory.length
+        const ban_level_current =  calculateHistory.length
         console.log(calculateHistory)
         const groups = settings.federation_id? getGroupsInAndFollowingFederation(db,'telegram',settings.federation_id) : [{group_id: moderationInfo.UserHistory.group.groupID}]
         const realityURL = `https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${moderationInfo.id}`;
-
-        if (restrict){
+        if(restrict && finalize && ban_level_current > ban_level_history && ban_level_current <= warnings){
+            // finalize warning
+            if(settings.enforcement){
+                const options = {can_send_messages: false, can_send_media_messages: false, can_send_polls: false, can_send_other_messages: false, can_add_web_page_previews: false, can_change_info: false, can_pin_messages: false};
+                queue.add(async () => {try{await bot.restrictChatMember(moderationInfo.UserHistory.group.groupID, moderationInfo.UserHistory.user.userID, options)}catch (e){console.log(e)}});
+                const msg_apologize = settings.lang === 'es'? `la conducta de [${moderationInfo.UserHistory.user.username}](tg://user?id=${moderationInfo.UserHistory.user.userID}) por este [mensaje](${moderationInfo.message}) ([backup](${moderationInfo.messageBackup})) viola las [reglas](${moderationInfo.rulesUrl}). Esta es la ${ban_level_current == 1 ? "primera" : ban_level_current == 2? "segunda": "trecera"} warn del usario *${moderationInfo.UserHistory.user.username}*. Por favor, revise las [reglas](${moderationInfo.rulesUrl}) y discúlpese.` : `*${moderationInfo.UserHistory.user.username}*'s conduct due to this [message](${moderationInfo.message}) ([backup](${moderationInfo.messageBackup})) violated the [rules](${moderationInfo.rulesUrl}). This is [${moderationInfo.UserHistory.user.username}](tg://user?id=${moderationInfo.UserHistory.user.userID})'s ${ban_level_current == 1 ? "first" : ban_level_current == 2? "second": "third"} warning.\n\nPlease review the [rules](${moderationInfo.rulesUrl}) and apologize.`
+                    const opts = {
+                        parse_mode: 'Markdown',
+                        disable_web_page_preview: true,
+                        reply_markup: {
+                            inline_keyboard: [
+                            [
+                                {
+                                text: langJson[settings.lang].apologize,
+                                callback_data: '5|'+moderationInfo.UserHistory.user.userID
+                                }
+                            ]
+                            ]
+                        }
+                    };
+                    const optsThread = {
+                        parse_mode: 'Markdown',
+                        message_thread_id: settings.thread_id_welcome,
+                        disable_web_page_preview: true,
+                        reply_markup: {
+                            inline_keyboard: [
+                            [
+                                {
+                                    text: langJson[settings.lang].apologize,
+                                    callback_data: '5|'+moderationInfo.UserHistory.user.userID
+                                }
+                            ]
+                            ]
+                        }
+                    };
+                queue.add(async () => {try{const val = await bot.sendMessage(settings.channelID, msg_apologize, settings.thread_id_notifications? optsThread: opts)
+                return val}catch(e){console.log(e)}});
+            }
+        }
+        else if (!finalize && ban_level_current <= warnings){
+            // no optimistic warning
+        }
+        else if (restrict){
             // TODO federation subscriptions
-
-            if (ban_level_current > ban_level_history){
-                const parole = calcPenalty(ban_level_current,timestampNew)
+            if (ban_level_current > ban_level_history && ban_level_current > warnings){
+                const parole = calcPenalty(ban_level_current-warnings,timestampNew)
+                
                 if (settings.enforcement){
                     if(finalize){
+                        
                         // if message reported timestamp is before the most recent finalized ban / penality, users deserve a second chance, no action taken
                         // philosophy is only escalate the penalties after the user is warned with a temporary ban. 
                         // this report changed penalties, recalculate all
@@ -515,14 +584,17 @@ const handleTelegramUpdate = async (db: any, bot: any, settings: groupSettings, 
                         }
                     }
                 }
-                const msg_enforcement = settings.lang === 'es'? `la conducta de *${moderationInfo.UserHistory.user.username}* por este [mensaje](${moderationInfo.message}) ([backup](${moderationInfo.messageBackup})) mensaje viola las [reglas](${moderationInfo.rulesUrl}) por ${calcPenaltyPhrase(settings, ban_level_current, settings.enforcement, finalize, realityURL)}.` : `*${moderationInfo.UserHistory.user.username}*'s conduct due to this [message](${moderationInfo.message}) ([backup](${moderationInfo.messageBackup})) violated the [rules](${moderationInfo.rulesUrl}) for the ${calcPenaltyPhrase(settings, ban_level_current, settings.enforcement, finalize, realityURL)}.`
+                const msg_enforcement = settings.lang === 'es'? `la conducta de *${moderationInfo.UserHistory.user.username}* por este [mensaje](${moderationInfo.message}) ([backup](${moderationInfo.messageBackup})) viola las [reglas](${moderationInfo.rulesUrl}) por ${calcPenaltyPhrase(settings, ban_level_current-warnings, settings.enforcement, finalize, realityURL)}.` : `*${moderationInfo.UserHistory.user.username}*'s conduct due to this [message](${moderationInfo.message}) ([backup](${moderationInfo.messageBackup})) violated the [rules](${moderationInfo.rulesUrl}) for the ${calcPenaltyPhrase(settings, ban_level_current-warnings, settings.enforcement, finalize, realityURL)}.`
                 queue.add(async () => {try{await bot.sendMessage(settings.channelID, msg_enforcement, settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown',disable_web_page_preview: true}: {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
             } else{
                 const i = calculateHistory.findIndex(e => e.question_id === moderationInfo.id);
                 if (i > -1) {
-                    queue.add(async () => {try{await bot.sendMessage(settings.channelID, `*${moderationInfo.UserHistory.user.username}*'s conduct due to this [message](${moderationInfo.message}) ([backup](${moderationInfo.messageBackup})) violated the [rules](${moderationInfo.rulesUrl}) for the ${calcPenaltyPhrase(settings, ban_level_current, settings.enforcement, finalize, realityURL)}.`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown', disable_web_page_preview: true}: {parse_mode: 'Markdown', disable_web_page_preview: true})}catch{}});
-                } else
-                    queue.add(async () => {try{await bot.sendMessage(settings.channelID, `*${moderationInfo.UserHistory.user.username}*'s conduct due to this [message](${moderationInfo.message}) ([backup](${moderationInfo.messageBackup})) violated the [rules](${moderationInfo.rulesUrl}). The conduct occured before *${moderationInfo.UserHistory.user.username}*'s latest confirmed report, so the user is recommended to get a second chance --- they should have been penalized already.`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown', disable_web_page_preview: true}: {parse_mode: 'Markdown', disable_web_page_preview: true})}catch{}});
+                    const msg_info = settings.lang === 'es'? `La conducta de *${moderationInfo.UserHistory.user.username}* debido a este mensaje(${moderationInfo.message}) ([backup](${moderationInfo.messageBackup})) violó las [reglas](${moderationInfo.rulesUrl}) por ${calcPenaltyPhrase(settings, ban_level_current-warnings, settings.enforcement, finalize, realityURL)}.`:`*${moderationInfo.UserHistory.user.username}*'s conduct due to this [message](${moderationInfo.message}) ([backup](${moderationInfo.messageBackup})) violated the [rules](${moderationInfo.rulesUrl}) for the ${calcPenaltyPhrase(settings, ban_level_current-warnings, settings.enforcement, finalize, realityURL)}.`
+                    queue.add(async () => {try{await bot.sendMessage(settings.channelID, msg_info,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown', disable_web_page_preview: true}: {parse_mode: 'Markdown', disable_web_page_preview: true})}catch{}});
+                } else{
+                    const msg_info = settings.lang === 'es'? `La conducta de *${moderationInfo.UserHistory.user.username}* debido a este mensaje(${moderationInfo.message}) ([backup](${moderationInfo.messageBackup})) violó las [reglas](${moderationInfo.rulesUrl}). La conducta se produjo antes del último informe confirmado de *${moderationInfo.UserHistory.user.username}*, por lo que no se aplican sanciones.` :  `*${moderationInfo.UserHistory.user.username}*'s conduct due to this [message](${moderationInfo.message}) ([backup](${moderationInfo.messageBackup})) violated the [rules](${moderationInfo.rulesUrl}). The conduct occured before *${moderationInfo.UserHistory.user.username}*'s latest confirmed report, so no penalties are applied.`
+                    queue.add(async () => {try{await bot.sendMessage(settings.channelID, msg_info,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown', disable_web_page_preview: true}: {parse_mode: 'Markdown', disable_web_page_preview: true})}catch{}});
+                }
             }
         } else if (ban_level_current < ban_level_history){
                 let liftbans = true;
@@ -532,7 +604,7 @@ const handleTelegramUpdate = async (db: any, bot: any, settings: groupSettings, 
                     if (timestamp_most_recent< ban_level.timestamp_active)
                         timestamp_most_recent = ban_level.timestamp_active
 
-                if (calcPenalty(calculateHistory.length, timestamp_most_recent) > timestampNew)
+                if (calcPenalty(ban_level_current-warnings, timestamp_most_recent) > timestampNew)
                     liftbans = false      
                 if(liftbans){
                     if (settings.enforcement)
@@ -549,7 +621,7 @@ const handleTelegramUpdate = async (db: any, bot: any, settings: groupSettings, 
                     queue.add(async () => {try{await bot.sendMessage(settings.channelID, msg_update,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
                 } else {
                     const msg_update = settings.lang === "en" ? `*${moderationInfo.UserHistory.user.username}* has other active reports and should remain restricted.` : `*${moderationInfo.UserHistory.user.username}* tiene otros informes activos y debe permanecer restringido.`
-                    queue.add(async () => {try{await bot.sendMessage(settings.channelID, `*${moderationInfo.UserHistory.user.username}* has other active reports and should remain restricted.`,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
+                    queue.add(async () => {try{await bot.sendMessage(settings.channelID, msg_update,settings.thread_id_notifications? {message_thread_id: settings.thread_id_notifications, parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
                 }
             }
     } catch(e){
@@ -561,6 +633,7 @@ const moderationInfoContent = `        id
 message
 messageBackup
 moderationType
+deadline
 rulesUrl
 UserHistory{
     countBrokeRulesArbitrated
@@ -580,26 +653,31 @@ const getQuery = (lastPageUpdated: number, timestampLastUpdated: number, botaddr
 return `{
         disputesFinal: moderationDisputes(first: 1000, skip: ${lastPageUpdated*1000}, where: {timestampLastUpdated_gt: ${timestampLastUpdated}, timestampLastUpdated_lt: ${timestampNew}, finalRuling_not: null, moderationInfo_: {askedBy: "${botaddress}"}}) {
             id
+            timestampLastUpdated
             finalRuling
             ${moderationInfo}
         }
         disputesAppealPossible: moderationDisputes(first: 1000, skip: ${lastPageUpdated*1000}, where: {timestampLastAppealPossible_gt: ${timestampLastUpdated}, timestampLastAppealPossible_lt: ${timestampNew}, finalRuling: null, moderationInfo_: {askedBy: "${botaddress}"}}) {
             id
+            timestampLastAppealPossible
             currentRuling
             ${moderationInfo}
         }
         disputesAppeal: moderationDisputes(first: 1000, skip: ${lastPageUpdated*1000}, where: {timestampLastAppeal_gt: ${timestampLastUpdated}, timestampLastAppeal_lt: ${timestampNew}, finalRuling: null, moderationInfo_: {askedBy: "${botaddress}"}}) {
             id
+            timestampLastAppeal
             currentRuling
             ${moderationInfo}
         }
         disputesCreated: moderationDisputes(first: 1000, skip: ${lastPageUpdated*1000}, where: {timestampLastUpdated_gt: ${timestampLastUpdated}, timestampLastUpdated_lt: ${timestampNew}, finalRuling: null, currentRuling: null, rulingFunded: null, moderationInfo_: {askedBy: "${botaddress}"}}) {
             id
+            timestampLastUpdated
             ${moderationInfo}
         }
         disputesAppealFunded: moderationDisputes(first: 1000, skip: ${lastPageUpdated*1000}, where: {timestampLastAppealPossible_gt: ${timestampLastUpdated}, , timestampLastAppealPossible_lt: ${timestampNew}, rulingFunded_not: null, moderationInfo_: {askedBy: "${botaddress}"}}) {
             id
             rulingFunded
+            timestampLastAppealPossible
             currentRuling
             ${moderationInfo}
         }
@@ -608,6 +686,7 @@ return `{
         }
         realityQuestionAnsweredFinalized: realityChecks(first: 1000, skip: ${lastPageUpdated*1000}, where: {deadline_gt: ${timestampLastUpdated}, dispute: null, deadline_lt: ${timestampNew}, moderationInfo_: {askedBy: "${botaddress}"}}) {
             id
+            deadline
             timestampLastUpdated
             currentAnswer
             timeServed
@@ -615,12 +694,13 @@ return `{
         }
         realityQuestionAnsweredNotFinalized: realityChecks(first: 1000, skip: ${lastPageUpdated*1000}, where: {deadline_gt: ${timestampNew}, dispute: null, timestampLastUpdated_gt: ${timestampLastUpdated}, timestampLastUpdated_lt: ${timestampNew}, moderationInfo_: {askedBy: "${botaddress}"}}) {
             id
-            currentAnswer
             timestampLastUpdated
+            currentAnswer
             ${moderationInfo}
         }
         sheriffs: jannies(first: 1000, skip: ${lastPageUpdated*1000}, where: {timestampLastUpdatedSheriff_gt: ${timestampLastUpdated}, timestampLastUpdatedSheriff_lt: ${timestampNew}, group_: {botAddress: "${botaddress}"}}) {
             id
+            timestampLastUpdatedSheriff
             group{
                 groupID
             }
@@ -632,6 +712,7 @@ return `{
         }
         deputySheriffs: jannies(first: 1000, skip: ${lastPageUpdated*1000}, where: {timestampLastUpdatedDeputySheriff_gt: ${timestampLastUpdated}, timestampLastUpdatedDeputySheriff_lt: ${timestampNew}, group_: {botAddress: "${botaddress}"}}) {
             id
+            timestampLastUpdatedDeputySheriff
             group{
                 groupID
             }
@@ -643,6 +724,7 @@ return `{
         }
         ranks: userHistories(first: 1000, skip: ${lastPageUpdated*1000}, where: {timestampStatusUpdated_gt: ${timestampLastUpdated}, timestampStatusUpdated_lt: ${timestampNew}, group_: {botAddress: "${botaddress}", platform: "Telegram"}}) {
                 status
+                timestampStatusUpdated
                 user{
                 userID
                 }

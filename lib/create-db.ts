@@ -30,6 +30,7 @@ const Database = require('better-sqlite3');
             enforcement BIT,
             lang TEXT,
             rules TEXT,
+            warn_mode BIT,
             PRIMARY KEY (platform, group_id))`
         );
 
@@ -78,14 +79,29 @@ const Database = require('better-sqlite3');
      * `timestamp` the timestamp when the rules were set.
      */
     await db.exec(
-    `CREATE TABLE rules (
-        platform TEXT, 
-        group_id TEXT, 
-        rules TEXT, 
-        timestamp INTEGER, 
-        msg_id TEXT,
-        PRIMARY KEY (platform, group_id, timestamp))`
-    );
+        `CREATE TABLE rules (
+            platform TEXT, 
+            group_id TEXT, 
+            rules TEXT, 
+            timestamp INTEGER, 
+            msg_id TEXT,
+            PRIMARY KEY (platform, group_id, timestamp))`
+        );
+
+    /**
+     * `platform` can be `telegram`, `reddit`, etc.
+     * `group_id` is the id of the group on the platform (eg. group on telegram, subreddit on reddit, etc.).
+     * `rules` the group rules. eg ipfs cid string.
+     * `timestamp` the timestamp when the rules were set.
+     */
+    await db.exec(
+        `CREATE TABLE forgiveness (
+            platform TEXT, 
+            group_id TEXT, 
+            user_id TEXT, 
+            timestamp INTEGER,
+            PRIMARY KEY (platform, group_id, user_id))`
+        );
 
     /**
      * `question_id` is the id of the question in reality.eth
@@ -96,7 +112,7 @@ const Database = require('better-sqlite3');
      * `active` indicates whether the user is currently banned.
      * `finalized` indicates if the question has finalized.
      */
-     await db.exec(
+    await db.exec(
         `CREATE TABLE reports (
             question_id TEXT PRIMARY KEY, 
             platform TEXT, 
@@ -116,6 +132,8 @@ const Database = require('better-sqlite3');
             finalized BIT
             )`
         );
+
+
 
     /**
      * `platform` can be `telegram`, `reddit`, etc.
