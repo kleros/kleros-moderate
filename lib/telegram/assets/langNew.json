@@ -273,8 +273,8 @@
         "info": {
             "evidence": "¿De qué usuario trata la denuncia?",
             "noevidence": "No hay denuncias a los que añadir evidencia en tu grupo.",
-            "get": "Obtener información sobre la denuncia",
-            "DM": "DM para información de denuncia : )",
+            "get": "DM : )",
+            "DM": "DM para información sobre la denuncia : )",
             "report1": "rompió las reglas al menos",
             "report2": "vece(s) y está prohibido hasta que",
             "fed": "Denuncias federales para "
