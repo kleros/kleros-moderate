@@ -897,7 +897,7 @@ const setRules = (db:any, platform: string, groupId: string, rules: string, time
 const getForgiveness = (db:any, platform: string, groupId: string, userId: string): any => {
     try{
         const stmt = db.prepare(`
-        SELECT * FROM forgiveness 
+        SELECT * FROM forgivness 
         WHERE platform = ? AND group_id = ? AND user_id = ?`);
         return stmt.get(platform, groupId, userId)?.timestamp || 0;
     } catch(err){
@@ -908,7 +908,7 @@ const getForgiveness = (db:any, platform: string, groupId: string, userId: strin
 const setForgiveness = (db:any, platform: string, groupId: string, userId: string, timestamp: number) => {
     try{
         const stmt = db.prepare(
-            `INSERT INTO forgiveness (platform, group_id, user_id, timestamp)
+            `INSERT INTO forgivness (platform, group_id, user_id, timestamp)
             VALUES (?, ?, ?, ?)
             ON CONFLICT(platform, group_id, user_id) DO UPDATE SET 
             timestamp=?;`);
