@@ -14,6 +14,10 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
             inline_keyboard: [
                 [
                     {
+                        text: '0',
+                        callback_data: `7|${msg.from.id}|0`
+                    }, 
+                    {
                         text: '1',
                         callback_data: `7|${msg.from.id}|1`
                     }, 
