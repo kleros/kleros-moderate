@@ -14,7 +14,7 @@
             "NeighborhoodWatch": "🤝 ***Neighborhood Watch Recognition*** 🤝\n\n The Neighborhood Watch recognition is given to members who help protect their community. Thank you for your service 🙏"
         },
         "notifications": {
-            "getfed": "The notifications for this group's federation are sent to this [channel]",
+            "getFed": "The notifications for this group's federation are sent to this [channel]",
             "notset": "Notifications channel for this group is not set. Ask an admin to `/setchannel`",
             "get": "I send moderation notifications to this [channel]",
             "set": "/setchannel must be followed by a channel id.  If you need more help, ",
