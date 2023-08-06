@@ -610,9 +610,7 @@ const handleTelegramUpdate = async (db: any, bot: any, settings: groupSettings, 
                     if (settings.enforcement)
                         for (const group of groups){
                                 const permissions = await queue.add(async () => {try{const val = (await bot.getChat(group.group_id)).permissions
-                                    return val}catch{}})
-                                if(!permissions)
-                                    continue
+                                    return val}catch{ return {can_send_messages: true, can_send_media_messages: true, can_send_polls: false, can_send_other_messages: false, can_add_web_page_previews: false, can_change_info: false, can_pin_messages: false}}})
                                 queue.add(async () => {try{await bot.restrictChatMember(moderationInfo.UserHistory.group.groupID, moderationInfo.UserHistory.user.userID, permissions)}catch{}});
                         }
                     const msg_update = settings.lang === "en" ? `*${moderationInfo.UserHistory.user.username}*'s has no other active reports. All bans should be lifted.` : `*${moderationInfo.UserHistory.user.username}* no tiene otros informes activos. Todas las prohibiciones deben ser levantadas.`
