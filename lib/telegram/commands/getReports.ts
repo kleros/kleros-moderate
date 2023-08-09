@@ -101,7 +101,7 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
             }
             reports.forEach( report => {
                 const reportAnswer = report.answered? (report.active? langJson[settings.lang].getReports.broke : langJson[settings.lang].getReports.nobreak) : 'unanswered';
-                const MsgLink = 'https://t.me/c/' + String(msg.chat.id).substring(4) + '/' + report.msg_id;
+                const MsgLink = 'https://t.me/c/' + String(group_id).substring(4) + '/' + report.msg_id;
                 const msgTimehours = new Date(report.timestamp_msg*1000).toUTCString();
                 const reportState = report.finalized? langJson[settings.lang].getReports.reportFinal : langJson[settings.lang].getReports.reportCurrent;
                 reportMessage += ` - [${langJson[settings.lang].getReports.reportMessage3}](https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${report.question_id}), [Message](${MsgLink}), Sent ${msgTimehours.substring(0,12)}([${langJson[settings.lang].socialConsensus.consensus5}](${report.msgBackup})), ${reportState} ${langJson[settings.lang].answer}, ${reportAnswer}${report.finalized? "":`, \`/evidence ${report.evidenceIndex}\``}\n`;
