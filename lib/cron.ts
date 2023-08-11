@@ -55,12 +55,7 @@ const exit = async () => {
     console.log('##LASTUPDATED')
     console.log(timestampLastUpdated)
     const updateBlock = Math.min(history.last_block+1000, currentBlock)
-    try{
-        await realitio_bot(web3, history.last_block, updateBlock, process.env.REALITY_ETH_V30, process.env.REALITIO_ARBITRATOR_EN);
-        await realitio_bot(web3, history.last_block, updateBlock, process.env.REALITY_ETH_V30, process.env.REALITIO_ARBITRATOR_ES);
-    } catch (e){
-        console.log(e)
-    }
+
     history.last_block = updateBlock
     setCron(db, history.last_block,timestampLastUpdated)
 })()
