@@ -15,7 +15,6 @@ import {
       return;
     }
 
-    let currentRuling = getCurrentRulling(event.params._disputeID, event.address)
     dispute.currentRuling = getCurrentRulling(event.params._disputeID, event.address)
     dispute.timestampLastAppealPossible = event.block.timestamp
     dispute.save()
