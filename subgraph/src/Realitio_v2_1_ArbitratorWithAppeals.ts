@@ -4,6 +4,8 @@ import {
     Ruling as RulingEvent,
     Evidence as EvidenceEvent,
     Realitio_v2_1_ArbitratorWithAppeals as Realitio_v2_1_ArbitratorWithAppealsContract
+    Evidence as EvidenceEvent,
+    Realitio_v2_1_ArbitratorWithAppeals as Realitio_v2_1_ArbitratorWithAppealsContract
   } from "../generated/Realitio_v2_1_ArbitratorWithAppeals/Realitio_v2_1_ArbitratorWithAppeals"
 import {
     ModerationDispute, ModerationInfo, RealityCheck, UserHistory, Group
