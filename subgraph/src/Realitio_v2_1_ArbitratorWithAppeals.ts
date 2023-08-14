@@ -2,7 +2,8 @@ import {
     DisputeIDToQuestionID as DisputeIDToQuestionIDEvent,
     RulingFunded as RulingFundedEvent,
     Ruling as RulingEvent,
-    Evidence as EvidenceEvent
+    Evidence as EvidenceEvent,
+    Realitio_v2_1_ArbitratorWithAppeals as Realitio_v2_1_ArbitratorWithAppealsContract
   } from "../generated/Realitio_v2_1_ArbitratorWithAppeals/Realitio_v2_1_ArbitratorWithAppeals"
 import {
     ModerationDispute, ModerationInfo, RealityCheck, UserHistory, Group
@@ -91,18 +92,26 @@ import {
     } 
     userHistory.save()
 }
-
   export function handleRulingFunded(event: RulingFundedEvent): void {
     let moderationInfo = ModerationInfo.load(event.params._localDisputeID.toHexString());
+
     if (!moderationInfo){
       log.error('Moderation Info not found {}.',[event.params._localDisputeID.toHexString()]);
       return;
     }
-    const dispute = moderationInfo.dispute
-    const dispute_non_null = dispute ? dispute : 'no-dispute';
-    let moderationDispute = ModerationDispute.load(dispute_non_null);
+
+
+    let contract = Realitio_v2_1_ArbitratorWithAppealsContract.bind(event.address)
+    let callResult = contract.try_arbitrationRequests(event.params._localDisputeID)
+    if (!callResult || callResult.reverted){
+      log.error('Moderation Info not found {}.',[event.params._localDisputeID.toHexString()]);
+      return;
+    }
+    
+    let disputeID = callResult.value.getDisputeID()
+    let moderationDispute = ModerationDispute.load(disputeID.toHexString());
     if (!moderationDispute){
-      log.error('Moderation Dispute not found {}.',[])
+      log.error('Moderation Dispute not found {}.',[disputeID.toHexString()])
       return;
     }
     moderationDispute.rulingFunded = event.params._ruling

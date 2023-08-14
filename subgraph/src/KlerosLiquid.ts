@@ -15,7 +15,6 @@ import {
       return;
     }
 
-    let currentRuling = getCurrentRulling(event.params._disputeID, event.address)
     dispute.currentRuling = getCurrentRulling(event.params._disputeID, event.address)
     dispute.timestampLastAppealPossible = event.block.timestamp
     dispute.save()
@@ -27,7 +26,7 @@ export function handleAppealDecision(event: AppealDecisionEvent): void {
     log.error("Disput not found {}.", [event.params._disputeID.toHexString()])
     return;
   }
-  dispute.timestampLastAppealPossible = event.block.timestamp
+  dispute.timestampLastAppeal = event.block.timestamp
   dispute.save()
 }
 
