@@ -74,7 +74,7 @@ const handler: Handler = async () => {
 
         responses.sort((a,b) => a.timestamp-b.timestamp)
       
-        const answerer = responses[0].user
+        const answerer = responses[responses.length - 1].user
         const historyHash = responses[Math.max(0, responses.length - 2)].historyHash
         
         // DEBUG
