@@ -1,5 +1,5 @@
 import * as TelegramBot from "node-telegram-bot-api";
-import {setInviteURL,getInviteURL, getRule,getAllowance, setAllowance, addReport, getRecordCount, getQuestionId, getForgiveness} from "../../db";
+import {getFederationChannel, getFederatedInviteURLChannel, getRule,getAllowance, setAllowance, addReport, getRecordCount, getQuestionId, getForgiveness} from "../../db";
 import { groupSettings } from "../../../types";
 import {upload} from "./addEvidence"
 import {reportUser} from "../../bot-core";
@@ -23,7 +23,7 @@ myCacheGarbageCollection.on("expired",function(key,value){
 myCacheGarbageCollectionSlow.on("expired",function(key,value){
     myQueue.add(async () => {try{await myBot.deleteMessage(value, key)}catch{}});
     });
-const callback = async (queue: any, db:any, settings: groupSettings, bot: any, botId: number, msg: any, match: string[]) => {
+const callback = async (queue: any, db:any, settings: groupSettings, bot: TelegramBot, botId: number, msg: TelegramBot.Message, match: string[]) => {
     try{        
         if(msg.text.substring(0,11) === '/info')
             return
@@ -148,7 +148,7 @@ const callback = async (queue: any, db:any, settings: groupSettings, bot: any, b
             setAllowance(db, 'telegram', String(msg.chat.id), String(msg.from.id), 9, 30, currentTimeMs);
         } else if (currentTimeMs < reportAllowance.timestamp_refresh + 28800 && reportAllowance.report_allowance < 1 ){
             console.log(msg)
-            const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, langJson[settings.lang].report.noallowance, (msg.chat.is_forum && msg.is_topic_message)? String(msg.message_thread_id): {})
+            const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, langJson[settings.lang].report.noallowance, (msg.chat.is_forum && msg.is_topic_message)? {message_thread_id: msg.message_thread_id}: {})
             return val}catch (e){console.log(e)}});
             if (!resp)
                 return resp
@@ -163,9 +163,9 @@ const callback = async (queue: any, db:any, settings: groupSettings, bot: any, b
         console.log(msg)
         console.log(msgId)
         const opts = {
-            parse_mode: 'Markdown',
+            parse_mode: "Markdown" as TelegramBot.ParseMode,
             reply_to_message_id: msg.reply_to_message.message_id,
-            ...(msg.chat.is_topic_message && {message_thread_id: msg.message_thread_id}),
+            ...(msg.is_topic_message && {message_thread_id: msg.message_thread_id}),
             disable_web_page_preview: true,
             reply_markup: {
                 inline_keyboard: [
@@ -249,10 +249,19 @@ const reportMsg = async (queue: any, settings: groupSettings, db: any, bot: any,
             isPrivate);
 
         addReport(db, questionId, 'telegram', String(msg.chat.id), reportedUserID, fromUsername , msgId, Number(msgDate),evidenceIndex, msgBackup);
-            console.log(msgLink)
-        if (settings.lang === "en")
-            queue.add(async () => {try{bot.sendMessage(settings.channelID, `[${fromUsername}](tg://user?id=${reportedUserID})'s conduct due to this [message](${msgLink}) ([backup](${msgBackup})) is reported for breaking the [rules](${rules}).\n\nDid *${fromUsername}* break the rules? The [question](${appealUrl}) can be answered with a minimum bond of 1 DAI. Need assistance answering the question? [DM](https://t.me/${process.env.BOT_USERNAME}?start=helpgnosis) me for help : )\n\nTo save a record, reply to messages you want saved with \`/evidence ${evidenceIndex}\``, msg.chat.is_forum? {message_thread_id: settings.thread_id_notifications , parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
-        else if (settings.lang === "es")
+        const fedNotificationChannel = settings.federation_id ? getFederationChannel(db, 'telegram',settings.federation_id) : ""
+        if (settings.lang === "en"){
+            if (fedNotificationChannel){
+                const inviteurl = getFederatedInviteURLChannel(db, 'telegram', settings.federation_id);
+                queue.add(async () => {try{bot.sendMessage(fedNotificationChannel, `[${fromUsername}](tg://user?id=${reportedUserID})'s conduct due to this [message](${msgLink}) ([backup](${msgBackup})) is reported for breaking the [rules](${rules}).\n\nDid *${fromUsername}* break the rules? The [question](${appealUrl}) can be answered with a minimum bond of 1 DAI. Need assistance answering the question? [DM](https://t.me/${process.env.BOT_USERNAME}?start=helpgnosis) me for help : )\n\nTo save a record, reply to messages you want saved with \`/evidence ${evidenceIndex}\``, msg.chat.is_forum? {message_thread_id: settings.thread_id_notifications , parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
+                if (inviteurl)
+                    queue.add(async () => {try{bot.sendMessage(settings.channelID, `[${fromUsername}](tg://user?id=${reportedUserID})'s conduct due to this [message](${msgLink}) ([backup](${msgBackup})) is reported for breaking the [rules](${rules}).\n\nDid *${fromUsername}* break the rules? The [question](${appealUrl}) can be answered with a minimum bond of 1 DAI. Need assistance answering the question? [DM](https://t.me/${process.env.BOT_USERNAME}?start=helpgnosis) me for help : )\n\nTo save a record, reply to messages you want saved with \`/evidence ${evidenceIndex}\`\n\nJoin the [notification channel](${inviteurl}) to follow updates for this moderation question.`, msg.chat.is_forum? {message_thread_id: settings.thread_id_notifications , parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
+                else
+                    queue.add(async () => {try{bot.sendMessage(settings.channelID, `[${fromUsername}](tg://user?id=${reportedUserID})'s conduct due to this [message](${msgLink}) ([backup](${msgBackup})) is reported for breaking the [rules](${rules}).\n\nDid *${fromUsername}* break the rules? The [question](${appealUrl}) can be answered with a minimum bond of 1 DAI. Need assistance answering the question? [DM](https://t.me/${process.env.BOT_USERNAME}?start=helpgnosis) me for help : )\n\nTo save a record, reply to messages you want saved with \`/evidence ${evidenceIndex}\``, msg.chat.is_forum? {message_thread_id: settings.thread_id_notifications , parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
+            } else 
+                queue.add(async () => {try{bot.sendMessage(settings.channelID, `[${fromUsername}](tg://user?id=${reportedUserID})'s conduct due to this [message](${msgLink}) ([backup](${msgBackup})) is reported for breaking the [rules](${rules}).\n\nDid *${fromUsername}* break the rules? The [question](${appealUrl}) can be answered with a minimum bond of 1 DAI. Need assistance answering the question? [DM](https://t.me/${process.env.BOT_USERNAME}?start=helpgnosis) me for help : )\n\nTo save a record, reply to messages you want saved with \`/evidence ${evidenceIndex}\``, msg.chat.is_forum? {message_thread_id: settings.thread_id_notifications , parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
+        }
+        else if (settings.lang === "es") // TODO add spanish federation notification channeling
             queue.add(async () => {try{bot.sendMessage(settings.channelID, `La conducta de [${fromUsername}](tg://user?id=${reportedUserID}) a este [mensaje](${msgLink}) ([backup](${msgBackup})) es denunciada por infringir las [reglas](${rules}).\n\nHa infringido el usuario  *${fromUsername}* las reglas? La [pregunta](${appealUrl}) puede responderse con un bono mínimo de 1 DAI. Necesitas ayuda para responder a la pregunta? [DM](https://t.me/${process.env.BOT_USERNAME}?start=helpgnosis) para obetener ayuda : )\n\nPara guardar un mensaje, responda a los mensajes que desee guardar con \`/evidence ${evidenceIndex}\``, msg.chat.is_forum? {message_thread_id: settings.thread_id_notifications , parse_mode: 'Markdown'}: {parse_mode: 'Markdown'})}catch{}});
         return [appealUrl, evidenceIndex];
     } catch (e) {

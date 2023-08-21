@@ -60,7 +60,7 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: Teleg
             }
             return;
         }
-        const channelUser = await queue.add(async () => {try{const val = await bot.getChatMember(newmatch[1], String(msg.from.id))
+        const channelUser = await queue.add(async () => {try{const val = await bot.getChatMember(newmatch[1], msg.from.id)
             return val}catch{}});
             if(!channelUser)
             return
@@ -72,7 +72,7 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: Teleg
             myCache.set(resp.message_id, msg.chat.id)
             return;
         }
-        const channelUserSusie = await queue.add(async () => {try{const val = await bot.getChatMember(newmatch[1], botId)
+        const channelUserSusie = await queue.add(async () => {try{const val = await bot.getChatMember(newmatch[1], Number(botId))
             return val}catch{}});
             if(!channelUserSusie)
             return

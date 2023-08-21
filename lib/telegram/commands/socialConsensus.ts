@@ -56,7 +56,7 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: Teleg
         }
     try{
       if (newConfirmations > 2){
-        const user = (await queue.add(async () => {try{const val = await bot.getChatMember(String(msg.chat.id), String(calldata[1]))
+        const user = (await queue.add(async () => {try{const val = await bot.getChatMember(String(msg.chat.id), Number(calldata[1]))
           return val}catch{}})).user;
           const fromUsername = user.username || user.first_name || `no-username-set`;
         const [appealURL, evidenceIndex] = await reportMsg(queue, settings, db, bot, msg, fromUsername, String(calldata[1]), msg.entities[1].url, String(calldata[2]), msg.entities[3].url, calldata[4],calldata[3],batchedSend);
