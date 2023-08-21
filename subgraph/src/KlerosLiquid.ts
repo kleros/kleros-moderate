@@ -16,6 +16,7 @@ import {
     }
 
     dispute.currentRuling = getCurrentRulling(event.params._disputeID, event.address)
+    dispute.rulingFunded = null;
     dispute.timestampLastAppealPossible = event.block.timestamp
     dispute.save()
 }
