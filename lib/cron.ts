@@ -130,7 +130,8 @@ const update = async (timestampNew: number, timestampLastUpdated: number,botaddr
             timestampUpdated = data.timestampLastAppealPossible
         const settings = validate(data.moderationInfo.UserHistory.group.groupID);
         const msgLink = data.moderationInfo.message;
-        const realityURL = `https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${data.moderationInfo.id}`;
+        const template_id = settings.lang === 'es'? Number(process.env.TEMPLATE_ID_ES): Number(process.env.TEMPLATE_ID_EN)
+        const realityURL = `https://reality.eth.limo/app/#!/template/${template_id}/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${data.moderationInfo.id}`;
         const disputeURL = `https://resolve.kleros.io/cases/${BigNumber.from(data.id).toNumber()}`;
         // settings[1] language
         try{
@@ -169,7 +170,9 @@ const update = async (timestampNew: number, timestampLastUpdated: number,botaddr
         const fedNotificationChannel = settings.federation_id ? getFederationChannel(db, 'telegram',settings.federation_id) : ""
 
         // settings[1] language
-        const realityURL = `https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${data.moderationInfo.id}`;
+        
+        const template_id = settings.lang === 'es'? Number(process.env.TEMPLATE_ID_ES): Number(process.env.TEMPLATE_ID_EN)
+        const realityURL = `https://reality.eth.limo/app/#!/template/${template_id}/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${data.moderationInfo.id}`;
         const disputeURL = `https://resolve.kleros.io/cases/${BigNumber.from(data.id).toNumber()}`;
         try{
             const chatobj = (await queue.add(async () => {try{const val = await bot.getChat(data.moderationInfo.UserHistory.group.groupID)
@@ -211,7 +214,8 @@ const update = async (timestampNew: number, timestampLastUpdated: number,botaddr
         const fedNotificationChannel = settings.federation_id ? getFederationChannel(db, 'telegram',settings.federation_id) : ""
 
         const msgLink = data.moderationInfo.message;
-        const realityURL = `https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${data.moderationInfo.id}`;
+        const template_id = settings.lang === 'es'? Number(process.env.TEMPLATE_ID_ES): Number(process.env.TEMPLATE_ID_EN)
+        const realityURL = `https://reality.eth.limo/app/#!/template/${template_id}/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${data.moderationInfo.id}`;
         const disputeURL = `https://resolve.kleros.io/cases/${BigNumber.from(data.id).toNumber()}`;
         // settings[1] language
         try{
@@ -278,7 +282,8 @@ const update = async (timestampNew: number, timestampLastUpdated: number,botaddr
         const fedNotificationChannel = settings.federation_id ? getFederationChannel(db, 'telegram',settings.federation_id) : ""
         // settings[1] language
         try{
-            const realityURL = `https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${data.moderationInfo.id}`;
+            const template_id = settings.lang === 'es'? Number(process.env.TEMPLATE_ID_ES): Number(process.env.TEMPLATE_ID_EN)
+            const realityURL = `https://reality.eth.limo/app/#!/template/${template_id}/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${data.moderationInfo.id}`;
             const answer = data.currentAnswer === "0x0000000000000000000000000000000000000000000000000000000000000001" ? (settings.lang === 'en'? "yes": 'si') : "no";
             //console.log('answeredbeg')
             const chat = (await queue.add(async () => {try{const val = await bot.getChat(data.moderationInfo.UserHistory.group.groupID)
@@ -519,7 +524,8 @@ const handleTelegramUpdate = async (db: any, bot: TelegramBot, settings: groupSe
 
         const ban_level_current =  calculateHistory.length
         const groups = settings.federation_id? getGroupsInAndFollowingFederation(db,'telegram',settings.federation_id) : [{group_id: moderationInfo.UserHistory.group.groupID}]
-        const realityURL = `https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${moderationInfo.id}`;
+        const template_id = settings.lang === 'es'? Number(process.env.TEMPLATE_ID_ES): Number(process.env.TEMPLATE_ID_EN)
+        const realityURL = `https://reality.eth.limo/app/#!/template/${template_id}/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${moderationInfo.id}`;
         if(restrict && finalize && ban_level_current > ban_level_history && ban_level_current <= warnings){
             // finalize warning
             if(settings.enforcement){
