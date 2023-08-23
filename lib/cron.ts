@@ -581,7 +581,7 @@ const handleTelegramUpdate = async (db: any, bot: TelegramBot, settings: groupSe
                         // this report changed penalties, recalculate all
                         //console.log(moderationInfo.UserHistory.group.groupID)
                         for (const group of groups){
-                            queue.add(async () => {try{await bot.banChatMember(group.group_id, moderationInfo.UserHistory.user.userID, parole)}catch (e){console.log(e)}});
+                            queue.add(async () => {try{await (bot as any).banChatMember(group.group_id, moderationInfo.UserHistory.user.userID, {until_date: parole})}catch (e){console.log(e)}});
                         }
                     } else if(!finalize){
                         const options = {permissions: {can_send_messages: false, can_send_audios: false, can_send_documents: false, can_send_photos: false, can_send_videos: false, can_send_video_notes: false, can_send_voice_notes: false, can_send_polls: false, can_send_other_messages: false, can_add_web_page_previews: false, can_change_info: false, can_pin_messages: false, can_invite_users: false, can_manage_topics: false}, until_date: parole};
