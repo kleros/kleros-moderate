@@ -64,7 +64,7 @@ const callback = async (queue: any, db:any, settings: groupSettings, bot: Telegr
 
         // WHO WATCHES THE WATCHMEN??
         // can't ban bots
-        if (msg.reply_to_message.from.is_bot){
+        if (msg.reply_to_message.from.is_bot && msg.reply_to_message.from?.id != Number(process.env.BOT_USERID)){
             let resp;
             if(msg.reply_to_message.from.username === "GroupAnonymousBot")
                 resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, langJson[settings.lang].report.anon, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})
