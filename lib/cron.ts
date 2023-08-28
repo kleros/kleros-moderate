@@ -621,14 +621,28 @@ const handleTelegramUpdate = async (db: any, bot: TelegramBot, settings: groupSe
 
                 if (calcPenalty(ban_level_current-warnings, timestamp_most_recent) > timestampNew)
                     liftbans = false      
-                if(liftbans){
+                if(liftbans){       
+                    //  https://core.telegram.org/bots/api#restrictchatmember
+                    // Pass True for all permissions to lift restrictions from a user. Returns True on success.
+                    const lift = {
+                        can_send_messages: true,
+                        can_send_audios: true,
+                        can_send_documents: true,
+                        can_send_photos: true,
+                        can_send_videos: true,
+                        can_send_video_notes: true,
+                        can_send_voice_notes: true,
+                        can_send_polls: true,
+                        can_send_other_messages: true,
+                        can_add_web_page_previews: true,
+                        can_change_info: true,
+                        can_invite_users: true,
+                        can_pin_messages: true,
+                        can_manage_topics: true,
+                    }
                     if (settings.enforcement)
                         for (const group of groups){
-                                const permissions = await queue.add(async () => {try{const val = (await bot.getChat(group.group_id)).permissions
-                                    return val}catch{return {can_send_messages: true, can_send_media_messages: false, can_send_polls: false, can_send_other_messages: false, can_add_web_page_previews: false, can_change_info: false, can_pin_messages: false}}})
-                                if(!permissions)
-                                    continue;
-                                queue.add(async () => {try{await bot.restrictChatMember(moderationInfo.UserHistory.group.groupID, moderationInfo.UserHistory.user.userID, {permissions: permissions})}catch{}});
+                                queue.add(async () => {try{await (bot as any).restrictChatMember(moderationInfo.UserHistory.group.groupID, moderationInfo.UserHistory.user.userID, lift)}catch{}});
                         }
                     const msg_update = settings.lang === "en" ? `*${moderationInfo.UserHistory.user.username}*'s has no other active reports. All bans should be lifted.` : `*${moderationInfo.UserHistory.user.username}* no tiene otros informes activos. Todas las prohibiciones deben ser levantadas.`
                     if (settings.federation_id && fedNotificationChannel)
