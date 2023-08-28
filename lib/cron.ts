@@ -628,7 +628,7 @@ const handleTelegramUpdate = async (db: any, bot: TelegramBot, settings: groupSe
                                     return val}catch{return {can_send_messages: true, can_send_media_messages: false, can_send_polls: false, can_send_other_messages: false, can_add_web_page_previews: false, can_change_info: false, can_pin_messages: false}}})
                                 if(!permissions)
                                     continue;
-                                queue.add(async () => {try{await bot.restrictChatMember(moderationInfo.UserHistory.group.groupID, moderationInfo.UserHistory.user.userID, permissions)}catch{}});
+                                queue.add(async () => {try{await bot.restrictChatMember(moderationInfo.UserHistory.group.groupID, moderationInfo.UserHistory.user.userID, {permissions: permissions})}catch{}});
                         }
                     const msg_update = settings.lang === "en" ? `*${moderationInfo.UserHistory.user.username}*'s has no other active reports. All bans should be lifted.` : `*${moderationInfo.UserHistory.user.username}* no tiene otros informes activos. Todas las prohibiciones deben ser levantadas.`
                     if (settings.federation_id && fedNotificationChannel)
