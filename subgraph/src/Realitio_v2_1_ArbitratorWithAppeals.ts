@@ -103,11 +103,11 @@ import {
     let contract = Realitio_v2_1_ArbitratorWithAppealsContract.bind(event.address)
     let callResult = contract.try_arbitrationRequests(event.params._localDisputeID)
     if (!callResult || callResult.reverted){
-      log.error('Moderation Info not found {}.',[event.params._localDisputeID.toHexString()]);
+      log.error('Dispute ID not found {}.',[event.params._localDisputeID.toHexString()]);
       return;
     }
     
-    let disputeID = callResult.value.getDisputeID()
+    let disputeID = callResult.value.value2;
     let moderationDispute = ModerationDispute.load(disputeID.toHexString());
     if (!moderationDispute){
       log.error('Moderation Dispute not found {}.',[disputeID.toHexString()])

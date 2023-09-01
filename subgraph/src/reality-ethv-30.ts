@@ -14,7 +14,13 @@ export function handleLogNotifyOfArbitrationRequest(event: LogNotifyOfArbitratio
     return
   }
 
-  if(moderationInfo.deadline < event.block.timestamp)
+  let realityCheck = RealityCheck.load(event.params.question_id.toHexString())
+  if (!realityCheck){
+    log.error('no reality answers found. {}',[event.params.question_id.toHexString()])
+    return;
+  }
+
+  if(realityCheck.deadline < event.block.timestamp)
     return;
 
   let userHistory = UserHistory.load(moderationInfo.UserHistory)
@@ -68,12 +74,13 @@ export function handleLogNewAnswer(event: LogNewAnswer): void {
     return
   }
 
-  if(moderationInfo.deadline < event.block.timestamp)
-    return;
-
   let realityCheck = RealityCheck.load(event.params.question_id.toHexString())
   if (!realityCheck)
     realityCheck = new RealityCheck(event.params.question_id.toHexString())
+
+
+  if(realityCheck.deadline.equals(BigInt.fromU64(0)) && event.block.timestamp.lt(moderationInfo.deadline))
+    return;
 
   let userHistory = UserHistory.load(moderationInfo.UserHistory)
   if (!userHistory){
@@ -82,7 +89,7 @@ export function handleLogNewAnswer(event: LogNewAnswer): void {
   }
   let group = Group.load(userHistory.group);
   if (!group){
-    log.error('usrhistory group missing {}',[userHistory.group]);
+    log.error('userhistory group missing {}',[userHistory.group]);
     return;
   }
 

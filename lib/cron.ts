@@ -666,7 +666,6 @@ const moderationInfoContent = `        id
 message
 messageBackup
 moderationType
-deadline
 rulesUrl
 UserHistory{
     countBrokeRulesArbitrated
@@ -714,9 +713,6 @@ return `{
             currentRuling
             ${moderationInfo}
         }
-        realityQuestionUnansweredFinalized: moderationInfos(first: 1000, skip: ${lastPageUpdated*1000}, where: {deadline_gt: ${timestampLastUpdated}, deadline_lt: ${timestampNew}, reality: null, askedBy: "${botaddress}"}) {
-            ${moderationInfoContent}
-        }
         realityQuestionAnsweredFinalized: realityChecks(first: 1000, skip: ${lastPageUpdated*1000}, where: {deadline_gt: ${timestampLastUpdated}, dispute: null, deadline_lt: ${timestampNew}, moderationInfo_: {askedBy: "${botaddress}"}}) {
             id
             deadline
@@ -727,6 +723,7 @@ return `{
         }
         realityQuestionAnsweredNotFinalized: realityChecks(first: 1000, skip: ${lastPageUpdated*1000}, where: {deadline_gt: ${timestampNew}, dispute: null, timestampLastUpdated_gt: ${timestampLastUpdated}, timestampLastUpdated_lt: ${timestampNew}, moderationInfo_: {askedBy: "${botaddress}"}}) {
             id
+            deadline
             timestampLastUpdated
             currentAnswer
             ${moderationInfo}
