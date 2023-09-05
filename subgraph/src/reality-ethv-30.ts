@@ -75,12 +75,13 @@ export function handleLogNewAnswer(event: LogNewAnswer): void {
   }
 
   let realityCheck = RealityCheck.load(event.params.question_id.toHexString())
-  if (!realityCheck)
+  if (!realityCheck){
+    if(event.block.timestamp.gt(moderationInfo.deadline)){
+      log.error('reality question expired. qid: {}, ts: {}, deadline: {}',[event.params.question_id.toHexString(), event.block.timestamp.toString(), moderationInfo.deadline.toString()])
+      return;
+    }
     realityCheck = new RealityCheck(event.params.question_id.toHexString())
-
-
-  if(realityCheck.deadline.equals(BigInt.fromU64(0)) && event.block.timestamp.lt(moderationInfo.deadline))
-    return;
+  }
 
   let userHistory = UserHistory.load(moderationInfo.UserHistory)
   if (!userHistory){

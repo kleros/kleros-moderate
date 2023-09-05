@@ -11,7 +11,7 @@ import {
   export function handleAppealPossible(event: AppealPossibleEvent): void {
     let dispute = ModerationDispute.load(event.params._disputeID.toHexString())
     if (!dispute){
-      log.error("Disput not found {}.", [event.params._disputeID.toHexString()])
+      log.error("Moderation Dispute not found {}.", [event.params._disputeID.toHexString()])
       return;
     }
 
