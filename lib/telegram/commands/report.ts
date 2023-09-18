@@ -118,8 +118,7 @@ const callback = async (queue: any, db:any, settings: groupSettings, bot: Telegr
             return;
         }
 
-
-        const rules = getRule(db, 'telegram', String(msg.chat.id), isAdmin ?  msg.reply_to_message.date: Math.floor(Date.now()/1000))?.rules;
+        const rules = getRule(db, 'telegram', String(msg.chat.id), msg.reply_to_message.date)?.rules;
 
         if (!rules){
             const resp = await queue.add(async () => {try{const val = await bot.sendMessage(msg.chat.id, langJson[settings.lang].report.norules, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})
