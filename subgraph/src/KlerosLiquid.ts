@@ -11,12 +11,12 @@ import {
   export function handleAppealPossible(event: AppealPossibleEvent): void {
     let dispute = ModerationDispute.load(event.params._disputeID.toHexString())
     if (!dispute){
-      log.error("Disput not found {}.", [event.params._disputeID.toHexString()])
+      log.error("Moderation Dispute not found {}.", [event.params._disputeID.toHexString()])
       return;
     }
 
-    let currentRuling = getCurrentRulling(event.params._disputeID, event.address)
     dispute.currentRuling = getCurrentRulling(event.params._disputeID, event.address)
+    dispute.rulingFunded = null;
     dispute.timestampLastAppealPossible = event.block.timestamp
     dispute.save()
 }
@@ -27,7 +27,7 @@ export function handleAppealDecision(event: AppealDecisionEvent): void {
     log.error("Disput not found {}.", [event.params._disputeID.toHexString()])
     return;
   }
-  dispute.timestampLastAppealPossible = event.block.timestamp
+  dispute.timestampLastAppeal = event.block.timestamp
   dispute.save()
 }
 

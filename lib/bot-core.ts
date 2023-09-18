@@ -31,7 +31,7 @@ export const reportUser = (batchedSend:any, lang: string, hasBanningPermission: 
 
     return {
         questionId: questionId,
-        questionUrl: `https://reality.eth.limo/app/#!/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${questionId}`
+        questionUrl: `https://reality.eth.limo/app/#!/template/${template_id}/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${questionId}`
     };
 
 }

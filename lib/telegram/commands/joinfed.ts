@@ -16,7 +16,7 @@ myCache.on("expired",function(key,value){
  */
 const regexp = /\/joinfed\s?(.+)?/
 
-const callback = async (queue: any, db: any, settings: groupSettings, bot: any, botId: string, msg: any, match: string[]) => {
+const callback = async (queue: any, db: any, settings: groupSettings, bot: TelegramBot, botId: string, msg: any, match: string[]) => {
     try{
         if (!myBot)
             myBot = bot
