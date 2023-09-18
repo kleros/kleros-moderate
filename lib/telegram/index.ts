@@ -327,6 +327,9 @@ commands.forEach((command) => {
             if(!hasStarted(msg.chat.id) && (command !== help && command !== start)){
                 return;
             }
+            if(hasStarted(msg.chat.id) && (command == start)){
+                return;
+            }
 
             if (msg.chat.type !== "private" && adminOnlyCommands.indexOf(command)!==-1){
                 var status = myCache.get("status"+msg.chat.id+msg.from.id)
