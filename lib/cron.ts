@@ -209,8 +209,8 @@ const update = async (timestampNew: number, timestampLastUpdated: number,botaddr
 
     for (const data of moderationActions.disputesAppeal) {
         isUpdated = true
-        if (data.timestampLastUpdated > timestampUpdated)
-            timestampUpdated = data.timestampLastUpdated
+        if (data.timestampLastAppealPossible > timestampUpdated)
+            timestampUpdated = data.timestampLastAppealPossible
         const settings = validate(data.moderationInfo.UserHistory.group.groupID);
         const fedNotificationChannel = settings.federation_id ? getFederationChannel(db, 'telegram',settings.federation_id) : ""
 
@@ -247,8 +247,8 @@ const update = async (timestampNew: number, timestampLastUpdated: number,botaddr
 
     for (const data of moderationActions.disputesAppealFunded) {
         isUpdated = true
-        if (data.timestampLastUpdated > timestampUpdated)
-            timestampUpdated = data.timestampLastUpdated
+        if (data.timestampLastAppealPossible > timestampUpdated)
+            timestampUpdated = data.timestampLastAppealPossible
         const settings = validate(data.moderationInfo.UserHistory.group.groupID);
         const fedNotificationChannel = settings.federation_id ? getFederationChannel(db, 'telegram',settings.federation_id) : ""
 
