@@ -206,6 +206,45 @@ const update = async (timestampNew: number, timestampLastUpdated: number,botaddr
         }
     }
 
+
+    for (const data of moderationActions.disputesAppeal) {
+        isUpdated = true
+        if (data.timestampLastUpdated > timestampUpdated)
+            timestampUpdated = data.timestampLastUpdated
+        const settings = validate(data.moderationInfo.UserHistory.group.groupID);
+        const fedNotificationChannel = settings.federation_id ? getFederationChannel(db, 'telegram',settings.federation_id) : ""
+
+        const msgLink = data.moderationInfo.message;
+        const template_id = settings.lang === 'es'? Number(process.env.TEMPLATE_ID_ES): Number(process.env.TEMPLATE_ID_EN)
+        const realityURL = `https://reality.eth.limo/app/#!/template/${template_id}/network/${process.env.CHAIN_ID}/question/${process.env.REALITY_ETH_V30}-${data.moderationInfo.id}`;
+        const disputeURL = `https://resolve.kleros.io/cases/${BigNumber.from(data.id).toNumber()}`;
+        // settings[1] language
+        try{
+            const chatobj = (await queue.add(async () => {try{const val = await bot.getChat(data.moderationInfo.UserHistory.group.groupID)
+                return val}catch{}}))
+            const chatname = chatobj?.title
+            const isPrivate = !chatobj.active_usernames
+            const invite_url= isPrivate? '' : `https://t.me/${chatobj?.active_usernames[0]}`
+            if (settings.lang === "en"){
+                if (fedNotificationChannel)
+                    queue.add(async () => {try{await bot.sendMessage(fedNotificationChannel, `An appeal has been created in the dispute over the [question](${realityURL}) about [${data.moderationInfo.UserHistory.user.username}](tg://user?id=${data.moderationInfo.UserHistory.user.userID})'s conduct due to the [message](${msgLink}) ([backup](${data.moderationInfo.messageBackupup})). Juror's voted in the previous round that *${data.moderationInfo.UserHistory.user.username}*'s conduct ${data.currentRuling == 2? 'broke the rules': 'did not break the rules'}. The contribution funded ${data.RulingFunded == data.currentRuling ? 'the previous round winning option': 'a different option that the previous round'}. If you think the funded option is incorrect, you can win some of their deposit by funding the correct side of the [appeal](${disputeURL})`, {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
+                else
+                    queue.add(async () => {try{await bot.sendMessage(settings.channelID, `An appeal has been created in the dispute over the [question](${realityURL}) about [${data.moderationInfo.UserHistory.user.username}](tg://user?id=${data.moderationInfo.UserHistory.user.userID})'s conduct due to the [message](${msgLink}) ([backup](${data.moderationInfo.messageBackupup})). Juror's voted in the previous round that *${data.moderationInfo.UserHistory.user.username}*'s conduct ${data.currentRuling == 2? 'broke the rules': 'did not break the rules'}. The contribution funded ${data.RulingFunded == data.currentRuling ? 'the previous round winning option': 'a different option that the previous round'}. If you think the funded option is incorrect, you can win some of their deposit by funding the correct side of the [appeal](${disputeURL})`, settings.thread_id_notifications? {message_thread_id: Number(settings.thread_id_notifications), parse_mode: 'Markdown',disable_web_page_preview: true}: {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
+                if (settings.channelID !== process.env.SUSIE_SUPPORT_EN)
+                    queue.add(async () => {try{await bot.sendMessage(process.env.SUSIE_SUPPORT_EN, `An appeal has created in the dispute over the [question](${realityURL}) about *${data.moderationInfo.UserHistory.user.username}*'s conduct due to the [message](${msgLink}) ([backup](${data.moderationInfo.messageBackupup})) in the group ${chatname}[${invite_url}]. Juror's voted in the previous round that *${data.moderationInfo.UserHistory.user.username}*'s conduct ${data.currentRuling == 2? 'broke the rules': 'did not break the rules'}. The contribution funded ${data.RulingFunded == data.currentRuling ? 'the previous round winning option': 'a different option that the previous round'}. If you think the funded option is incorrect, you can win some of their deposit by funding the correct side of the [appeal](${disputeURL})`, {message_thread_id: Number(process.env.JUSTICE_LEAGUE_EN), parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
+            } else {
+                if (fedNotificationChannel)
+                    queue.add(async () => {try{await bot.sendMessage(fedNotificationChannel, `Se ha creado una apelación en la disputa sobre la [pregunta](${realityURL}) acerca de la conducta de [${data.moderationInfo.UserHistory.user.username}](tg://user?id=${data.moderationInfo.UserHistory.user.userID})'s debido al [mensaje](${msgLink}) ([backup](${data.moderationInfo.messageBackupup})). El jurado votó en la ronda anterior que la conducta de *${data.moderationInfo.UserHistory.user.username}* ${data.currentRuling == 2? 'infringió las normas': 'no infringió las normas'}. La contribución financió ${data.RulingFunded == data.currentRuling ? 'la opción ganadora de la ronda anterior': 'una opción diferente a la de la ronda anterior'}. Si crees que la opción financiada es incorrecta, puedes ganar parte de su depósito financiando la parte correcta del [apelación](${disputeURL})`, {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
+                else
+                    queue.add(async () => {try{await bot.sendMessage(settings.channelID, `Se ha creado una apelación en la disputa sobre la [pregunta](${realityURL}) acerca de la conducta de [${data.moderationInfo.UserHistory.user.username}](tg://user?id=${data.moderationInfo.UserHistory.user.userID})'s debido al [mensaje](${msgLink}) ([backup](${data.moderationInfo.messageBackupup})). El jurado votó en la ronda anterior que la conducta de *${data.moderationInfo.UserHistory.user.username}* ${data.currentRuling == 2? 'infringió las normas': 'no infringió las normas'}. La contribución financió ${data.RulingFunded == data.currentRuling ? 'la opción ganadora de la ronda anterior': 'una opción diferente a la de la ronda anterior'}. Si crees que la opción financiada es incorrecta, puedes ganar parte de su depósito financiando la parte correcta del [apelación](${disputeURL})`, settings.thread_id_notifications? {message_thread_id: Number(settings.thread_id_notifications), parse_mode: 'Markdown',disable_web_page_preview: true}: {parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
+                if (settings.channelID !== process.env.SUSIE_SUPPORT_ES)
+                    queue.add(async () => {try{await bot.sendMessage(process.env.SUSIE_SUPPORT_ES, `Se ha creado una apelación en la disputa sobre la [pregunta](${realityURL}) acerca de la conducta de *${data.moderationInfo.UserHistory.user.username}* debido al [mensaje](${msgLink}) ([backup](${data.moderationInfo.messageBackupup})) en el grupo ${chatname}[${invite_url}]. El jurado votó en la ronda anterior que la conducta de *${data.moderationInfo.UserHistory.user.username}* ${data.currentRuling == 2? 'infringió las normas': 'no infringió las normas'}. La contribución financió ${data.RulingFunded == data.currentRuling ? 'la opción ganadora de la ronda anterior': 'una opción diferente a la de la ronda anterior'}. Si crees que la opción financiada es incorrecta, puedes ganar parte de su depósito financiando la parte correcta del [apelación](${disputeURL})`, {message_thread_id: Number(process.env.JUSTICE_LEAGUE_ES), parse_mode: 'Markdown',disable_web_page_preview: true})}catch{}});
+            }
+        } catch(e){
+            console.log(e)
+        }
+    }
+
     for (const data of moderationActions.disputesAppealFunded) {
         isUpdated = true
         if (data.timestampLastUpdated > timestampUpdated)
