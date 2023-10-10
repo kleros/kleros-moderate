@@ -1,0 +1,53 @@
+name: Deploy Subgraph
+
+on:
+  workflow_dispatch:
+    inputs:
+      network:
+        description: The network to deploy the subgraph to
+        default: 'gnosis'
+        required: true
+        type: choice
+        options:
+          - gnosis
+          - goerli
+      subgraph_name:
+        description: The subgraph project name typically as [account]/[project]-[network]
+        default: kleros/moderate-gnosis
+        required: true
+      environment:
+        description: 'The environment to deploy to'
+        default: 'production'
+        required: true
+        type: environment
+
+jobs:
+  buildAndDeploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 16
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Build subgraph
+        run: |
+          yarn graph codegen
+          yarn graph build --network ${{ inputs.network }}
+        working-directory: subgraph
+
+      - name: Authenticate with TheGraph
+        run: yarn graph auth --product hosted-service "${{ secrets.SUBGRAPH_AUTH_TOKEN }}"
+        working-directory: subgraph
+
+      - name: Deploy subgraph
+        run: yarn graph deploy --product hosted-service --network "${{ inputs.network }}" "${{ inputs.subgraph_name }}"
+        working-directory: subgraph
+ 
