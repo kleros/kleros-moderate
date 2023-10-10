@@ -35,7 +35,7 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
         // if toggling on captcha, turn on greetings
         if (!settings.captcha)
             setGreetingMode(db, 'telegram', String(msg.chat.id),1)
-        const msgcaptcha = settings.captcha? langJson[settings.lang].off : langJson[settings.lang].captcha.on
+        const msgcaptcha = settings.captcha? langJson[settings.lang].captcha.off : langJson[settings.lang].captcha.on
         queue.add(async () => {try{await bot.sendMessage(msg.chat.id, msgcaptcha, msg.chat.is_forum? {message_thread_id: msg.message_thread_id}: {})}catch{}});
     } catch(e){
         console.log(e)

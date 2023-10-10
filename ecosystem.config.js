@@ -1,7 +1,7 @@
 module.exports = {
     apps : [{
         name: 'moderator_telegram_bot',
-        script: 'yarn',
+        script: './yarn.sh',
         args: 'start-telegram-bot',
         interpreter: '/bin/bash',
         log_date_format : 'YYYY-MM-DD HH:mm Z',
@@ -13,7 +13,7 @@ module.exports = {
     },
     {
         name: 'moderator_cron',
-        script: 'yarn',
+        script: './yarn.sh',
         args: 'cron',
         interpreter: '/bin/bash',
         log_date_format : 'YYYY-MM-DD HH:mm Z',

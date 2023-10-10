@@ -4,11 +4,11 @@ schema:
 dataSources:
   - kind: ethereum
     name: RealityETHV30
-    network: goerli #goerli #xdai 
+    network: xdai #goerli #xdai 
     source:
-      address: "0x6F80C5cBCF9FbC2dA2F0675E56A5900BB70Df72f" # "0x6F80C5cBCF9FbC2dA2F0675E56A5900BB70Df72f" #<-- goerli, xdai "0xE78996A233895bE74a66F451f1019cA9734205cc"
+      address: "0xE78996A233895bE74a66F451f1019cA9734205cc" # "0x6F80C5cBCF9FbC2dA2F0675E56A5900BB70Df72f" #<-- goerli, xdai "0xE78996A233895bE74a66F451f1019cA9734205cc"
       abi: RealityETHV30
-      startBlock: 7913496  #7913496  # <--- goerli, xdai 23143918
+      startBlock: 29114503  #7913496  # <--- goerli, xdai 29114503
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -32,11 +32,11 @@ dataSources:
       file: ./src/reality-ethv-30.ts
   - kind: ethereum
     name: Realitio_v2_1_ArbitratorWithAppeals
-    network: goerli #xdai
+    network: xdai #xdai
     source:
-      address: "0x0a3fBb60D41F0Ec10f9E76368dd4e506885c3E7d" #goerli "0x0a3fBb60D41F0Ec10f9E76368dd4e506885c3E7d" #xdai 0x17BBc6405e3Cbc452A993E5C23e460980BBeC83F
+      address: "0xe04f5791d671d5C4e08ab49b39807087B591ea3e" #goerli "0x0a3fBb60D41F0Ec10f9E76368dd4e506885c3E7d" #xdai 0xe04f5791d671d5c4e08ab49b39807087b591ea3e
       abi: Realitio_v2_1_ArbitratorWithAppeals
-      startBlock: 8034496   #8034496  #goerli, xdai 23143918
+      startBlock: 29114503   #8034496  #goerli, xdai 29114503
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -58,11 +58,11 @@ dataSources:
       file: ./src/Realitio_v2_1_ArbitratorWithAppeals.ts
   - kind: ethereum
     name: Realitio_v2_1_ArbitratorWithAppeals_ES
-    network: goerli #xdai
+    network: xdai #xdai
     source:
-      address: "0x8f0b33ab30D4073E0772A688A18E937beE34cd65" #goerli "0x8f0b33ab30D4073E0772A688A18E937beE34cd65" #xdai 0x17BBc6405e3Cbc452A993E5C23e460980BBeC83F
+      address: "0x54068a67441a950ff33afa5a3247acc7188d0789" #goerli "0x8f0b33ab30D4073E0772A688A18E937beE34cd65" #xdai 0x1b433086a5c224a202fe55ef0169d1a7c1cbe584
       abi: Realitio_v2_1_ArbitratorWithAppeals
-      startBlock: 8034496   #8034496  #goerli, xdai 23143918
+      startBlock: 29114503   #8034496  #goerli, xdai 29114503
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6
@@ -84,11 +84,11 @@ dataSources:
       file: ./src/Realitio_v2_1_ArbitratorWithAppeals.ts
   - kind: ethereum
     name: KlerosLiquid
-    network: goerli #xdai
+    network: xdai #xdai
     source:
-      address: "0x1128eD55ab2d796fa92D2F8E1f336d745354a77A" # "0x1128eD55ab2d796fa92D2F8E1f336d745354a77A" # goerli # gnosis 0x9C1dA9A04925bDfDedf0f6421bC7EEa8305F9002
+      address: "0x9C1dA9A04925bDfDedf0f6421bC7EEa8305F9002" # "0x1128eD55ab2d796fa92D2F8E1f336d745354a77A" # goerli # gnosis 0x9C1dA9A04925bDfDedf0f6421bC7EEa8305F9002
       abi: KlerosLiquid
-      startBlock: 8034496  #goerli, 8034496 xdai 23143918
+      startBlock: 29114503  #goerli, 8034496 xdai 29114503
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.6

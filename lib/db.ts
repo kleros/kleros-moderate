@@ -616,8 +616,11 @@ const getLocalBanHistory = (db: any, platform: string, userId: string, group_id:
     const banLevel2 = getLocalBanHistoryInduction(db,platform,userId,group_id,banLevel1.timestamp, finalized)
     if(!banLevel2)
         return [base, banLevel1]
+    const banLevel3 = getLocalBanHistoryInduction(db,platform,userId,group_id,banLevel2.timestamp, finalized)
+    if(!banLevel2)
+        return [base, banLevel1, banLevel2]
 
-    return [base, banLevel1, banLevel2]
+    return [base, banLevel1, banLevel2, banLevel3]
 }
 
 const getLocalBanHistoryBase = (db: any, platform: string, userId: string, group_id: string, finalized: boolean, timestamp_forgiven: number) => {
@@ -661,8 +664,11 @@ const getFederatedBanHistory = (db: any, platform: string, userId: string, feder
     const banLevel2 = getFederatedBanHistoryInduction(db,platform,userId,federation_id,banLevel1.timestamp, finalized)
     if(!banLevel2)
         return [base, banLevel1]
+    const banLevel3 = getFederatedBanHistoryInduction(db,platform,userId,federation_id,banLevel2.timestamp, finalized)
+    if(!banLevel3)
+        return [base, banLevel1, banLevel2]
 
-    return [base, banLevel1, banLevel2]
+    return [base, banLevel1, banLevel2, banLevel3]
     }
 
 const getFederatedBanHistoryBase = (db: any, platform: string, userId: string, federation_id: string, finalized: boolean, timestamp_forgiven: number) => {
@@ -718,8 +724,11 @@ const getFederatedFollowingBanHistory = (db: any, platform: string, userId: stri
     const banLevel2 = getFederatedFollowingBanHistoryInduction(db,platform,userId,group_id,federation_id,banLevel1.timestamp, finalized)
     if(!banLevel2)
         return [base, banLevel1]
+    const banLevel3 = getFederatedFollowingBanHistoryInduction(db,platform,userId,group_id,federation_id,banLevel2.timestamp, finalized)
+    if(!banLevel2)
+        return [base, banLevel1, banLevel2]
 
-    return [base, banLevel1, banLevel2]
+    return [base, banLevel1, banLevel2, banLevel3]
     }
 
 const getFederatedFollowingBanHistoryBase = (db: any, platform: string, userId: string, group_id: string, federation_id: string, finalized: boolean, timestamp_forgiven: number) => {
