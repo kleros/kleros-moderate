@@ -1,5 +1,4 @@
 import * as TelegramBot from "node-telegram-bot-api";
-import { getQuestionId } from "../../graph";
 import {getFederationChannel, getFederatedInviteURLChannel} from "../../db";
 import  {reportMsg} from "./report";
 import langJson from "../assets/langNew.json";

@@ -50,15 +50,11 @@ const exit = async () => {
             last_block: currentBlock
         }
 
-    console.log(history.last_timestamp)
-    console.log(history.last_block)
-
     let timestampLastUpdated = history.last_timestamp
-    console.log('##LASTUPDATED')
-    console.log(timestampLastUpdated)
+
+    
     timestampLastUpdated = await update(currentTime, timestampLastUpdated, botaddress);
-    console.log('##LASTUPDATED')
-    console.log(timestampLastUpdated)
+
     const updateBlock = Math.min(history.last_block+1000, currentBlock)
 
     history.last_block = updateBlock

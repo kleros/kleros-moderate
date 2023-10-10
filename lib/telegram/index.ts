@@ -91,7 +91,7 @@ const delay = (delayInms) => {
 bot.on("my_chat_member", async function(myChatMember: any) {
     try{
         const lang_code = myChatMember?.from?.language_code
-        console.log(myChatMember)
+
         if(throttled(myChatMember.from.id))
             return
         if(myChatMember.new_chat_member.status === "left"){
@@ -101,7 +101,7 @@ bot.on("my_chat_member", async function(myChatMember: any) {
         }
 
         const settings = validate(myChatMember.chat, lang_code);
-        console.log('HMMMMMM')
+
         if(myChatMember.chat.type === "channel"){
             await delay(2000);
             if( myChatMember.new_chat_member.status === "administrator"){
@@ -128,37 +128,10 @@ bot.on("my_chat_member", async function(myChatMember: any) {
     }
 });
 
-/*  Forward messages to Susie for appeal
-// include "member" in allowed updates to work
-
-bot.on("message", async function (msg: TelegramBot.Message) {
-    if (msg.chat.type !== "private")
-        return;
-    console.log(msg)
-})
-*/
-//invite_url only present in private groups
-// include "chat_member" in allowed updates to work
-/*
-bot.on("chat_member", async function (msg: any) {
-    if (msg.new_chat_member){
-        if(msg.invite_link?.creator?.is_bot){
-            const options = {can_send_messages: false, can_send_media_messages: false, can_send_polls: false, can_send_other_messages: false, can_add_web_page_previews: false, can_change_info: false, can_pin_messages: false};
-            bot.restrictChatMember(msg.chat.id, msg.new_chat_member.id, options)
-        }
-        else{
-            const options = await bot.getChat(msg.chat.id).permissions
-            bot.restrictChatMember(msg.chat.id, msg.new_chat_member.id, options)
-        }
-    }
-})
-*/
-
-
 bot.on("new_chat_members", async function (chatMemberUpdated: any) {
     if(!chatMemberUpdated.new_chat_member?.id)
         return;
-    console.log(chatMemberUpdated)
+
     if(!hasStarted(chatMemberUpdated.chat.id)||throttled(chatMemberUpdated.new_chat_member?.id)||chatMemberUpdated.chat.type !== "supergroup")
         return;    
 
@@ -224,14 +197,11 @@ bot.on('callback_query', async function onCallbackQuery(callbackQuery: TelegramB
             console.log(e)
         }
     } else if (Number(calldata[0]) === 5){
-        console.log(calldata)
-        console.log(callbackQuery.from.id)
         if (callbackQuery.from.id !== Number(calldata[1]))
             return;
         const penalized = checkHistory(callbackQuery.message.chat, callbackQuery.from.id)
         const permissions = await queue.add(async () => {try{const val = (await bot.getChat(callbackQuery.message.chat.id)).permissions
             return val}catch (e){console.log(e)}})
-        console.log(permissions)
         if(!permissions)
             return
         if (!penalized)
@@ -247,8 +217,6 @@ bot.on('callback_query', async function onCallbackQuery(callbackQuery: TelegramB
             start.callback(queue, db, settings,bot,String(botId),callbackQuery.message,[],batchedSend, true)
         }
     } else if (Number(calldata[0]) === 7){
-        console.log(callbackQuery.from.id)
-        console.log(Number(calldata[1]))
         if (callbackQuery.from.id !== Number(calldata[1]))
             return;
         setWarn(db, 'telegram', String(callbackQuery.message.chat.id), Number(calldata[2]))
@@ -453,9 +421,7 @@ const checkHistory = (chat: TelegramBot.Chat, userid: number): boolean => {
     
     const timestamp_forgiven = getForgiveness(db, 'telegram',String(chat.id), String(userid))
     const warnings = getWarn(db,'telegram',String(chat.id))
-    console.log('hmmm1')
     const settings = validate(chat);
-    console.log('hmmm2')
     let calculateHistory = []
     if (settings.federation_id)
         calculateHistory = getFederatedBanHistory(db, 'telegram', String(userid),settings.federation_id,true,timestamp_forgiven)
@@ -488,8 +454,6 @@ const checkHistory = (chat: TelegramBot.Chat, userid: number): boolean => {
     else 
         calculateHistoryActive = getLocalBanHistory(db, 'telegram', String(userid),String(chat.id),false,timestamp_forgiven)
 
-    console.log('wtf')
-    console.log(calculateHistoryActive)
     ban_level = Math.max(calculateHistoryActive.length - warnings, 0)
     if (ban_level > 0){
         var max_timestamp = 0
@@ -505,7 +469,7 @@ const checkHistory = (chat: TelegramBot.Chat, userid: number): boolean => {
         }
     } 
     if (calculateHistoryActive.length > 0)
-        return true
+        return true;
 }
 
 console.log('Telegram bot ready...');
