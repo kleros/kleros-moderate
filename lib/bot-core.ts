@@ -3,7 +3,6 @@ import {getRealityETHV30} from "./ethers";
 const _contract = require('./abi/RealityETH_v3_0.json')
 const Web3 = require('web3')
 const web3 = new Web3(process.env.WEB3_PROVIDER_URL)
-const ob = require('urbit-ob')
 
 const contract = new web3.eth.Contract(
     _contract,
