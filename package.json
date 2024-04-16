@@ -45,7 +45,7 @@
     "typechain:build": "npx typechain --target ethers-v5 --out-dir lib/typechain lib/abi/*.json",
     "graph:codegen": "cd subgraph && graph codegen",
     "graph:build": "cd subgraph && graph build",
-    "graph:deploy": "cd subgraph && graph deploy --node https://api.thegraph.com/deploy/ kleros/kleros-moderator-bot",
+    "graph:deploy": "cd subgraph && graph deploy --studio kleros-moderator-bot",
     "graph:create-local": "cd subgraph && graph create --node http://localhost:8020/ kleros/kleros-moderator-bot",
     "graph:remove-local": "cd subgraph && graph remove --node http://localhost:8020/ kleros/kleros-moderator-bot",
     "graph:deploy-local": "cd subgraph && graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 kleros/kleros-moderator-bot",
@@ -54,8 +54,9 @@
     "pm2:delete-all": "pm2 delete all",
     "postinstall": "yarn typechain:build"
   },
+  "packageManager": "yarn@1.22.21+sha1.1959a18351b811cdeedbd484a8f86c3cc3bbaf72",
   "volta": {
-    "node": "16.20.2",
-    "yarn": "1.22.19"
+    "node": "18.20.2",
+    "yarn": "1.22.22"
   }
 }
