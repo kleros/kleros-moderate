@@ -77,7 +77,7 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: Teleg
             if(!channelUserSusie)
             return
         if (channelUserSusie.status !== "administrator"){
-            const resp = await queue.add(async () => {try{const val = await bot.sendVideo(msg.chat.id, 'https://ipfs.kleros.io/ipfs/QmbnEeVzBjcAnnDKGYJrRo1Lx2FFnG62hYfqx4fLTqYKC7/guide.mp4', {caption: langJson[settings.lang].errorAdminRights})
+            const resp = await queue.add(async () => {try{const val = await bot.sendVideo(msg.chat.id, 'https://cdn.kleros.link/ipfs/QmbnEeVzBjcAnnDKGYJrRo1Lx2FFnG62hYfqx4fLTqYKC7/guide.mp4', {caption: langJson[settings.lang].errorAdminRights})
             return val}catch{}});
             if(!resp)
             return

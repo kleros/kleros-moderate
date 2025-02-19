@@ -119,7 +119,7 @@ bot.on("my_chat_member", async function(myChatMember: any) {
         else
             try{
                 const video = myChatMember.chat.is_forum? 'QmSdP3SDoHCdW739xLDBKM3gnLeeZug77RgwgxBJSchvYV/guide_topics.mp4' : 'QmbnEeVzBjcAnnDKGYJrRo1Lx2FFnG62hYfqx4fLTqYKC7/guide.mp4'
-                queue.add(async () => {try{await bot.sendVideo(myChatMember.chat.id, `https://ipfs.kleros.io/ipfs/${video}`, {caption: langJson[lang_code].index.supergroup})}catch{}});
+                queue.add(async () => {try{await bot.sendVideo(myChatMember.chat.id, `https://cdn.kleros.link/ipfs/${video}`, {caption: langJson[lang_code].index.supergroup})}catch{}});
             } catch(e){
                 console.log(e)
             }

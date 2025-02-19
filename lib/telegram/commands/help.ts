@@ -20,7 +20,7 @@ const helpnotifications = (queue: any, db: any, settings: groupSettings, bot: an
     const lang_code = msg?.from?.language_code
     try{
         queue.add(async () => {try{await bot.sendMessage(msg.chat.id, langJson[lang_code].help.Notifications1,{parse_mode: 'Markdown', disable_web_page_preview: true})}catch{}})
-    //queue.add(async () => {try{await bot.sendVideo(msg.chat.id, `https://ipfs.kleros.io/ipfs/QmaWKFxR8TNzWW1xDuzXe4XFE5wCFJVuFP6AKCQ3LRAQqB/Screen%20Recording%202022-12-13%20at%209.19.17%20PM(1).mp4`));
+    //queue.add(async () => {try{await bot.sendVideo(msg.chat.id, `https://cdn.kleros.link/ipfs/QmaWKFxR8TNzWW1xDuzXe4XFE5wCFJVuFP6AKCQ3LRAQqB/Screen%20Recording%202022-12-13%20at%209.19.17%20PM(1).mp4`));
     } catch(e){
         console.log(e)
     }
@@ -228,7 +228,7 @@ const respond = (queue: any, settings: groupSettings, bot: any, helpType: string
                 break;
             }
             case 'court': {
-                //https://ipfs.kleros.io/ipfs/QmZwVBdfALRWbjCLtLNSq9YceADCtP96hfPkg3Y6f6xWJk/KlerosModerate.png
+                //https://cdn.kleros.link/ipfs/QmZwVBdfALRWbjCLtLNSq9YceADCtP96hfPkg3Y6f6xWJk/KlerosModerate.png
                 queue.add(async () => {try{await bot.editMessageText(langJson[lang_code].help.Court1,optsResponse)}catch{}})
                 break;
             }

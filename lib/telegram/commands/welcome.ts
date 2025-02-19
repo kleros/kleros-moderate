@@ -16,7 +16,7 @@ const callback = async (queue: any, settings: groupSettings, bot: any, msg: any)
         const lang_code = msg?.from?.language_code
         queue.add(async () => {try{await bot.sendMessage(msg.chat.id, langJson[lang_code].welcome.welcome, msg.chat.is_forum?  {message_thread_id: msg.message_thread_id, parse_mode: "Markdown"}: {parse_mode: "Markdown"})}catch{}});  
         //const options = msg.chat.is_forum? {message_thread_id: msg.message_thread_id, caption: "To get started, give Susie admin rights."} : {caption: "To get started, give Susie admin rights."}
-        //bot.sendVideo(msg.chat.id, 'https://ipfs.kleros.io/ipfs/QmbnEeVzBjcAnnDKGYJrRo1Lx2FFnG62hYfqx4fLTqYKC7/guide.mp4', options);
+        //bot.sendVideo(msg.chat.id, 'https://cdn.kleros.link/ipfs/QmbnEeVzBjcAnnDKGYJrRo1Lx2FFnG62hYfqx4fLTqYKC7/guide.mp4', options);
     } catch (error) {
         console.log(error);   
     }
