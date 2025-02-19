@@ -17,7 +17,7 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
         if(botUser.status !== "administrator" || !botUser.can_restrict_members){
             const video = msg.chat.is_forum? 'QmSdP3SDoHCdW739xLDBKM3gnLeeZug77RgwgxBJSchvYV/guide_topics.mp4' : 'QmbnEeVzBjcAnnDKGYJrRo1Lx2FFnG62hYfqx4fLTqYKC7/guide.mp4'
             const msg_error = langJson[settings.lang].error.adminbot
-            queue.add(async () => {try{await bot.sendVideo(msg.chat.id, `https://ipfs.kleros.io/ipfs/${video}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id, caption: msg_error} : {caption: msg_error})}catch{}});
+            queue.add(async () => {try{await bot.sendVideo(msg.chat.id, `https://cdn.kleros.link/ipfs/${video}`, msg.chat.is_forum? {message_thread_id: msg.message_thread_id, caption: msg_error} : {caption: msg_error})}catch{}});
             return;
         }
         setEnforcementMode(db, 'telegram', String(msg.chat.id),settings.enforcement? 0: 1)

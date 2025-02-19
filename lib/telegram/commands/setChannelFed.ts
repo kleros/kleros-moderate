@@ -84,7 +84,7 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
             if(!channelUserSusie)
                 return
         if (channelUserSusie.status !== "administrator"){
-            const resp = await queue.add(async () => {try{const val = await bot.sendVideo(msg.chat.id, 'https://ipfs.kleros.io/ipfs/QmbnEeVzBjcAnnDKGYJrRo1Lx2FFnG62hYfqx4fLTqYKC7/guide.mp4', {caption: langJson[settings.lang].errorAdminRights},msg.chat.is_forum? {message_thread_id: msg.message_thread_id, parse_mode: 'Markdown'} : {parse_mode: 'Markdown'})
+            const resp = await queue.add(async () => {try{const val = await bot.sendVideo(msg.chat.id, 'https://cdn.kleros.link/ipfs/QmbnEeVzBjcAnnDKGYJrRo1Lx2FFnG62hYfqx4fLTqYKC7/guide.mp4', {caption: langJson[settings.lang].errorAdminRights},msg.chat.is_forum? {message_thread_id: msg.message_thread_id, parse_mode: 'Markdown'} : {parse_mode: 'Markdown'})
             return val}catch{}});
             if(!resp)
             return

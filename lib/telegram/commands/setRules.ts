@@ -26,8 +26,8 @@ const callback = async (queue: any, db: any, settings: groupSettings, bot: any, 
             const msg_id = msg.chat.is_forum? msg.is_topic_message? msg.message_thread_id: 1 : ''+msg.reply_to_message.message_id;
             const MsgLink = 'https://t.me/c/' + String(msg.chat.id).substring(4) + '/' + msg_id;
 
-            setRulesCustom(db, 'telegram', String(msg.chat.id), 'https://ipfs.kleros.io'+rulesPath, Math.floor(Date.now()/1000), msg_id);
-            queue.add(async () => {try{await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].rulesUpdated}(https://ipfs.kleros.io${rulesPath}).`, msg.chat.is_forum? {message_thread_id: settings.thread_id_rules, parse_mode: 'Markdown'}: {parse_mode: "Markdown"})}catch{}});
+            setRulesCustom(db, 'telegram', String(msg.chat.id), 'https://cdn.kleros.link'+rulesPath, Math.floor(Date.now()/1000), msg_id);
+            queue.add(async () => {try{await bot.sendMessage(msg.chat.id, `${langJson[settings.lang].rulesUpdated}(https://cdn.kleros.link${rulesPath}).`, msg.chat.is_forum? {message_thread_id: settings.thread_id_rules, parse_mode: 'Markdown'}: {parse_mode: "Markdown"})}catch{}});
             if(msg.chat.is_forum){
                 const msgRules = await queue.add(async () => {try{const val = await bot.forwardMessage(msg.chat.id, msg.chat.id, msg.reply_to_message.message_id, {message_thread_id: settings.thread_id_rules})
                 return val}catch{}});

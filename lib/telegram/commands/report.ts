@@ -135,7 +135,7 @@ const callback = async (queue: any, db:any, settings: groupSettings, bot: Telegr
             return
         const isPrivate = !chatobj.active_usernames;
         const evidencepath = await upload(queue, bot, settings.lang, msg, isPrivate);
-        const msgBackup = 'https://ipfs.kleros.io'+evidencepath;
+        const msgBackup = 'https://cdn.kleros.link'+evidencepath;
         // TODO report
         const reportAllowance = getAllowance(db, 'telegram', String(msg.chat.id), String(msg.from.id));
         console.log(reportAllowance)
